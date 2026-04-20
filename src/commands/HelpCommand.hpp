@@ -5,7 +5,8 @@
 
 class HelpCommand : public ICommand {
     public: 
-        void execute() override;
+        void execute(std::ostream& out) override;
+        virtual std::string getSyntax() override;
 };
 
 #endif

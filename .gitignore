@@ -1,41 +1,42 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
+cat <<EOF > .gitignore
+# --- Build Output ---
+build/
+bin/
+obj/
 *.o
 *.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
 *.exe
 *.out
 *.app
 
-# debug information files
-*.dwo
+# --- Libraries & Debug ---
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+*.pdb
+*.dSYM/
+
+# --- CMake ---
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+_deps/
+
+# --- Editors & IDEs ---
+.vscode/
+.idea/
+.nvim/
+*.swp
+*.swo
+.DS_Store
+
+# --- Project Specific ---
+data/*.txt
+.env
+*.log
+EOF

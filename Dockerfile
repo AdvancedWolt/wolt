@@ -1,4 +1,4 @@
-FROM gcc:latest
+FROM gcc:15
 
 RUN apt-get update && apt-get install -y cmake
 

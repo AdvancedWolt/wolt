@@ -17,6 +17,7 @@ TEST(HelpCommandTest, PrintsAllRegisteredCommands) {
     helpCmd.execute(buffer);
 
     std::string result = buffer.str(); 
+    // Expect the find result to NOT equal npos
     EXPECT_NE(result.find("help"), std::string::npos);
     
     delete fakeCommands[0];
@@ -24,7 +25,7 @@ TEST(HelpCommandTest, PrintsAllRegisteredCommands) {
 
 TEST(HelpCommandTest, EmptyMapDoesNotCrash) {
     std::vector<ICommand*> emptyVec;
-    HelpCommand helpCmd(emptyMap);
+    HelpCommand helpCmd(emptyVec);
     std::stringstream buffer;
     
     // This should run without crashing and leave the buffer empty

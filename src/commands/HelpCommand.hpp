@@ -11,7 +11,7 @@ class HelpCommand : public ICommand {
         // Store a list of all commands 
         const std::vector<ICommand*>& commands;
     public: 
-        HelpCommand(const std::vector<int, ICommand*>& allCommands);
+        HelpCommand(const std::vector<ICommand*>& allCommands);
         void execute(std::ostream& out) override;
         virtual std::string getSyntax() override;
 };

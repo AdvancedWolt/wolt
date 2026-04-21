@@ -1,6 +1,5 @@
 #include "HelpCommand.hpp"
 
-// Initialize commands with the commands the constructor recieves
 HelpCommand::HelpCommand(const std::vector<ICommand*>& allCommands) : commands(allCommands) {}
 
 void HelpCommand::execute(std::ostream& out) {

@@ -2,16 +2,16 @@
 #define HELPCOMMAND_HPP
 
 #include "ICommand.hpp"
-#include <map>          
+#include <vector>          
 #include <string>       
 #include <ostream>      
 
 class HelpCommand : public ICommand {
     private:
-        const std::map<int, ICommand*>& commands;
-
+        // Store a list of all commands 
+        const std::vector<ICommand*>& commands;
     public: 
-        HelpCommand(const std::map<int, ICommand*>& allCommands);
+        HelpCommand(const std::vector<int, ICommand*>& allCommands);
         void execute(std::ostream& out) override;
         virtual std::string getSyntax() override;
 };

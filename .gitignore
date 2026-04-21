@@ -39,4 +39,6 @@ _deps/
 data/*.txt
 .env
 *.log
-EOF
+
+build_local/
+.clangd

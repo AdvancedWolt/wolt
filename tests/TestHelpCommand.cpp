@@ -2,40 +2,37 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <memory>
 #include "../src/commands/ICommand.hpp"
 #include "../src/commands/HelpCommand.hpp"
+#include "../src/commands/FakeCommand.hpp"
 
 TEST(HelpCommandTest, PrintsAllRegisteredCommands) {
-    std::vector<ICommand*> fakeCommands;
- 
-    fakeCommands.push_back(new HelpCommand(fakeCommands)); 
-    // Should add more commands here whilst building
-
-    HelpCommand helpCmd(fakeCommands); 
-    std::stringstream buffer;
-
-    helpCmd.execute(buffer);
-
-    std::string result = buffer.str(); 
-    // Expect the find result to NOT equal npos
-    EXPECT_NE(result.find("help"), std::string::npos);
+    std::vector<std::shared_ptr<ICommand>> fakeCommands;
     
-    delete fakeCommands[0];
+    // Create a fake command and test on it
+    fakeCommands.push_back(std::make_shared<FakeCommand>());
+    HelpCommand helpCmd(fakeCommands);
+    std::stringstream buffer;
+    helpCmd.execute(buffer);
+    std::string result = buffer.str();
+    // Expect the find result to NOT equal npos
+    EXPECT_NE(result.find("fake"), std::string::npos);
 }
 
 TEST(HelpCommandTest, EmptyVecDoesNotCrash) {
-    std::vector<ICommand*> emptyVec;
+    std::vector<std::shared_ptr<ICommand>> emptyVec;
     HelpCommand helpCmd(emptyVec);
     std::stringstream buffer;
-    
+
     // This should run without crashing and leave the buffer empty
     helpCmd.execute(buffer);
-    EXPECT_EQ(buffer.str(), ""); 
+    EXPECT_EQ(buffer.str(), "");
     EXPECT_NO_THROW(buffer.str());
 }
 
 TEST(HelpCommandTest, CorrectSyntaxName) {
-    std::vector<ICommand*> dummy;
+    std::vector<std::shared_ptr<ICommand>> dummy;
     HelpCommand help(dummy);
     EXPECT_EQ(help.getSyntax(), "help");
 }

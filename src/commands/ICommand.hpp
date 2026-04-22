@@ -2,6 +2,7 @@
 
 #include <ostream>
 #include <string>
+#include <memory>
 
 class ICommand {
     public:

@@ -2,15 +2,14 @@
 
 #include "ICommand.hpp"
 #include <vector>          
-#include <string>       
-#include <ostream>      
 
 class HelpCommand : public ICommand {
     private:
-        const std::vector<ICommand*>& commands;
+        const std::vector<std::shared_ptr<ICommand>>& commands;
 
     public: 
-        HelpCommand(const std::vector<ICommand*>& allCommands);
+        HelpCommand(const std::vector<std::shared_ptr<ICommand>>& allCommands);
         void execute(std::ostream& out) override;
         virtual std::string getSyntax() const override;
 };
+

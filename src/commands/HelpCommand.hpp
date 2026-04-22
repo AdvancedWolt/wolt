@@ -1,5 +1,4 @@
-#ifndef HELPCOMMAND_HPP
-#define HELPCOMMAND_HPP
+#pragma once
 
 #include "ICommand.hpp"
 #include <vector>          
@@ -13,7 +12,5 @@ class HelpCommand : public ICommand {
     public: 
         HelpCommand(const std::vector<ICommand*>& allCommands);
         void execute(std::ostream& out) override;
-        virtual std::string getSyntax() override;
+        virtual std::string getSyntax() const override;
 };
-
-#endif

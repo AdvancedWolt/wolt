@@ -23,7 +23,7 @@ TEST(HelpCommandTest, PrintsAllRegisteredCommands) {
     delete fakeCommands[0];
 }
 
-TEST(HelpCommandTest, EmptyMapDoesNotCrash) {
+TEST(HelpCommandTest, EmptyVecDoesNotCrash) {
     std::vector<ICommand*> emptyVec;
     HelpCommand helpCmd(emptyVec);
     std::stringstream buffer;
@@ -31,6 +31,7 @@ TEST(HelpCommandTest, EmptyMapDoesNotCrash) {
     // This should run without crashing and leave the buffer empty
     helpCmd.execute(buffer);
     EXPECT_EQ(buffer.str(), ""); 
+    EXPECT_NO_THROW(buffer.str());
 }
 
 TEST(HelpCommandTest, CorrectSyntaxName) {

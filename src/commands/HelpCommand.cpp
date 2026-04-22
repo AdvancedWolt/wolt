@@ -1,6 +1,7 @@
 #include "HelpCommand.hpp"
 
-HelpCommand::HelpCommand(const std::vector<ICommand*>& allCommands) : commands(allCommands) {}
+HelpCommand::HelpCommand(const std::vector<ICommand*>& allCommands) 
+    : commands(allCommands) {}
 
 void HelpCommand::execute(std::ostream& out) {
     for (ICommand* cmd : commands) {
@@ -8,6 +9,6 @@ void HelpCommand::execute(std::ostream& out) {
     }
 }
 
-std::string HelpCommand::getSyntax() {
+std::string HelpCommand::getSyntax() const {
     return "help";
 }

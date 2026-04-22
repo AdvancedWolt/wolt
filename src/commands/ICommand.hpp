@@ -1,5 +1,4 @@
-#ifndef ICommand_HPP
-#define ICommand_HPP
+#pragma once
 
 #include <ostream>
 #include <string>
@@ -10,7 +9,5 @@ class ICommand {
         virtual ~ICommand() {}
         
         virtual void execute(std::ostream& out) = 0;
-        virtual std::string getSyntax() = 0;
+        virtual std::string getSyntax() const = 0;
 };
-
-#endif

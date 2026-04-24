@@ -11,7 +11,11 @@ FetchContent_MakeAvailable(googletest)
 
 
 # Create one executable that runs all tests
-add_executable(unit_tests TestHelpCommand.cpp)
+add_executable(unit_tests
+    TestHelpCommand.cpp
+    TestApp.cpp
+    ../src/commands/FakeCommand.cpp
+)
 
 # Link to Logic Library and the GTest Main entry point
 target_link_libraries(unit_tests 

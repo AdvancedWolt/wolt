@@ -1,15 +1,18 @@
 #pragma once
 
 #include "ICommand.hpp"
-#include <vector>          
+#include <memory>
+#include <string>
+#include <vector>
 
 class HelpCommand : public ICommand {
     private:
-        const std::vector<std::shared_ptr<ICommand>>& commands;
+        const std::vector<std::shared_ptr<ICommand>>& m_commands;
 
-    public: 
-        HelpCommand(const std::vector<std::shared_ptr<ICommand>>& allCommands);
+    public:
+        explicit HelpCommand(const std::vector<std::shared_ptr<ICommand>>& commands);
+
         void execute(std::ostream& out) override;
-        virtual std::string getSyntax() const override;
+        std::string getSyntax() const override;
 };
 

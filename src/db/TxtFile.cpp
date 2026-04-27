@@ -54,9 +54,14 @@ bool TxtFile::load()
     return inputFile.good() || inputFile.eof();
 }
 
-const Idatabase::ProductsByUser& TxtFile::getProductsByUser() const
+std::vector<std::string> TxtFile::getProductsForUser(const std::string& userId) const
 {
-    return m_productsByUser;
+    const auto userProductsIterator = m_productsByUser.find(userId);
+    if (userProductsIterator == m_productsByUser.end()) {
+        return {};
+    }
+
+    return userProductsIterator->second;
 }
 
 bool TxtFile::addProducts(const std::string& userId,

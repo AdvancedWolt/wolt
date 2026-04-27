@@ -14,6 +14,8 @@ FetchContent_MakeAvailable(googletest)
 add_executable(unit_tests
     TestHelpCommand.cpp
     TestApp.cpp
+    TestAppInternals.cpp
+    TestTxtFile.cpp
     ../src/commands/FakeCommand.cpp
 )
 

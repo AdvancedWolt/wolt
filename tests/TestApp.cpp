@@ -6,15 +6,27 @@
 #include "../src/App.hpp"
 #include "../src/db/TxtFile.hpp"
 
-TEST(AppTest, HelpPrintsExpectedCommands)
-{
-    const std::filesystem::path tempFile =
-        std::filesystem::temp_directory_path() / "wolt_help_command_test.txt";
-    std::filesystem::remove(tempFile);
+class AppTest : public ::testing::Test {
+    protected:
+        const std::filesystem::path m_tempFile =
+            std::filesystem::temp_directory_path() / "wolt_app_test.txt";
 
+        void SetUp() override
+        {
+            std::filesystem::remove(m_tempFile);
+        }
+
+        void TearDown() override
+        {
+            std::filesystem::remove(m_tempFile);
+        }
+};
+
+TEST_F(AppTest, HelpPrintsExpectedCommands)
+{
     std::istringstream input("help\n");
     std::ostringstream output;
-    auto database = std::make_shared<TxtFile>(tempFile.string());
+    auto database = std::make_shared<TxtFile>(m_tempFile.string());
 
     App app(input, output, database);
     app.run();
@@ -22,24 +34,18 @@ TEST(AppTest, HelpPrintsExpectedCommands)
     EXPECT_EQ(output.str(),
               "add [userid] [productid1] [productid2] ...\n"
               "help\n");
-
-    std::filesystem::remove(tempFile);
 }
 
-TEST(AppTest, AddCommandPersistsProductsToFile)
+TEST_F(AppTest, AddCommandPersistsProductsToFile)
 {
-    const std::filesystem::path tempFile =
-        std::filesystem::temp_directory_path() / "wolt_add_command_test.txt";
-    std::filesystem::remove(tempFile);
-
     std::istringstream input("add user42 product1 product2\n");
     std::ostringstream output;
-    auto database = std::make_shared<TxtFile>(tempFile.string());
+    auto database = std::make_shared<TxtFile>(m_tempFile.string());
 
     App app(input, output, database);
     app.run();
 
-    std::ifstream savedFile(tempFile);
+    std::ifstream savedFile(m_tempFile);
     ASSERT_TRUE(savedFile.is_open());
 
     std::string firstLine;
@@ -51,5 +57,5 @@ TEST(AppTest, AddCommandPersistsProductsToFile)
     EXPECT_EQ(secondLine, "user42\tproduct2");
     EXPECT_EQ(output.str(), "");
 
-    std::filesystem::remove(tempFile);
+    savedFile.close();
 }

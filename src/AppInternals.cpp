@@ -2,6 +2,7 @@
 #include "commands/AddCommand.hpp"
 #include "commands/HelpCommand.hpp"
 #include "commands/SyntaxCommand.hpp"
+#include <cctype>
 #include <cstddef>
 #include <unordered_map>
 
@@ -43,10 +44,16 @@ namespace AppInternals {
         {HELP_COMMAND_NAME, buildHelpCommand}
     };
 
-    bool hasOnlySpaces(const std::string& text)
+    bool isSupportedWhitespace(const char currentChar)
+    {
+        return currentChar != TAB_CHARACTER &&
+               std::isspace(static_cast<unsigned char>(currentChar));
+    }
+
+    bool isBlank(const std::string& text)
     {
         for (const char currentChar : text) {
-            if (currentChar != SPACE_CHARACTER) {
+            if (!isSupportedWhitespace(currentChar)) {
                 return false;
             }
         }
@@ -55,7 +62,8 @@ namespace AppInternals {
     }
 
     // Split one input command line into tokens.
-    // The exercise allows one or more regular spaces between fields, but not tabs.
+    // The exercise allows spaces between fields. Other non-tab whitespace is
+    // tolerated so CRLF input does not leak '\r' into the last token.
     std::vector<std::string> parseLine(const std::string& line, bool& isValidFormat)
     {
         /* 
@@ -65,7 +73,7 @@ namespace AppInternals {
         */
         isValidFormat = true;
 
-        if (line.empty() || hasOnlySpaces(line)) {
+        if (line.empty() || isBlank(line)) {
             return {};
         }
 
@@ -73,17 +81,17 @@ namespace AppInternals {
         std::string currentToken;
 
         for (const char currentChar : line) {
-            if (currentChar == SPACE_CHARACTER) {
+            if (currentChar == TAB_CHARACTER) {
+                isValidFormat = false;
+                return {};
+            }
+
+            if (isSupportedWhitespace(currentChar)) {
                 if (!currentToken.empty()) {
                     tokens.push_back(currentToken);
                     currentToken.clear();
                 }
                 continue;
-            }
-
-            if (currentChar == TAB_CHARACTER) {
-                isValidFormat = false;
-                return {};
             }
 
             currentToken += currentChar;

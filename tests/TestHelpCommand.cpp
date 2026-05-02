@@ -7,11 +7,11 @@
 #include "../src/commands/HelpCommand.hpp"
 #include "../src/commands/FakeCommand.hpp"
 
-TEST(HelpCommandTest, PrintsAllRegisteredCommands) {
+TEST(HelpCommandTest, PrintsAllRegisteredCommands)
+{
     std::vector<std::shared_ptr<ICommand>> fakeCommands;
-    
-    // Create a fake command and test on it
     fakeCommands.push_back(std::make_shared<FakeCommand>());
+
     HelpCommand helpCmd(fakeCommands);
     std::stringstream buffer;
     helpCmd.execute(buffer);
@@ -20,7 +20,8 @@ TEST(HelpCommandTest, PrintsAllRegisteredCommands) {
     EXPECT_NE(result.find("fake"), std::string::npos);
 }
 
-TEST(HelpCommandTest, EmptyVecDoesNotCrash) {
+TEST(HelpCommandTest, EmptyVecDoesNotCrash)
+{
     std::vector<std::shared_ptr<ICommand>> emptyVec;
     HelpCommand helpCmd(emptyVec);
     std::stringstream buffer;
@@ -31,7 +32,8 @@ TEST(HelpCommandTest, EmptyVecDoesNotCrash) {
     EXPECT_NO_THROW(buffer.str());
 }
 
-TEST(HelpCommandTest, CorrectSyntaxName) {
+TEST(HelpCommandTest, CorrectSyntaxName)
+{
     std::vector<std::shared_ptr<ICommand>> dummy;
     HelpCommand help(dummy);
     EXPECT_EQ(help.getSyntax(), "help");

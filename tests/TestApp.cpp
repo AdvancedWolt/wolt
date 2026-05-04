@@ -33,6 +33,7 @@ TEST_F(AppTest, HelpPrintsExpectedCommands)
 
     EXPECT_EQ(output.str(),
               "add [userid] [productid1] [productid2] ...\n"
+              "recommend [userid] [productid]\n"
               "help\n");
 }
 

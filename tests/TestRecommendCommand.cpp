@@ -34,3 +34,55 @@ TEST(RecommendCommandTest, FullScenarioRecommendation)
 
     EXPECT_EQ(output.str(), "105 106 111 110 112 113 107 108 109 114\n");
 }
+
+TEST(RecommendCommandTest, EdgeCase_NobodyWatchedTargetProduct)
+{
+    std::istringstream input(
+        "add 1 100 101\n"
+        "add 2 100 102 103\n"
+        "add 3 101 105 106\n"
+        "recommend 1 999\n" // Product 999 was never watched
+    );
+    std::ostringstream output;
+    
+    auto database = std::make_shared<TxtFile>("test_db_unknown_product.txt");
+    App app(input, output, database);
+    app.run();
+
+    EXPECT_EQ(output.str(), "");
+}
+
+TEST(RecommendCommandTest, EdgeCase_TieBreakerSorting)
+{
+    std::istringstream input(
+        "add 1 100\n"
+        "add 2 100 104 205 101 300\n"
+        "recommend 1 104\n"
+    );
+    std::ostringstream output;
+    
+    auto database = std::make_shared<TxtFile>("test_db_tie_breaker.txt");
+    App app(input, output, database);
+    app.run();
+
+    // All recommended products have a relevence of 1. 
+    // They must be sorted by ID: 101, 205, 300.
+    EXPECT_EQ(output.str(), "101 205 300\n");
+}
+
+TEST(RecommendCommandTest, EdgeCase_NoNewProductsToRecommend)
+{
+    std::istringstream input(
+        "add 1 100 101\n"
+        "add 2 100 101 104\n"
+        "recommend 1 104\n"
+    );
+    std::ostringstream output;
+    
+    auto database = std::make_shared<TxtFile>("test_db_no_new_products.txt");
+    App app(input, output, database);
+    app.run();
+
+    // all products are either watched by target user or is a target product
+    EXPECT_EQ(output.str(), "");
+}

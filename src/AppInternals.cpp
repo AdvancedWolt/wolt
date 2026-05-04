@@ -23,6 +23,7 @@ namespace AppInternals {
     // HelpCommand prints getSyntax() for each command it receives.
     const std::vector<std::shared_ptr<ICommand>> HELP_COMMANDS = {
         std::make_shared<SyntaxCommand>(AddCommand::syntax()),
+        std::make_shared<SyntaxCommand>(RecommendCommand::syntax()),
         std::make_shared<SyntaxCommand>(HELP_COMMAND_NAME)
     };
 

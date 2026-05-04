@@ -9,13 +9,13 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE) 
 FetchContent_MakeAvailable(googletest)
 
-
 # Create one executable that runs all tests
 add_executable(unit_tests
     TestHelpCommand.cpp
     TestApp.cpp
     TestAppInternals.cpp
     TestTxtFile.cpp
+    TestRecommendCommand.cpp
     ../src/commands/FakeCommand.cpp
 )
 

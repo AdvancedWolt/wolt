@@ -64,6 +64,21 @@ std::vector<std::string> TxtFile::getProductsForUser(const std::string& userId) 
     return userProductsIterator->second;
 }
 
+std::vector<std::string> TxtFile::getAllUserIds() const
+{
+    std::vector<std::string> userIds;
+    
+    // Reserve memory in advance to avoid unnecessary reallocations
+    userIds.reserve(m_productsByUser.size());
+    
+    for (const auto& pair : m_productsByUser) {
+        // pair.first contains the userId (the key)
+        userIds.push_back(pair.first);
+    }
+    
+    return userIds;
+}
+
 bool TxtFile::addProducts(const std::string& userId,
                           const std::vector<std::string>& productIds)
 {

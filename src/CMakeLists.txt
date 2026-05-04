@@ -5,6 +5,7 @@ set(LOGIC_FILES
     commands/HelpCommand.cpp
     commands/AddCommand.cpp
     commands/SyntaxCommand.cpp
+    commands/RecommendCommand.cpp
     db/TxtFile.cpp
 )
 

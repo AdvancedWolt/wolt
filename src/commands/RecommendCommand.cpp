@@ -16,54 +16,41 @@ std::string RecommendCommand::syntax()
 void RecommendCommand::execute(std::ostream& out)
 {
     if (m_database == nullptr || m_productId.empty()) {
-        out << "[DEBUG] Command failed early: Database is null or Product ID is empty.\n";
-        return;
-    }
-
-    // DEBUG: Check how many users the database actually has loaded
-    std::vector<std::string> allUsers = m_database->getAllUserIds();
-    if (allUsers.empty()) {
-        out << "[DEBUG] Database is completely empty! addProducts() probably failed to open the file.\n";
         return;
     }
 
     std::vector<std::string> targetUserProducts = m_database->getProductsForUser(m_userId);
-    
-    // DEBUG: Check if the target user actually has products
-    if (targetUserProducts.empty()) {
-        out << "[DEBUG] Target user '" << m_userId << "' has 0 products in memory.\n";
-        return;
-    }
 
+    // calculate the weight for each user by product similaritis to target user
     std::unordered_map<std::string, int> userWeights = countSimilarities(targetUserProducts);
+
     std::unordered_map<std::string, int> productRelevence = computeRelevence(targetUserProducts, userWeights);
 
-    // DEBUG: Check if computeRelevence found any matching products
-    if (productRelevence.empty()) {
-        out << "[DEBUG] productRelevence is empty. Target product ID: '" << m_productId.front() << "'\n";
-        out << "[DEBUG] Number of users who watched the target product: " << getUsersWithProduct(m_productId.front()).size() << "\n";
-        return;
-    }
-
-    // --- Original Sorting and Printing Logic ---
+    // Copy the map into a vector of pairs so we can sort it
     std::vector<std::pair<std::string, int>> sortedRelevance(productRelevence.begin(), productRelevence.end());
 
+    // Sort the vector
     std::sort(sortedRelevance.begin(), sortedRelevance.end(), 
         [](const std::pair<std::string, int>& a, const std::pair<std::string, int>& b) {
             if (a.second != b.second) {
                 return a.second > b.second; 
             }
+            
             return a.first < b.first; 
         }
     );
 
+    // Print the sorted product IDs to the output stream
     for (size_t i = 0; i < sortedRelevance.size(); ++i) {
         out << sortedRelevance[i].first;
+        
+        // Add a space after every item except the last one
         if (i < sortedRelevance.size() - 1) {
             out << " ";
         }
     }
     
+    // Only print the newline if we actually recommended something
     if (!sortedRelevance.empty()) {
         out << "\n";
     }

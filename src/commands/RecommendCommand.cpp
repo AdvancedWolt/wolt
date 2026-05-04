@@ -30,12 +30,14 @@ void RecommendCommand::execute(std::ostream& out)
     // sort the relevence of all products
     std::vector<std::pair<std::string, int>> sortedRelevence = sortRelevence(productRelevence);
 
+    size_t limit = std::min(sortedRelevence.size(), size_t(10));
+
     // Print the sorted product IDs to the output stream
-    for (size_t i = 0; i < sortedRelevence.size(); ++i) {
+    for (size_t i = 0; i < limit; ++i) {
         out << sortedRelevence[i].first;
         
         // Add a space after every item except the last one
-        if (i < sortedRelevence.size() - 1) {
+        if (i < limit - 1) {
             out << " ";
         }
     }

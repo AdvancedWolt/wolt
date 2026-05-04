@@ -24,8 +24,30 @@ void RecommendCommand::execute(std::ostream& out)
     // calculate the weight for each user by product similaritis to target user
     std::unordered_map<std::string, int> userWeights = countSimilarities(targetUserProducts);
 
+    // for each product asign relevence by the users similar to target user, by their weight
     std::unordered_map<std::string, int> productRelevence = computeRelevence(targetUserProducts, userWeights);
 
+    // sort the relevence of all products
+    std::vector<std::pair<std::string, int>> sortedRelevence = sortRelevence(productRelevence);
+
+    // Print the sorted product IDs to the output stream
+    for (size_t i = 0; i < sortedRelevence.size(); ++i) {
+        out << sortedRelevence[i].first;
+        
+        // Add a space after every item except the last one
+        if (i < sortedRelevence.size() - 1) {
+            out << " ";
+        }
+    }
+    
+    // Only print the newline if we actually recommended something
+    if (!sortedRelevence.empty()) {
+        out << "\n";
+    }
+}
+
+std::vector<std::pair<std::string, int>> RecommendCommand::sortRelevence(std::unordered_map<std::string, int> productRelevence)
+{
     // Copy the map into a vector of pairs so we can sort it
     std::vector<std::pair<std::string, int>> sortedRelevance(productRelevence.begin(), productRelevence.end());
 
@@ -40,20 +62,7 @@ void RecommendCommand::execute(std::ostream& out)
         }
     );
 
-    // Print the sorted product IDs to the output stream
-    for (size_t i = 0; i < sortedRelevance.size(); ++i) {
-        out << sortedRelevance[i].first;
-        
-        // Add a space after every item except the last one
-        if (i < sortedRelevance.size() - 1) {
-            out << " ";
-        }
-    }
-    
-    // Only print the newline if we actually recommended something
-    if (!sortedRelevance.empty()) {
-        out << "\n";
-    }
+    return sortedRelevance;
 }
 
 std::unordered_map<std::string, int> RecommendCommand::countSimilarities(const std::vector<std::string>& targetUserProducts)
@@ -83,17 +92,12 @@ std::unordered_map<std::string, int> RecommendCommand::computeRelevence(
 {
     std::unordered_map<std::string, int> productRelevence;
 
-    // Assuming the target product is the first item in your m_productId vector 
-    // based on your command syntax: "recommend [userid] [productid]"
-    if (m_productId.empty()) {
-        return productRelevence;
-    }
     std::string targetProduct = m_productId.front();
 
-    // 1. Get only the users who have watched the target product
+    // Get only the users who have watched the target product
     std::vector<std::string> targetProductWatchers = getUsersWithProduct(targetProduct);
 
-    // 2. Iterate through those specific users
+    // Iterate through those specific users
     for (const auto& user : targetProductWatchers) {
         
         // Skip the target user themselves just in case they watched the target product
@@ -103,24 +107,19 @@ std::unordered_map<std::string, int> RecommendCommand::computeRelevence(
 
         // Get the current user's similarity weight
         int weight = userWeights[user];
-        
-        // Small optimization: If weight is 0, they don't contribute to relevance
-        if (weight == 0) {
-            continue;
-        }
 
         // Fetch the products for the current user
         std::vector<std::string> userProducts = m_database->getProductsForUser(user);
 
-        // 3. Add their weight to each valid product
+        // Add their weight to each valid product
         for (const auto& product : userProducts) {
             
-            // Rule A: Do not recommend the target product itself
+            // Do not recommend the target product itself
             if (product == targetProduct) {
                 continue;
             }
 
-            // Rule B: Do not recommend products the target user has already watched
+            // Do not recommend products the target user has already watched
             if (std::find(targetUserProducts.begin(), targetUserProducts.end(), product) != targetUserProducts.end()) {
                 continue;
             }

@@ -92,7 +92,6 @@ TEST(RecommendCommandTest, Persistence_RecommendationsWorkAfterRestart)
 {
     const std::string dbPath = "test_db_persistence.txt";
     
-    // Create a scope to add data and then "shut down" the app
     {
         std::istringstream setupInput(
             "add 1 100 101\n"
@@ -103,7 +102,6 @@ TEST(RecommendCommandTest, Persistence_RecommendationsWorkAfterRestart)
         
         App setupApp(setupInput, dummyOutput, dbSetup);
         setupApp.run();
-        // At this point, data is saved to test_db_persistence.txt
     }
 
     // Start a brand new app instance pointing to the same file
@@ -115,7 +113,6 @@ TEST(RecommendCommandTest, Persistence_RecommendationsWorkAfterRestart)
     App runApp(runInput, finalOutput, dbRun);
     runApp.run();
 
-    // If persistence works, User 1 should get recommended Product 105
     EXPECT_EQ(finalOutput.str(), "105\n");
 
     std::filesystem::remove(dbPath);

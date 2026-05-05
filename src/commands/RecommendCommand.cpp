@@ -51,7 +51,14 @@ void RecommendCommand::execute(std::ostream& out)
 std::vector<std::pair<std::string, int>> RecommendCommand::sortRelevence(std::unordered_map<std::string, int> productRelevence)
 {
     // Copy the map into a vector of pairs so we can sort it
-    std::vector<std::pair<std::string, int>> sortedRelevance(productRelevence.begin(), productRelevence.end());
+    std::vector<std::pair<std::string, int>> sortedRelevance;
+
+    for (const auto& pair : productRelevence) {
+        if (pair.second > 0) { 
+            // Only keep products with a relevance weight > 0
+            sortedRelevance.push_back(pair);
+        }
+    }
 
     // Sort the vector
     std::sort(sortedRelevance.begin(), sortedRelevance.end(), 
@@ -99,18 +106,16 @@ std::unordered_map<std::string, int> RecommendCommand::computeRelevence(
     // Get only the users who have watched the target product
     std::vector<std::string> targetProductWatchers = getUsersWithProduct(targetProduct);
 
-    // Iterate through those specific users
     for (const auto& user : targetProductWatchers) {
         
         // Skip the target user themselves just in case they watched the target product
-        if (user == m_userId) {
+        // skip users with zero weight for optimization
+        if (user == m_userId || userWeights[user] == 0) {
             continue;
         }
 
-        // Get the current user's similarity weight
         int weight = userWeights[user];
 
-        // Fetch the products for the current user
         std::vector<std::string> userProducts = m_database->getProductsForUser(user);
 
         // Add their weight to each valid product

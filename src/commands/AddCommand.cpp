@@ -1,5 +1,9 @@
 #include "AddCommand.hpp"
 
+#include <algorithm>
+#include <cctype>
+
+
 AddCommand::AddCommand(std::shared_ptr<Idatabase> database,
                        std::string userId,
                        std::vector<std::string> productIds)
@@ -18,11 +22,20 @@ void AddCommand::execute(std::ostream& out)
     // for now we don't need to output anything , just to get rid of the unused parameter warning.
     (void)out;
 
-    if (m_database == nullptr || m_productIds.empty()) {
+    if (m_database == nullptr || m_productIds.empty() || m_userId.empty()) {
         return;
     }
 
-    const User user(std::stoi(m_userId));
+    if(std::all_of(m_userId.begin(), m_userId.end(), std::isdigit)) {
+        return;
+    }
+
+    const auto userId = std::stoi(m_userId);
+    if(userId < 0) {
+        return;
+    }    
+
+    const User user(userId);
     std::vector<Product> products;
     products.reserve(m_productIds.size());
     for (const std::string& productId : m_productIds) {

@@ -3,10 +3,11 @@
 #include "Idatabase.hpp"
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 class TxtFile : public Idatabase {
     private:
-        using ProductsByUser = std::unordered_map<std::string, std::vector<std::string>>;
+        using ProductsByUser = std::unordered_map<User, std::unordered_set<Product>>;
 
         std::string m_filepath;
         ProductsByUser m_productsByUser;

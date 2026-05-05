@@ -43,11 +43,11 @@ bool TxtFile::load()
             continue;
         }
 
-        const std::string userId = line.substr(0, separatorPosition);
-        const std::string productId = line.substr(separatorPosition + 1);
+        const std::string userIdText = line.substr(0, separatorPosition);
+        const std::string productIdText = line.substr(separatorPosition + 1);
 
-        if (!userId.empty() && !productId.empty()) {
-            m_productsByUser[userId].push_back(productId);
+        if (!userIdText.empty() && !productIdText.empty()) {
+            m_productsByUser[User(std::stoi(userIdText))].insert(Product(std::stoi(productIdText)));
         }
     }
 
@@ -56,30 +56,24 @@ bool TxtFile::load()
 
 std::vector<Product> TxtFile::getProductsForUser(const User& user) const
 {
-    const auto userProductsIterator = m_productsByUser.find(std::to_string(user.getId()));
+    const auto userProductsIterator = m_productsByUser.find(user);
     if (userProductsIterator == m_productsByUser.end()) {
         return {};
     }
 
-    std::vector<Product> products;
-    for (const auto& productId : userProductsIterator->second) {
-        products.emplace_back(std::stoi(productId));
-    }
-    return products;
+    return std::vector<Product>(userProductsIterator->second.begin(),
+                                userProductsIterator->second.end());
 }
 
 std::vector<User> TxtFile::getAllUsers() const
 {
     std::vector<User> users;
-    
-    // Reserve memory in advance to avoid unnecessary reallocations
     users.reserve(m_productsByUser.size());
-    
+
     for (const auto& pair : m_productsByUser) {
-        // pair.first contains the userId (the key)
-        users.push_back(User(std::stoi(pair.first)));
+        users.push_back(pair.first);
     }
-    
+
     return users;
 }
 
@@ -90,16 +84,19 @@ bool TxtFile::addProducts(const User& user, const std::vector<Product>& products
         return false;
     }
 
-    const std::string userId = std::to_string(user.getId());
+    auto& userProducts = m_productsByUser[user];
 
     for (const Product& product : products) {
-        const std::string productId = std::to_string(product.getId());
-        outputFile << userId << '\t' << productId << std::endl;
+        if (userProducts.find(product) != userProducts.end()) {
+            continue;
+        }
+
+        outputFile << user.getId() << '\t' << product.getId() << std::endl;
         if (!outputFile.good()) {
             return false;
         }
 
-        m_productsByUser[userId].push_back(productId);
+        userProducts.insert(product);
     }
 
     return true;

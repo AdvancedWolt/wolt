@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <vector>
@@ -24,8 +25,15 @@ TEST(TxtFileTest, GetProductsForUserReturnsOnlyRequestedUserProducts)
 
     const std::vector<Product> products = database.getProductsForUser(User(42));
     ASSERT_EQ(products.size(), 2);
-    EXPECT_EQ(products[0].getId(), 1);
-    EXPECT_EQ(products[1].getId(), 3);
+
+    std::vector<int> productIds;
+    productIds.reserve(products.size());
+    for (const Product& product : products) {
+        productIds.push_back(product.getId());
+    }
+    std::sort(productIds.begin(), productIds.end());
+    EXPECT_EQ(productIds[0], 1);
+    EXPECT_EQ(productIds[1], 3);
 
     EXPECT_TRUE(database.getProductsForUser(User(7)).empty());
 

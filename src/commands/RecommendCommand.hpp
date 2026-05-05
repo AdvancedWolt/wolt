@@ -26,8 +26,8 @@ class RecommendCommand : public ICommand {
 
         RecommendCommand(std::shared_ptr<Idatabase> database,
                          std::string userId,
-                   std::vector<std::string> productId);
+                         std::vector<std::string> productId);
 
         void execute(std::ostream& out) override;
-        std::string getSyntax() const override;
+        std::string getSyntax() const override { return syntax(); }
 };

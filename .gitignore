@@ -1,6 +1,5 @@
-cat <<EOF > .gitignore
 # --- Build Output ---
-build/
+build*/
 bin/
 obj/
 *.o
@@ -40,5 +39,4 @@ data/*.txt
 .env
 *.log
 
-build_local/
 .clangd

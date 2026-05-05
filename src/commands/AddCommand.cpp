@@ -22,10 +22,12 @@ void AddCommand::execute(std::ostream& out)
         return;
     }
 
-    m_database->addProducts(m_userId, m_productIds);
-}
+    const User user(std::stoi(m_userId));
+    std::vector<Product> products;
+    products.reserve(m_productIds.size());
+    for (const std::string& productId : m_productIds) {
+        products.emplace_back(std::stoi(productId));
+    }
 
-std::string AddCommand::getSyntax() const
-{
-    return syntax();
+    m_database->addProducts(user, products);
 }

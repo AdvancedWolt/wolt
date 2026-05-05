@@ -15,6 +15,3 @@ std::string HelpCommand::getSyntax() const
 {
     return "help";
 }
-
-
-

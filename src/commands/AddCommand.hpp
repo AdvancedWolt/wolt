@@ -20,5 +20,5 @@ class AddCommand : public ICommand {
                    std::vector<std::string> productIds);
 
         void execute(std::ostream& out) override;
-        std::string getSyntax() const override;
+        std::string getSyntax() const override { return syntax(); }
 };

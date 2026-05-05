@@ -54,40 +54,46 @@ bool TxtFile::load()
     return inputFile.good() || inputFile.eof();
 }
 
-std::vector<std::string> TxtFile::getProductsForUser(const std::string& userId) const
+std::vector<Product> TxtFile::getProductsForUser(const User& user) const
 {
-    const auto userProductsIterator = m_productsByUser.find(userId);
+    const auto userProductsIterator = m_productsByUser.find(std::to_string(user.getId()));
     if (userProductsIterator == m_productsByUser.end()) {
         return {};
     }
 
-    return userProductsIterator->second;
+    std::vector<Product> products;
+    for (const auto& productId : userProductsIterator->second) {
+        products.emplace_back(std::stoi(productId));
+    }
+    return products;
 }
 
-std::vector<std::string> TxtFile::getAllUserIds() const
+std::vector<User> TxtFile::getAllUsers() const
 {
-    std::vector<std::string> userIds;
+    std::vector<User> users;
     
     // Reserve memory in advance to avoid unnecessary reallocations
-    userIds.reserve(m_productsByUser.size());
+    users.reserve(m_productsByUser.size());
     
     for (const auto& pair : m_productsByUser) {
         // pair.first contains the userId (the key)
-        userIds.push_back(pair.first);
+        users.push_back(User(std::stoi(pair.first)));
     }
     
-    return userIds;
+    return users;
 }
 
-bool TxtFile::addProducts(const std::string& userId,
-                          const std::vector<std::string>& productIds)
+bool TxtFile::addProducts(const User& user, const std::vector<Product>& products)
 {
     std::ofstream outputFile(m_filepath, std::ios::app);
     if (!outputFile.is_open()) {
         return false;
     }
 
-    for (const std::string& productId : productIds) {
+    const std::string userId = std::to_string(user.getId());
+
+    for (const Product& product : products) {
+        const std::string productId = std::to_string(product.getId());
         outputFile << userId << '\t' << productId << std::endl;
         if (!outputFile.good()) {
             return false;

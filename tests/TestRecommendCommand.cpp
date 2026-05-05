@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <filesystem>
 #include <sstream>
 #include <vector>
 #include <string>
@@ -85,4 +86,37 @@ TEST(RecommendCommandTest, EdgeCase_NoNewProductsToRecommend)
 
     // all products are either watched by target user or is a target product
     EXPECT_EQ(output.str(), "");
+}
+
+TEST(RecommendCommandTest, Persistence_RecommendationsWorkAfterRestart)
+{
+    const std::string dbPath = "test_db_persistence.txt";
+    
+    // Create a scope to add data and then "shut down" the app
+    {
+        std::istringstream setupInput(
+            "add 1 100 101\n"
+            "add 2 100 104 105\n"
+        );
+        std::ostringstream dummyOutput;
+        auto dbSetup = std::make_shared<TxtFile>(dbPath);
+        
+        App setupApp(setupInput, dummyOutput, dbSetup);
+        setupApp.run();
+        // At this point, data is saved to test_db_persistence.txt
+    }
+
+    // Start a brand new app instance pointing to the same file
+    // We only provide the 'recommend' command. No 'add' commands
+    std::istringstream runInput("recommend 1 104\n");
+    std::ostringstream finalOutput;
+    
+    auto dbRun = std::make_shared<TxtFile>(dbPath);
+    App runApp(runInput, finalOutput, dbRun);
+    runApp.run();
+
+    // If persistence works, User 1 should get recommended Product 105
+    EXPECT_EQ(finalOutput.str(), "105\n");
+
+    std::filesystem::remove(dbPath);
 }

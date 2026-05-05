@@ -117,3 +117,22 @@ TEST(RecommendCommandTest, Persistence_RecommendationsWorkAfterRestart)
 
     std::filesystem::remove(dbPath);
 }
+
+TEST(RecommendCommandTest, EdgeCase_DuplicateProductEntries)
+{
+    std::istringstream input(
+        "add 1 100\n"
+        "add 1 100\n"
+        "add 1 100\n"             // Added across multiple lines
+        "add 1 101\n"
+        "add 2 100 100 104 105\n" // Added multiple times in one line
+        "recommend 1 104\n"
+    );
+    std::ostringstream output;
+    
+    auto database = std::make_shared<TxtFile>("test_db_duplicates.txt");
+    App app(input, output, database);
+    app.run();
+
+    EXPECT_EQ(output.str(), "105\n");
+}

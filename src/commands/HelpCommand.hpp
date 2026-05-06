@@ -7,12 +7,10 @@
 
 class HelpCommand : public ICommand {
     private:
-        static const std::string s_syntax;
-
         const std::vector<std::shared_ptr<ICommand>>& m_commands;
 
     public:
-        static std::string syntax() { return s_syntax; }
+        static const std::string s_syntax;
 
         explicit HelpCommand(const std::vector<std::shared_ptr<ICommand>>& commands);
 

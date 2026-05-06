@@ -27,9 +27,9 @@ namespace AppInternals {
     const std::vector<std::shared_ptr<ICommand>>& helpCommands()
     {
         static const std::vector<std::shared_ptr<ICommand>> commands = {
-            std::make_shared<SyntaxCommand>(AddCommand::syntax()),
-            std::make_shared<SyntaxCommand>(RecommendCommand::syntax()),
-            std::make_shared<SyntaxCommand>(HelpCommand::syntax())
+            std::make_shared<SyntaxCommand>(AddCommand::s_syntax),
+            std::make_shared<SyntaxCommand>(RecommendCommand::s_syntax),
+            std::make_shared<SyntaxCommand>(HelpCommand::s_syntax)
         };
         return commands;
     }

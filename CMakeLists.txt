@@ -5,7 +5,7 @@ project(AdvancedWolt LANGUAGES CXX)
 # files to avoid build warnings and sync errors.
 set(CMAKE_POLICY_DEFAULT_CMP0135 NEW)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(src) # Define where the code is  

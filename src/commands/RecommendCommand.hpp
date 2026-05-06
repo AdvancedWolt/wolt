@@ -7,6 +7,8 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+#include <format>
+#include <ranges>
 
 class RecommendCommand : public ICommand {
     private:

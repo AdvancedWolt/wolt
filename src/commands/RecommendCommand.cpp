@@ -42,21 +42,19 @@ void RecommendCommand::execute(std::ostream& out)
     // sort the relevence of all products
     std::vector<std::pair<std::string, int>> sortedRelevence = sortRelevence(productRelevence);
 
-    size_t limit = std::min(sortedRelevence.size(), MAX_RECOMMENDATIONS);
+    // Get the top 10 IDs
+    auto top_ids_view = sortedRelevence
+                      | std::views::take(MAX_RECOMMENDATIONS) 
+                      | std::views::keys;
 
-    // Print the sorted product IDs to the output stream
-    for (size_t i = 0; i < limit; ++i) {
-        out << sortedRelevence[i].first;
-        
-        // Add a space after every item except the last one
-        if (i < limit - 1) {
-            out << " ";
-        }
-    }
-    
-    // Only print the newline if we actually recommended something
-    if (!sortedRelevence.empty()) {
-        out << "\n";
+    // Join them with spaces and convert the view into a real std::string
+    std::string output_str = top_ids_view 
+                           | std::views::join_with(' ') 
+                           | std::ranges::to<std::string>();
+
+    // Use std::format on the resulting string
+    if (!output_str.empty()) {
+        out << std::format("{}\n", output_str);
     }
 }
 

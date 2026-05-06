@@ -1,5 +1,11 @@
 #include "AddCommand.hpp"
 
+#include <algorithm>
+#include <cctype>
+
+
+const std::string AddCommand::s_syntax = "add [userid] [productid1] [productid2] ...";
+
 AddCommand::AddCommand(std::shared_ptr<Idatabase> database,
                        std::string userId,
                        std::vector<std::string> productIds)
@@ -8,24 +14,32 @@ AddCommand::AddCommand(std::shared_ptr<Idatabase> database,
       m_productIds(std::move(productIds))
 {}
 
-std::string AddCommand::syntax()
-{
-    return "add [userid] [productid1] [productid2] ...";
-}
-
 void AddCommand::execute(std::ostream& out)
 {
     // for now we don't need to output anything , just to get rid of the unused parameter warning.
     (void)out;
 
-    if (m_database == nullptr || m_productIds.empty()) {
+    if (m_database == nullptr || m_productIds.empty() || m_userId.empty()) {
         return;
     }
 
-    m_database->addProducts(m_userId, m_productIds);
-}
+    const bool isNumericUserId = std::all_of(m_userId.begin(), m_userId.end(),
+        [](char character) { return std::isdigit(static_cast<unsigned char>(character)) != 0; });
+    if (!isNumericUserId) {
+        return;
+    }
 
-std::string AddCommand::getSyntax() const
-{
-    return syntax();
+    const auto userId = std::stoi(m_userId);
+    if(userId < 0) {
+        return;
+    }    
+
+    const User user(userId);
+    std::vector<Product> products;
+    products.reserve(m_productIds.size());
+    for (const std::string& productId : m_productIds) {
+        products.emplace_back(std::stoi(productId));
+    }
+
+    m_database->addProducts(user, products);
 }

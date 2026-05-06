@@ -3,10 +3,11 @@
 #include "Idatabase.hpp"
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 class TxtFile : public Idatabase {
     private:
-        using ProductsByUser = std::unordered_map<std::string, std::vector<std::string>>;
+        using ProductsByUser = std::unordered_map<User, std::unordered_set<Product>>;
 
         std::string m_filepath;
         ProductsByUser m_productsByUser;
@@ -16,8 +17,7 @@ class TxtFile : public Idatabase {
 
         bool initialize() override;
         bool load() override;
-        std::vector<std::string> getProductsForUser(const std::string& userId) const override;
-        std::vector<std::string> getAllUserIds() const override;
-        bool addProducts(const std::string& userId,
-                         const std::vector<std::string>& productIds) override;
+        std::vector<Product> getProductsForUser(const User& user) const override;
+        std::vector<User> getAllUsers() const override;
+        bool addProducts(const User& user, const std::vector<Product>& products) override;
 };

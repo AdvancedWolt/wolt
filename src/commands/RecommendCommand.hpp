@@ -22,12 +22,12 @@ class RecommendCommand : public ICommand {
         std::vector<std::pair<std::string, int>> sortRelevence(std::unordered_map<std::string, int> productRelevence);
 
     public:
-        static std::string syntax();
+        static const std::string s_syntax;
 
         RecommendCommand(std::shared_ptr<Idatabase> database,
                          std::string userId,
-                   std::vector<std::string> productId);
+                         std::vector<std::string> productId);
 
         void execute(std::ostream& out) override;
-        std::string getSyntax() const override;
+        std::string getSyntax() const override { return s_syntax; }
 };

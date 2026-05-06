@@ -11,5 +11,5 @@ class SyntaxCommand : public ICommand {
         explicit SyntaxCommand(std::string syntax);
 
         void execute(std::ostream& out) override;
-        std::string getSyntax() const override;
+        std::string getSyntax() const override { return m_syntax; }
 };

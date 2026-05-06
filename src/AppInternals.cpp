@@ -1,6 +1,7 @@
 #include "AppInternals.hpp"
 #include "commands/AddCommand.hpp"
 #include "commands/HelpCommand.hpp"
+#include "commands/RecommendCommand.hpp"
 #include "commands/SyntaxCommand.hpp"
 #include <cctype>
 #include <cstddef>
@@ -13,15 +14,25 @@ namespace AppInternals {
 
     constexpr std::size_t HELP_ARGUMENT_COUNT = 1;
     constexpr std::size_t ADD_MINIMUM_ARGUMENT_COUNT = 3;
+    constexpr std::size_t RECOMMEND_ARGUMENT_COUNT = 3;
 
     const std::string ADD_COMMAND_NAME = "add";
     const std::string HELP_COMMAND_NAME = "help";
+    const std::string RECOMMEND_COMMAND_NAME = "recommend";
 
     // HelpCommand prints getSyntax() for each command it receives.
-    const std::vector<std::shared_ptr<ICommand>> HELP_COMMANDS = {
-        std::make_shared<SyntaxCommand>(AddCommand::syntax()),
-        std::make_shared<SyntaxCommand>(HELP_COMMAND_NAME)
-    };
+    // Wrapped in a function so the static is initialized on first use,
+    // avoiding a static-init-order issue with the s_syntax members in
+    // AddCommand.cpp / RecommendCommand.cpp.
+    const std::vector<std::shared_ptr<ICommand>>& helpCommands()
+    {
+        static const std::vector<std::shared_ptr<ICommand>> commands = {
+            std::make_shared<SyntaxCommand>(AddCommand::s_syntax),
+            std::make_shared<SyntaxCommand>(RecommendCommand::s_syntax),
+            std::make_shared<SyntaxCommand>(HelpCommand::s_syntax)
+        };
+        return commands;
+    }
 
     // A builder receives the already-split input line and creates the matching
     // command. Returning nullptr means the input is not a valid command.
@@ -37,11 +48,16 @@ namespace AppInternals {
         const std::vector<std::string>& tokens,
         const std::shared_ptr<Idatabase>& database);
 
+    std::unique_ptr<ICommand> buildRecommendCommand(
+        const std::vector<std::string>& tokens,
+        const std::shared_ptr<Idatabase>& database);
+
     // Maps the command name from tokens[0] to the function that knows how to
     // validate its arguments and create the command object.
     const std::unordered_map<std::string, CommandBuilder> COMMAND_BUILDERS = {
         {ADD_COMMAND_NAME, buildAddCommand},
-        {HELP_COMMAND_NAME, buildHelpCommand}
+        {HELP_COMMAND_NAME, buildHelpCommand},
+        {RECOMMEND_COMMAND_NAME, buildRecommendCommand}
     };
 
     bool isSupportedWhitespace(const char currentChar)
@@ -133,7 +149,24 @@ namespace AppInternals {
             return nullptr;
         }
 
-        return std::make_unique<HelpCommand>(HELP_COMMANDS);
+        return std::make_unique<HelpCommand>(helpCommands());
+    }
+
+    std::unique_ptr<ICommand> buildRecommendCommand(
+    const std::vector<std::string>& tokens,
+    const std::shared_ptr<Idatabase>& database)
+    {
+        if (tokens.size() != RECOMMEND_ARGUMENT_COUNT) {
+            return nullptr;
+        }
+
+        const std::string& userId = tokens[USER_ID_INDEX];
+        
+        // Extract the target product ID from the tokens
+        std::vector<std::string> productId;
+        productId.push_back(tokens[FIRST_PRODUCT_INDEX]);
+
+        return std::make_unique<RecommendCommand>(database, userId, productId);
     }
 
     std::unique_ptr<ICommand> buildCommand(

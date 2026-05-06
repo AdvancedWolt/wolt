@@ -17,3 +17,4 @@ CMD ["./build/src/wolt_app"]
 
 # To build: docker build -t wolt-app . 
 # To run tests: docker run -it wolt-app ./build/tests/unit_tests
+# To run: docker run -it wolt-app

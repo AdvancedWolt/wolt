@@ -4,7 +4,9 @@
 
 // A fake command used for testing
 class FakeCommand : public ICommand {
-    public: 
+    public:
+        static const std::string s_syntax;
+
         void execute(std::ostream& out) override;
-        virtual std::string getSyntax() const override;
+        std::string getSyntax() const override { return s_syntax; }
 };

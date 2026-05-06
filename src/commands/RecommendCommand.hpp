@@ -25,7 +25,7 @@ class RecommendCommand : public ICommand {
     const std::unordered_map<std::string, int>& userWeights);
         std::vector<std::string> getUsersWithProduct(const std::string& targetProduct);
 
-        std::vector<std::pair<std::string, int>> sortRelevence(std::unordered_map<std::string, int> productRelevence);
+    std::vector<std::pair<std::string, int>> RecommendCommand::sortRelevence(const std::unordered_map<std::string, int>& productRelevence);
 
     public:
         static const std::string s_syntax;

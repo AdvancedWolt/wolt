@@ -58,7 +58,7 @@ void RecommendCommand::execute(std::ostream& out)
     }
 }
 
-std::vector<std::pair<std::string, int>> RecommendCommand::sortRelevence(std::unordered_map<std::string, int> productRelevence)
+std::vector<std::pair<std::string, int>> RecommendCommand::sortRelevence(const std::unordered_map<std::string, int>& productRelevence)
 {
     // Copy the map into a vector of pairs so we can sort it
     std::vector<std::pair<std::string, int>> sortedRelevance;

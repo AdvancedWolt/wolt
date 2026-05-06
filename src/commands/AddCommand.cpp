@@ -23,7 +23,9 @@ void AddCommand::execute(std::ostream& out)
         return;
     }
 
-    if(std::all_of(m_userId.begin(), m_userId.end(), std::isdigit)) {
+    const bool isNumericUserId = std::all_of(m_userId.begin(), m_userId.end(),
+        [](char character) { return std::isdigit(static_cast<unsigned char>(character)) != 0; });
+    if (!isNumericUserId) {
         return;
     }
 

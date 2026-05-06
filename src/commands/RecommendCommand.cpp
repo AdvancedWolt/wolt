@@ -89,15 +89,24 @@ std::unordered_map<std::string, int> RecommendCommand::countSimilarities(const s
     std::unordered_map<std::string, int> userWeights;
     std::vector<std::string> userIds = toIds<User>(m_database->getAllUsers());
 
+    // Convert target products to an unordered_set
+    std::unordered_set<std::string> targetSet(targetUserProducts.begin(), targetUserProducts.end());
+
     for (const auto& user : userIds) {
-        // Fetch the products for the current user in the loop
+        // Skip the user asking for the recommendation
+        if (user == m_userId) {
+            continue;
+        }
+
         std::vector<std::string> currentUserProducts =
             toIds<Product>(m_database->getProductsForUser(User(std::stoi(user))));
 
-        for (const auto& product : targetUserProducts) {
-            // Check if the target user's product exists in the current user's list
-            if (std::find(currentUserProducts.begin(), currentUserProducts.end(), product) != currentUserProducts.end()) {
-                // product in common, Increment the weight for this user.
+        // Convert current user's products to a set too.
+        std::unordered_set<std::string> currentUserSet(currentUserProducts.begin(), currentUserProducts.end());
+
+        for (const auto& product : currentUserSet) {
+            if (targetSet.contains(product)) {
+                // Product in common, increment the weight for this user.
                 ++userWeights[user]; 
             }
         }
@@ -108,24 +117,37 @@ std::unordered_map<std::string, int> RecommendCommand::countSimilarities(const s
 
 std::unordered_map<std::string, int> RecommendCommand::computeRelevence(
     const std::vector<std::string>& targetUserProducts,
-    std::unordered_map<std::string, int> userWeights)
+    const std::unordered_map<std::string, int>& userWeights)
 {
     std::unordered_map<std::string, int> productRelevence;
-
     std::string targetProduct = m_productId.front();
 
-    // Get only the users who have watched the target product
-    std::vector<std::string> targetProductWatchers = getUsersWithProduct(targetProduct);
+    // Convert to unordered_set for O(1) lookups inside the loop
+    std::unordered_set<std::string> alreadyWatched(
+        targetUserProducts.begin(), targetUserProducts.end()
+    );
 
-    for (const auto& user : targetProductWatchers) {
+    // Fetch the watchers of the target product
+    std::vector<std::string> watchersList = getUsersWithProduct(targetProduct);
+    
+    // Convert watchers to a set so we can instantly check if a weighted user is a watcher
+    std::unordered_set<std::string> targetProductWatchers(
+        watchersList.begin(), watchersList.end()
+    );
+
+    // Iterate over the userWeights map
+    for (const auto& [user, weight] : userWeights) {
         
-        // Skip the target user themselves just in case they watched the target product
-        // skip users with zero weight for optimization
-        if (user == m_userId || userWeights[user] == 0) {
+        // Skip users with zero weight
+        // Skip the target user themselves
+        if (weight == 0 || user == m_userId) {
             continue;
         }
 
-        int weight = userWeights[user];
+        // Check if this weighted user actually watched the target product
+        if (!targetProductWatchers.contains(user)) {
+            continue;
+        }
 
         std::vector<std::string> userProducts =
             toIds<Product>(m_database->getProductsForUser(User(std::stoi(user))));
@@ -139,7 +161,7 @@ std::unordered_map<std::string, int> RecommendCommand::computeRelevence(
             }
 
             // Do not recommend products the target user has already watched
-            if (std::find(targetUserProducts.begin(), targetUserProducts.end(), product) != targetUserProducts.end()) {
+            if (alreadyWatched.contains(product)) {
                 continue;
             }
 
@@ -161,8 +183,7 @@ std::vector<std::string> RecommendCommand::getUsersWithProduct(const std::string
         std::vector<std::string> userProducts =
             toIds<Product>(m_database->getProductsForUser(User(std::stoi(user))));
 
-        // Check if the target product exists in their list
-        if (std::find(userProducts.begin(), userProducts.end(), targetProduct) != userProducts.end()) {
+        if (std::ranges::contains(userProducts, targetProduct)) {
             usersWithProduct.push_back(user);
         }
     }

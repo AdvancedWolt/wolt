@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <format>
 #include <ranges>
+#include <unordered_set>
 
 class RecommendCommand : public ICommand {
     private:
@@ -19,8 +20,9 @@ class RecommendCommand : public ICommand {
         static constexpr size_t MAX_RECOMMENDATIONS = 10;
 
         std::unordered_map<std::string, int> countSimilarities(const std::vector<std::string>& products);
-        std::unordered_map<std::string, int> computeRelevence(const std::vector<std::string>& targetUserProducts,
-     std::unordered_map<std::string, int> userWeights);
+        std::unordered_map<std::string, int> computeRelevence(
+    const std::vector<std::string>& targetUserProducts,
+    const std::unordered_map<std::string, int>& userWeights);
         std::vector<std::string> getUsersWithProduct(const std::string& targetProduct);
 
         std::vector<std::pair<std::string, int>> sortRelevence(std::unordered_map<std::string, int> productRelevence);

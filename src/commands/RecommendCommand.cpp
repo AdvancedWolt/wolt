@@ -77,7 +77,7 @@ std::vector<std::pair<std::string, int>> RecommendCommand::sortRelevence(std::un
                 return a.second > b.second; 
             }
             
-            return a.first < b.first; 
+            return std::stoi(a.first) < std::stoi(b.first);        
         }
     );
 

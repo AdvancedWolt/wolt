@@ -5,16 +5,13 @@ CLI application for saving product views by user.
 ## Build
 
 ```bash
-mkdir build
-cd build
-cmake ..
-make
+docker build -t wolt-app .
 ```
 
 ## Run
 
 ```bash
-./build/src/wolt_app
+docker run -it wolt-app
 ```
 
 Example commands:
@@ -29,7 +26,7 @@ help
 ## Tests
 
 ```bash
-./build/tests/unit_tests
+docker run -it wolt-app ./build/tests/unit_tests
 ```
 
 ## Docker

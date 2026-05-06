@@ -4,6 +4,8 @@
 #include <cctype>
 
 
+const std::string AddCommand::s_syntax = "add [userid] [productid1] [productid2] ...";
+
 AddCommand::AddCommand(std::shared_ptr<Idatabase> database,
                        std::string userId,
                        std::vector<std::string> productIds)
@@ -11,11 +13,6 @@ AddCommand::AddCommand(std::shared_ptr<Idatabase> database,
       m_userId(std::move(userId)),
       m_productIds(std::move(productIds))
 {}
-
-std::string AddCommand::syntax()
-{
-    return "add [userid] [productid1] [productid2] ...";
-}
 
 void AddCommand::execute(std::ostream& out)
 {

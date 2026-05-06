@@ -7,12 +7,14 @@
 
 class HelpCommand : public ICommand {
     private:
+        static const std::string s_syntax;
+
         const std::vector<std::shared_ptr<ICommand>>& m_commands;
 
     public:
         explicit HelpCommand(const std::vector<std::shared_ptr<ICommand>>& commands);
 
         void execute(std::ostream& out) override;
-        std::string getSyntax() const override;
+        std::string getSyntax() const override { return s_syntax; }
 };
 

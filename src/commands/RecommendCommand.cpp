@@ -14,19 +14,15 @@ namespace {
     }
 }
 
+const std::string RecommendCommand::s_syntax = "recommend [userid] [productid]";
+
 RecommendCommand::RecommendCommand(std::shared_ptr<Idatabase> database,
                        std::string userId,
                        std::vector<std::string> productIds)
-    : ICommand(syntax()),
-      m_database(std::move(database)),
+    : m_database(std::move(database)),
       m_userId(std::move(userId)),
       m_productId(std::move(productIds))
 {}
-
-std::string RecommendCommand::syntax()
-{
-    return "recommend [userid] [productid]";
-}
 
 void RecommendCommand::execute(std::ostream& out)
 {

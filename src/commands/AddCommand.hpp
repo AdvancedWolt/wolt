@@ -8,17 +8,19 @@
 
 class AddCommand : public ICommand {
     private:
+        static const std::string s_syntax;
+
         std::shared_ptr<Idatabase> m_database;
         std::string m_userId;
         std::vector<std::string> m_productIds;
 
     public:
-        static std::string syntax();
+        static std::string syntax() { return s_syntax; }
 
         AddCommand(std::shared_ptr<Idatabase> database,
                    std::string userId,
                    std::vector<std::string> productIds);
 
         void execute(std::ostream& out) override;
-        std::string getSyntax() const override { return syntax(); }
+        std::string getSyntax() const override { return s_syntax; }
 };

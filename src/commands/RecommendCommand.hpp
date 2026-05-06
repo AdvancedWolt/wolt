@@ -14,6 +14,8 @@ class RecommendCommand : public ICommand {
         std::string m_userId;
         std::vector<std::string> m_productId;
 
+        static constexpr size_t MAX_RECOMMENDATIONS = 10;
+
         std::unordered_map<std::string, int> countSimilarities(const std::vector<std::string>& products);
         std::unordered_map<std::string, int> computeRelevence(const std::vector<std::string>& targetUserProducts,
      std::unordered_map<std::string, int> userWeights);

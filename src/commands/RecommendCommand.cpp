@@ -1,22 +1,14 @@
 #include "RecommendCommand.hpp"
 
 namespace {
-    std::vector<std::string> toProductIds(const std::vector<Product>& products)
-    {
-        std::vector<std::string> ids;
-        ids.reserve(products.size());
-        for (const Product& product : products) {
-            ids.push_back(std::to_string(product.getId()));
-        }
-        return ids;
-    }
 
-    std::vector<std::string> toUserIds(const std::vector<User>& users)
+    template<typename T>
+    std::vector<std::string> toIds(const std::vector<T>& items)
     {
         std::vector<std::string> ids;
-        ids.reserve(users.size());
-        for (const User& user : users) {
-            ids.push_back(std::to_string(user.getId()));
+        ids.reserve(items.size());
+        for (const T& item : items) {
+            ids.push_back(std::to_string(item.getId()));
         }
         return ids;
     }
@@ -25,7 +17,8 @@ namespace {
 RecommendCommand::RecommendCommand(std::shared_ptr<Idatabase> database,
                        std::string userId,
                        std::vector<std::string> productIds)
-    : m_database(std::move(database)),
+    : ICommand(syntax()),
+      m_database(std::move(database)),
       m_userId(std::move(userId)),
       m_productId(std::move(productIds))
 {}
@@ -42,7 +35,7 @@ void RecommendCommand::execute(std::ostream& out)
     }
 
     std::vector<std::string> targetUserProducts =
-        toProductIds(m_database->getProductsForUser(User(std::stoi(m_userId))));
+        toIds<Product>(m_database->getProductsForUser(User(std::stoi(m_userId))));
 
     // calculate the weight for each user by product similaritis to target user
     std::unordered_map<std::string, int> userWeights = countSimilarities(targetUserProducts);
@@ -100,12 +93,12 @@ std::vector<std::pair<std::string, int>> RecommendCommand::sortRelevence(std::un
 std::unordered_map<std::string, int> RecommendCommand::countSimilarities(const std::vector<std::string>& targetUserProducts)
 {
     std::unordered_map<std::string, int> userWeights;
-    std::vector<std::string> userIds = toUserIds(m_database->getAllUsers());
+    std::vector<std::string> userIds = toIds<User>(m_database->getAllUsers());
 
     for (const auto& user : userIds) {
         // Fetch the products for the current user in the loop
         std::vector<std::string> currentUserProducts =
-            toProductIds(m_database->getProductsForUser(User(std::stoi(user))));
+            toIds<Product>(m_database->getProductsForUser(User(std::stoi(user))));
 
         for (const auto& product : targetUserProducts) {
             // Check if the target user's product exists in the current user's list
@@ -141,7 +134,7 @@ std::unordered_map<std::string, int> RecommendCommand::computeRelevence(
         int weight = userWeights[user];
 
         std::vector<std::string> userProducts =
-            toProductIds(m_database->getProductsForUser(User(std::stoi(user))));
+            toIds<Product>(m_database->getProductsForUser(User(std::stoi(user))));
 
         // Add their weight to each valid product
         for (const auto& product : userProducts) {
@@ -167,12 +160,12 @@ std::unordered_map<std::string, int> RecommendCommand::computeRelevence(
 std::vector<std::string> RecommendCommand::getUsersWithProduct(const std::string& targetProduct)
 {
     std::vector<std::string> usersWithProduct;
-    std::vector<std::string> allUsers = toUserIds(m_database->getAllUsers());
+    std::vector<std::string> allUsers = toIds<User>(m_database->getAllUsers());
 
     for (const auto& user : allUsers) {
         // Fetch the products for the current user
         std::vector<std::string> userProducts =
-            toProductIds(m_database->getProductsForUser(User(std::stoi(user))));
+            toIds<Product>(m_database->getProductsForUser(User(std::stoi(user))));
 
         // Check if the target product exists in their list
         if (std::find(userProducts.begin(), userProducts.end(), targetProduct) != userProducts.end()) {

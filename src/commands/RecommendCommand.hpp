@@ -29,5 +29,4 @@ class RecommendCommand : public ICommand {
                          std::vector<std::string> productId);
 
         void execute(std::ostream& out) override;
-        std::string getSyntax() const override { return syntax(); }
 };

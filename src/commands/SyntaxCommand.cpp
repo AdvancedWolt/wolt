@@ -9,8 +9,3 @@ void SyntaxCommand::execute(std::ostream& out)
 {
     (void)out;
 }
-
-std::string SyntaxCommand::getSyntax() const
-{
-    return m_syntax;
-}

@@ -13,12 +13,12 @@ class AddCommand : public ICommand {
         std::vector<std::string> m_productIds;
 
     public:
-        static std::string syntax();
+        static const std::string s_syntax;
 
         AddCommand(std::shared_ptr<Idatabase> database,
                    std::string userId,
                    std::vector<std::string> productIds);
 
         void execute(std::ostream& out) override;
-        std::string getSyntax() const override;
+        std::string getSyntax() const override { return s_syntax; }
 };

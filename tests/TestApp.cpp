@@ -39,7 +39,7 @@ TEST_F(AppTest, HelpPrintsExpectedCommands)
 
 TEST_F(AppTest, AddCommandPersistsProductsToFile)
 {
-    std::istringstream input("add user42 product1 product2\n");
+    std::istringstream input("add 42 1 2\n");
     std::ostringstream output;
     auto database = std::make_shared<TxtFile>(m_tempFile.string());
 
@@ -54,8 +54,8 @@ TEST_F(AppTest, AddCommandPersistsProductsToFile)
     std::getline(savedFile, firstLine);
     std::getline(savedFile, secondLine);
 
-    EXPECT_EQ(firstLine, "user42\tproduct1");
-    EXPECT_EQ(secondLine, "user42\tproduct2");
+    EXPECT_EQ(firstLine, "42\t1");
+    EXPECT_EQ(secondLine, "42\t2");
     EXPECT_EQ(output.str(), "");
 
     savedFile.close();

@@ -21,11 +21,18 @@ namespace AppInternals {
     const std::string RECOMMEND_COMMAND_NAME = "recommend";
 
     // HelpCommand prints getSyntax() for each command it receives.
-    const std::vector<std::shared_ptr<ICommand>> HELP_COMMANDS = {
-        std::make_shared<SyntaxCommand>(AddCommand::syntax()),
-        std::make_shared<SyntaxCommand>(RecommendCommand::syntax()),
-        std::make_shared<SyntaxCommand>(HELP_COMMAND_NAME)
-    };
+    // Wrapped in a function so the static is initialized on first use,
+    // avoiding a static-init-order issue with the s_syntax members in
+    // AddCommand.cpp / RecommendCommand.cpp.
+    const std::vector<std::shared_ptr<ICommand>>& helpCommands()
+    {
+        static const std::vector<std::shared_ptr<ICommand>> commands = {
+            std::make_shared<SyntaxCommand>(AddCommand::s_syntax),
+            std::make_shared<SyntaxCommand>(RecommendCommand::s_syntax),
+            std::make_shared<SyntaxCommand>(HelpCommand::s_syntax)
+        };
+        return commands;
+    }
 
     // A builder receives the already-split input line and creates the matching
     // command. Returning nullptr means the input is not a valid command.
@@ -142,7 +149,7 @@ namespace AppInternals {
             return nullptr;
         }
 
-        return std::make_unique<HelpCommand>(HELP_COMMANDS);
+        return std::make_unique<HelpCommand>(helpCommands());
     }
 
     std::unique_ptr<ICommand> buildRecommendCommand(

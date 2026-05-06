@@ -1,9 +1,8 @@
 #include "FakeCommand.hpp"
 
-void FakeCommand::execute(std::ostream& out)
-{}
+const std::string FakeCommand::s_syntax = "fake";
 
-std::string FakeCommand::getSyntax() const
+void FakeCommand::execute(std::ostream& out)
 {
-    return "fake";
+    (void)out;
 }

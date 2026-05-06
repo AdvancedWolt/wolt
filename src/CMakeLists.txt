@@ -7,6 +7,8 @@ set(LOGIC_FILES
     commands/SyntaxCommand.cpp
     commands/RecommendCommand.cpp
     db/TxtFile.cpp
+    db/User.cpp
+    db/Product.cpp
 )
 
 # Create the Library for the logic files

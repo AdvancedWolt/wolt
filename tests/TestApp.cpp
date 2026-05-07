@@ -3,8 +3,8 @@
 #include <fstream>
 #include <memory>
 #include <sstream>
-#include "../src/App.hpp"
-#include "../src/db/TxtFile.hpp"
+#include "App.hpp"
+#include "db/TxtFile.hpp"
 
 class AppTest : public ::testing::Test {
     protected:

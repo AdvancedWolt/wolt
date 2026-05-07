@@ -4,11 +4,11 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "../src/commands/ICommand.hpp"
-#include "../src/commands/RecommendCommand.hpp"
-#include "../src/commands/AddCommand.hpp"
-#include "../src/App.hpp" 
-#include "../src/db/TxtFile.hpp"
+#include "commands/ICommand.hpp"
+#include "commands/RecommendCommand.hpp"
+#include "commands/AddCommand.hpp"
+#include "App.hpp" 
+#include "db/TxtFile.hpp"
 
 TEST(RecommendCommandTest, FullScenarioRecommendation)
 {

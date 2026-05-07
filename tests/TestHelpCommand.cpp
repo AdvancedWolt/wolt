@@ -3,9 +3,9 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include "../src/commands/ICommand.hpp"
-#include "../src/commands/HelpCommand.hpp"
-#include "../src/commands/FakeCommand.hpp"
+#include "commands/ICommand.hpp"
+#include "commands/HelpCommand.hpp"
+#include "commands/FakeCommand.hpp"
 
 TEST(HelpCommandTest, PrintsAllRegisteredCommands)
 {

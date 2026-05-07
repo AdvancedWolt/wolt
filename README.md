@@ -2,6 +2,10 @@
 
 CLI application for saving product views by user.
 
+## Checking the exrecise
+
+The exrecise is saved in a branch called 'ex1'
+
 ## Build
 
 ```bash
@@ -17,7 +21,8 @@ docker run -it wolt-app
 Example commands:
 
 ```text
-add user42 product1 product2
+add [userid] [productid1] [productid2] …
+recommend [userid] [productid]
 help
 ```
 

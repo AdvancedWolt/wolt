@@ -6,6 +6,7 @@ set(LOGIC_FILES
     commands/AddCommand.cpp
     commands/SyntaxCommand.cpp
     commands/RecommendCommand.cpp
+    commands/FakeCommand.cpp
     db/TxtFile.cpp
     db/User.cpp
     db/Product.cpp
@@ -13,6 +14,9 @@ set(LOGIC_FILES
 
 # Create the Library for the logic files
 add_library(WoltLogic ${LOGIC_FILES})
+
+# Set src as PUBLIC so we can include dirs in a simpler way(without ../src)
+target_include_directories(WoltLogic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(wolt_app main.cpp)
 

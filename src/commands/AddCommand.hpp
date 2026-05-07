@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ICommand.hpp"
-#include "../db/Idatabase.hpp"
+#include "db/Idatabase.hpp"
 #include <memory>
 #include <string>
 #include <vector>

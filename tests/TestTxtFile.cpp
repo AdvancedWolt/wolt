@@ -5,9 +5,9 @@
 #include <sstream>
 #include <string>
 #include <vector>
-#include "../src/db/TxtFile.hpp"
-#include "../src/db/User.hpp"
-#include "../src/db/Product.hpp"
+#include "db/TxtFile.hpp"
+#include "db/User.hpp"
+#include "db/Product.hpp"
 
 namespace {
 

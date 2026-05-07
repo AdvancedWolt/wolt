@@ -10,7 +10,7 @@ COPY . .
 # Build process
 RUN mkdir build && cd build && \
     cmake .. && \
-    make
+    make -j$(nproc)
 
 # Default command: Runs the target name we defined in src/CMakeLists.txt
 CMD ["./build/src/wolt_app"]

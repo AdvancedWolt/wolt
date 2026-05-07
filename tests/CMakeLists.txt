@@ -16,7 +16,6 @@ add_executable(unit_tests
     TestAppInternals.cpp
     TestTxtFile.cpp
     TestRecommendCommand.cpp
-    ../src/commands/FakeCommand.cpp
 )
 
 # Link to Logic Library and the GTest Main entry point

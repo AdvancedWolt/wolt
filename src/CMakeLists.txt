@@ -3,7 +3,7 @@ set(LOGIC_FILES
     App.cpp
     AppInternals.cpp
     commands/HelpCommand.cpp
-    commands/AddCommand.cpp
+    commands/PostCommand.cpp
     commands/SyntaxCommand.cpp
     commands/RecommendCommand.cpp
     commands/FakeCommand.cpp

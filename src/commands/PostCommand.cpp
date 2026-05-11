@@ -1,20 +1,20 @@
-#include "AddCommand.hpp"
+#include "PostCommand.hpp"
 
 #include <algorithm>
 #include <cctype>
 
 
-const std::string AddCommand::s_syntax = "add [userid] [productid1] [productid2] ...";
+const std::string PostCommand::s_syntax = "post [userid] [productid1] [productid2] ...";
 
-AddCommand::AddCommand(std::shared_ptr<Idatabase> database,
-                       std::string userId,
-                       std::vector<std::string> productIds)
+PostCommand::PostCommand(std::shared_ptr<IdbManger> database,
+                         std::string userId,
+                         std::vector<std::string> productIds)
     : m_database(std::move(database)),
       m_userId(std::move(userId)),
       m_productIds(std::move(productIds))
 {}
 
-void AddCommand::execute(std::ostream& out)
+void PostCommand::execute(std::ostream& out)
 {
     // for now we don't need to output anything , just to get rid of the unused parameter warning.
     (void)out;

@@ -62,9 +62,8 @@ TEST(TxtFileTest, GetProductsForUserReturnsOnlyRequestedUserProducts)
 
     {
         std::ofstream outputFile(tempFile);
-        outputFile << "42\t1\n";
-        outputFile << "99\t2\n";
-        outputFile << "42\t3\n";
+        outputFile << "42 1 3\n";
+        outputFile << "99 2\n";
     }
 
     TxtFile database(tempFile.string());
@@ -88,10 +87,7 @@ TEST(TxtFileTest, LoadDeduplicatesRepeatedLines)
 
     {
         std::ofstream outputFile(tempFile);
-        outputFile << "1\t10\n";
-        outputFile << "1\t10\n";
-        outputFile << "1\t10\n";
-        outputFile << "1\t20\n";
+        outputFile << "1 10 10 10 20\n";
     }
 
     TxtFile database(tempFile.string());
@@ -125,7 +121,7 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesWithinSameCall)
     EXPECT_EQ(ids[0], 7);
     EXPECT_EQ(ids[1], 8);
 
-    EXPECT_EQ(readAllLines(tempFile).size(), 2u);
+    EXPECT_EQ(readAllLines(tempFile).size(), 1u);
 
     std::filesystem::remove(tempFile);
 }
@@ -142,7 +138,7 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesAcrossCalls)
         ASSERT_TRUE(database.addProducts(User(1), {Product(100), Product(300)}));
     }
 
-    EXPECT_EQ(readAllLines(tempFile).size(), 3u);
+    EXPECT_EQ(readAllLines(tempFile).size(), 1u);
 
     TxtFile reloaded(tempFile.string());
     ASSERT_TRUE(reloaded.load());
@@ -162,11 +158,9 @@ TEST(TxtFileTest, GetAllUsersReturnsEachUserOnce)
 
     {
         std::ofstream outputFile(tempFile);
-        outputFile << "1\t10\n";
-        outputFile << "2\t20\n";
-        outputFile << "1\t11\n";
-        outputFile << "3\t30\n";
-        outputFile << "2\t21\n";
+        outputFile << "1 10 11\n";
+        outputFile << "2 20 21\n";
+        outputFile << "3 30\n";
     }
 
     TxtFile database(tempFile.string());
@@ -203,10 +197,10 @@ TEST(TxtFileTest, LoadIgnoresMalformedLines)
 
     {
         std::ofstream outputFile(tempFile);
-        outputFile << "1\t10\n";
+        outputFile << "1 10\n";
         outputFile << "no-tab-here\n";
         outputFile << "\n";
-        outputFile << "2\t20\n";
+        outputFile << "2 20\n";
     }
 
     TxtFile database(tempFile.string());
@@ -227,4 +221,25 @@ TEST(TxtFileTest, LoadOnMissingFileReturnsFalse)
 
     TxtFile database(tempFile.string());
     EXPECT_FALSE(database.load());
+}
+
+TEST(TxtFileTest, LoadSupportsSingleUserLineWithMultipleProducts)
+{
+    const auto tempFile = makeTempFile("wolt_txt_file_multi_product_line_test.txt");
+
+    {
+        std::ofstream outputFile(tempFile);
+        outputFile << "7 100 200 300\n";
+    }
+
+    TxtFile database(tempFile.string());
+    ASSERT_TRUE(database.load());
+
+    const std::vector<int> ids = sortedProductIds(database.getProductsForUser(User(7)));
+    ASSERT_EQ(ids.size(), 3u);
+    EXPECT_EQ(ids[0], 100);
+    EXPECT_EQ(ids[1], 200);
+    EXPECT_EQ(ids[2], 300);
+
+    std::filesystem::remove(tempFile);
 }

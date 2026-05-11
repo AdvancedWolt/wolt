@@ -6,24 +6,24 @@
 #include <memory>
 #include "commands/ICommand.hpp"
 #include "commands/RecommendCommand.hpp"
-#include "commands/AddCommand.hpp"
-#include "App.hpp" 
+#include "commands/PostCommand.hpp"
+#include "../src/App.hpp"
 #include "db/TxtFile.hpp"
 
 TEST(RecommendCommandTest, FullScenarioRecommendation)
 {
     // Simulate user input: adding all users and their products, then asking for a recommendation
     std::istringstream input(
-        "add 1 100 101 102 103\n"
-        "add 2 101 102 104 105 106\n"
-        "add 3 100 104 105 107 108\n"
-        "add 4 101 105 106 107 109 110\n"
-        "add 5 100 102 103 105 108 111\n"
-        "add 6 100 103 104 110 111 112 113\n"
-        "add 7 102 105 106 107 108 109 110\n"
-        "add 8 101 104 105 106 109 111 114\n"
-        "add 9 100 103 105 107 112 113 115\n"
-        "add 10 100 102 105 106 107 109 110 116\n"
+        "post 1 100 101 102 103\n"
+        "post 2 101 102 104 105 106\n"
+        "post 3 100 104 105 107 108\n"
+        "post 4 101 105 106 107 109 110\n"
+        "post 5 100 102 103 105 108 111\n"
+        "post 6 100 103 104 110 111 112 113\n"
+        "post 7 102 105 106 107 108 109 110\n"
+        "post 8 101 104 105 106 109 111 114\n"
+        "post 9 100 103 105 107 112 113 115\n"
+        "post 10 100 102 105 106 107 109 110 116\n"
         "recommend 1 104\n"
     );
     std::ostringstream output;

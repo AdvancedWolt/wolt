@@ -37,7 +37,7 @@ TEST_F(AppTest, HelpPrintsExpectedCommands)
               "help\n");
 }
 
-TEST_F(AppTest, AddCommandPersistsProductsToFile)
+TEST_F(AppTest, PostCommandPersistsProductsToFile)
 {
     std::istringstream input("add 42 1 2\n");
     std::ostringstream output;

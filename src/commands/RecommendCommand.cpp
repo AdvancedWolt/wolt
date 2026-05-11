@@ -16,7 +16,7 @@ namespace {
 
 const std::string RecommendCommand::s_syntax = "recommend [userid] [productid]";
 
-RecommendCommand::RecommendCommand(std::shared_ptr<Idatabase> database,
+RecommendCommand::RecommendCommand(std::shared_ptr<IdbManger> database,
                        std::string userId,
                        std::vector<std::string> productIds)
     : m_database(std::move(database)),
@@ -176,16 +176,12 @@ std::unordered_map<std::string, int> RecommendCommand::computeRelevence(
 std::vector<std::string> RecommendCommand::getUsersWithProduct(const std::string& targetProduct)
 {
     std::vector<std::string> usersWithProduct;
-    std::vector<std::string> allUsers = toIds<User>(m_database->getAllUsers());
+    Product p(std::stoi(targetProduct));
+    auto allUsers = m_database->getUsersWithProduct(p);
 
-    for (const auto& user : allUsers) {
-        // Fetch the products for the current user
-        std::vector<std::string> userProducts =
-            toIds<Product>(m_database->getProductsForUser(User(std::stoi(user))));
-
-        if (std::ranges::contains(userProducts, targetProduct)) {
-            usersWithProduct.push_back(user);
-        }
+    for(const auto& u : allUsers)
+    {
+        usersWithProduct.push_back(std::to_string(u.getId()));
     }
 
     return usersWithProduct;

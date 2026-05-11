@@ -1,5 +1,5 @@
 #include "AppInternals.hpp"
-#include "commands/AddCommand.hpp"
+#include "commands/PostCommand.hpp"
 #include "commands/HelpCommand.hpp"
 #include "commands/RecommendCommand.hpp"
 #include "commands/SyntaxCommand.hpp"
@@ -23,11 +23,11 @@ namespace AppInternals {
     // HelpCommand prints getSyntax() for each command it receives.
     // Wrapped in a function so the static is initialized on first use,
     // avoiding a static-init-order issue with the s_syntax members in
-    // AddCommand.cpp / RecommendCommand.cpp.
+    // PostCommand.cpp / RecommendCommand.cpp.
     const std::vector<std::shared_ptr<ICommand>>& helpCommands()
     {
         static const std::vector<std::shared_ptr<ICommand>> commands = {
-            std::make_shared<SyntaxCommand>(AddCommand::s_syntax),
+            std::make_shared<SyntaxCommand>(PostCommand::s_syntax),
             std::make_shared<SyntaxCommand>(RecommendCommand::s_syntax),
             std::make_shared<SyntaxCommand>(HelpCommand::s_syntax)
         };
@@ -40,7 +40,7 @@ namespace AppInternals {
         const std::vector<std::string>&,
         const std::shared_ptr<Idatabase>&);
 
-    std::unique_ptr<ICommand> buildAddCommand(
+    std::unique_ptr<ICommand> buildPostCommand(
         const std::vector<std::string>& tokens,
         const std::shared_ptr<Idatabase>& database);
 
@@ -55,7 +55,7 @@ namespace AppInternals {
     // Maps the command name from tokens[0] to the function that knows how to
     // validate its arguments and create the command object.
     const std::unordered_map<std::string, CommandBuilder> COMMAND_BUILDERS = {
-        {ADD_COMMAND_NAME, buildAddCommand},
+        {POST_COMMAND_NAME, buildPostCommand},
         {HELP_COMMAND_NAME, buildHelpCommand},
         {RECOMMEND_COMMAND_NAME, buildRecommendCommand}
     };
@@ -120,11 +120,11 @@ namespace AppInternals {
         return tokens;
     }
 
-    std::unique_ptr<ICommand> buildAddCommand(
+    std::unique_ptr<ICommand> buildPostCommand(
         const std::vector<std::string>& tokens,
         const std::shared_ptr<Idatabase>& database)
     {
-        if (tokens.size() < ADD_MINIMUM_ARGUMENT_COUNT) {
+        if (tokens.size() < POST_MINIMUM_ARGUMENT_COUNT) {
             return nullptr;
         }
 
@@ -136,7 +136,7 @@ namespace AppInternals {
             productIds.push_back(tokens[index]);
         }
 
-        return std::make_unique<AddCommand>(database, userId, productIds);
+        return std::make_unique<PostCommand>(database, userId, productIds);
     }
 
     std::unique_ptr<ICommand> buildHelpCommand(

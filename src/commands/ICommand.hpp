@@ -1,15 +1,18 @@
 #pragma once
 
-#include <ostream>
+#include "models/Protocol.hpp"
 #include <string>
-#include <memory>
+#include <vector>
+#include <sstream>
+
+// Forward declaration
+class Idatabase;
 
 class ICommand {
-    public:
-        // Virtual destructor ensures derived class destructors are called, preventing memory leaks.
-        virtual ~ICommand()
-        {}
+public:
+    virtual ~ICommand() = default;
 
-        virtual void execute(std::ostream& out) = 0;
-        virtual std::string getSyntax() const = 0;
+    virtual CommandResult execute(const std::vector<std::string>& args, Idatabase& db) = 0;
+    
+    virtual std::string getSyntax() const = 0;
 };

@@ -14,7 +14,7 @@ AddCommand::AddCommand(std::shared_ptr<Idatabase> database,
       m_productIds(std::move(productIds))
 {}
 
-void AddCommand::execute(std::ostream& out)
+CommandResult HelpCommand::execute(const std::vector<std::string>& args, Idatabase& db) 
 {
     // for now we don't need to output anything , just to get rid of the unused parameter warning.
     (void)out;

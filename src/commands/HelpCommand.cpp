@@ -1,14 +1,28 @@
-#include "HelpCommand.hpp"
+#include "commands/HelpCommand.hpp"
 
-const std::string HelpCommand::s_syntax = "help";
-
-HelpCommand::HelpCommand(const std::vector<std::shared_ptr<ICommand>>& commands)
-    : m_commands(commands)
-{}
-
-void HelpCommand::execute(std::ostream& out)
+HelpCommand::HelpCommand(const std::vector<std::string>& syntaxes)
+    : m_syntaxes(syntaxes) 
 {
-    for (const std::shared_ptr<ICommand>& command : m_commands) {
-        out << command->getSyntax() << std::endl;
+}
+
+std::string HelpCommand::getSyntax() const 
+{
+    std::ostringstream oss;
+    oss << "help" << std::endl;
+    return oss.str();
+}
+
+CommandResult HelpCommand::execute(const std::vector<std::string>& args, Idatabase& db) 
+{
+    (void)args; 
+    (void)db;  
+    
+    std::string message;
+    
+    // Loop through the strings and append them to the message
+    for (const std::string& syntax : m_syntaxes) {
+        message +=  syntax;
     }
+
+    return {true, message};
 }

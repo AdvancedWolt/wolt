@@ -1,24 +1,29 @@
 #pragma once
 
-#include "db/Idatabase.hpp"
 #include <istream>
 #include <memory>
 #include <ostream>
 #include <string>
-#include <vector>
+
+class Idatabase;
+class CommandManager;
 
 class App {
-    private:
-        std::istream& m_input;
-        std::ostream& m_output;
-        std::shared_ptr<Idatabase> m_database;
+private:
+    std::istream& m_input;
+    std::ostream& m_output;
+    std::shared_ptr<Idatabase> m_database;
+    std::unique_ptr<CommandManager> m_commandManager;
+    bool m_isRunning;
 
-        void _handleLine(const std::string& line);
+    void _handleLine(const std::string& line);
+    void _setupCommands(); 
 
-    public:
-        App(std::istream& input,
-            std::ostream& output,
-            std::shared_ptr<Idatabase> database);
+public:
+    App(std::istream& input,
+        std::ostream& output,
+        std::shared_ptr<Idatabase> database);
 
-        void run();
+    bool initialize(); 
+    void run();
 };

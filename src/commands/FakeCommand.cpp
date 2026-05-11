@@ -1,8 +1,17 @@
 #include "FakeCommand.hpp"
+#include <sstream>
 
-const std::string FakeCommand::s_syntax = "fake";
-
-void FakeCommand::execute(std::ostream& out)
+std::string FakeCommand::getSyntax() const 
 {
-    (void)out;
+    std::ostringstream oss;
+    oss << "fake" << std::endl;
+    return oss.str();
+}
+
+CommandResult FakeCommand::execute(const std::vector<std::string>& args, Idatabase& db) 
+{
+    (void)args;
+    (void)db;
+    
+    return {true, "Fake command executed successfully."};
 }

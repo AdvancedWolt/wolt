@@ -2,11 +2,11 @@
 
 #include "ICommand.hpp"
 
-// A fake command used for testing
 class FakeCommand : public ICommand {
-    public:
-        static const std::string s_syntax;
+public:
 
-        void execute(std::ostream& out) override;
-        std::string getSyntax() const override { return s_syntax; }
+    FakeCommand() = default;
+
+    std::string getSyntax() const override;
+    CommandResult execute(const std::vector<std::string>& args, Idatabase& db) override;
 };

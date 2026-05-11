@@ -19,6 +19,6 @@ class AddCommand : public ICommand {
                    std::string userId,
                    std::vector<std::string> productIds);
 
-        void execute(std::ostream& out) override;
+        CommandResult execute(const std::vector<std::string>& args, Idatabase& db) override;
         std::string getSyntax() const override { return s_syntax; }
 };

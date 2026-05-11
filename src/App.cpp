@@ -1,40 +1,81 @@
 #include "App.hpp"
-#include "AppInternals.hpp"
+#include "models/Protocol.hpp"
+#include "commands/Commands.hpp"
+#include "core/CommandManager.hpp"
+#include "core/CommandParser.hpp"
+#include "db/Idatabase.hpp"
 #include <utility>
 
 App::App(std::istream& input,
          std::ostream& output,
          std::shared_ptr<Idatabase> database)
-    : m_input(input), m_output(output), m_database(std::move(database))
+    : m_input(input), 
+      m_output(output), 
+      m_database(std::move(database)),
+      m_commandManager(nullptr), // Created in initialize()
+      m_isRunning(false)
+{}
+
+bool App::initialize() 
 {
-    if (m_database != nullptr) {
-        if (m_database->initialize()) {
-            m_database->load();
-        }
+    if (!m_database) return false;
+
+    // Initialize and Load Database
+    if (!m_database->initialize() || !m_database->load()) {
+        return false;
     }
+
+    // Setup the Command Manager
+    m_commandManager = std::make_unique<CommandManager>();
+    _setupCommands();
+
+    m_isRunning = true;
+    return true;
+}
+
+void App::_setupCommands() {
+    // Register all normal commands 
+    m_commandManager->registerCommand("add", std::make_unique<AddCommand>(m_database));
+    m_commandManager->registerCommand("recommend", std::make_unique<RecommendCommand>(m_database));
+
+    // Get the array of syntaxes 
+    std::vector<std::string> syntaxes = m_commandManager->getAllSyntaxes();    
+
+    // add "help" to the list so it knows about itself
+    syntaxes.push_back("help");
+
+    // Sort alphabetically
+    std::sort(syntaxes.begin(), syntaxes.end());
+
+    // Instantiate help with the syntaxes vector
+    m_commandManager->registerCommand("help", std::make_unique<HelpCommand>(syntaxes));
 }
 
 void App::run()
 {
     std::string currentLine;
-    while (std::getline(m_input, currentLine)) {
+    while (m_isRunning && std::getline(m_input, currentLine)) {
         _handleLine(currentLine);
     }
 }
 
+// THIS SHOULD MOVE TO A DIFFERENT CLASS
+/*
 void App::_handleLine(const std::string& line)
 {
-    bool isValidLineFormat = true;
-    const std::vector<std::string> tokens = AppInternals::parseLine(line, isValidLineFormat);
-    if (!isValidLineFormat || tokens.empty()) {
+    // Use Parser from AppInternals
+    // ParsedCommand pc = CommandParser::parse(line);
+    
+    if (pc.name.empty()) {
         return;
     }
 
-    // App knows only how to parse the input line and ask the registered builder
-    // for a command object. Adding a new command now means registering a builder,
-    // instead of changing the command dispatch flow.
-    std::unique_ptr<ICommand> command = AppInternals::buildCommand(tokens, m_database);
-    if (command != nullptr) {
-        command->execute(m_output);
+    CommandResult result = m_commandManager->execute(pc, *m_database);
+
+    if (!result.success) {
+        m_output << "Error: ";
     }
+    m_output << result.message << std::endl;
 }
+
+*/

@@ -11,6 +11,8 @@ App::App(std::shared_ptr<Idatabase> database)
     : m_database(std::move(database))
 {}
 
+App::~App() = default;
+
 bool App::initialize()
 {
     if (!m_database) return false;
@@ -25,11 +27,9 @@ bool App::initialize()
 
 void App::_setupCommands()
 {
-    m_commandManager->registerCommand("POST",
-        std::make_unique<PostCommand>(m_database));
-    m_commandManager->registerCommand("GET",
-        std::make_unique<GetCommand>(m_database));
-    // TBD: PATCH, DELETE later
+    m_commandManager->registerCommand("post", std::make_unique<PostCommand>());
+    m_commandManager->registerCommand("get",  std::make_unique<GetCommand>());
+    // TBD: patch, delete
 
     m_commandManager->registerCommand("help",
         std::make_unique<HelpCommand>(*m_commandManager));

@@ -6,7 +6,6 @@ set(LOGIC_FILES
     commands/HelpCommand.cpp
     commands/GetCommand.cpp
     commands/PostCommand.cpp
-    commands/FakeCommand.cpp
     db/TxtFile.cpp
 )
 

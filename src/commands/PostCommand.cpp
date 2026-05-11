@@ -1,30 +1,35 @@
 #include "PostCommand.hpp"
+#include "db/Idatabase.hpp"    
 #include "models/User.hpp"
-#include <stdexcept>
+#include "models/Product.hpp"
 
 std::string PostCommand::getSyntax() const 
 {
-    std::ostringstream oss;
-    oss << "POST [userid] [productid1] [productid2] ..." << std::endl;
-    return oss.str();
+    return "POST, arguments: [userid] [productid1] [productid2] ...\n";
 }
 
-
-models::CommandResult execute(const models::ParsedCommand& cmd, Idatabase& db)
+models::CommandResult PostCommand::execute(const models::ParsedCommand& cmd, Idatabase& db)
 {
-    // Check for valid syntax length (needs at least userid and one productid)
     if (cmd.args.size() < 2) {
         return {false, "400 Bad Request\n"};
     }
 
-    const std::string userId = cmd.args[0];
+    const User user(cmd.args[0]);
 
-    const User user(userId);
-
-    /* commented out, DB doesn't have the right functions yet.
-    // POST is only valid if the user DOES NOT exist yet.
-    if (db.hasUser(userId)) { 
+    // POST is valid only if the user doesn't already exist.
+    if (db.hasUser(user)) {
         return {false, "404 Not Found\n"};
     }
-        */
+
+    std::vector<Product> products;
+    products.reserve(cmd.args.size() - 1);
+    for (std::size_t i = 1; i < cmd.args.size(); ++i) {
+        products.emplace_back(cmd.args[i]);
+    }
+
+    if (!db.addProducts(user, products)) {
+        return {false, "400 Bad Request\n"};
+    }
+
+    return {true, "201 Created\n"};
 }

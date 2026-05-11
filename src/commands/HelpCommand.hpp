@@ -1,13 +1,16 @@
 #pragma once
 
-#include "commands/ICommand.hpp" 
+#include "commands/ICommand.hpp"
+#include <string>
+
+class CommandManager;  // forward decl
 
 class HelpCommand : public ICommand {
 private:
-    std::vector<std::string> m_syntaxes;
+    const CommandManager& m_manager;
 
 public:
-    HelpCommand(const std::vector<std::string>& syntaxes);
+    explicit HelpCommand(const CommandManager& manager);
 
     std::string getSyntax() const override;
     models::CommandResult execute(const models::ParsedCommand& cmd, Idatabase& db) override;

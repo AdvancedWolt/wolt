@@ -6,9 +6,7 @@
 #include "db/TxtFile.hpp"
 
 namespace {
-    // Helper: runs a list of commands through the app, returns the response
-    // to the LAST command. Useful when the setup commands are uninteresting
-    // and only the final command's output is being tested.
+    // Run lines, return the last response.
     std::string runAndGetLast(App& app, const std::vector<std::string>& lines)
     {
         std::string last;
@@ -18,7 +16,7 @@ namespace {
         return last;
     }
 
-    // Helper: builds an App with a fresh database file, initialized.
+    // Fresh App with an initialized DB file.
     std::unique_ptr<App> makeApp(const std::string& dbPath)
     {
         auto db = std::make_shared<TxtFile>(dbPath);
@@ -64,7 +62,6 @@ TEST(GetCommandTest, NobodyWatchedTargetProduct)
         "GET 1 999",   // product 999 was never watched
     });
 
-    // Spec says 404 when the product doesn't exist in the system.
     EXPECT_EQ(result, "404 Not Found\n");
 
     std::filesystem::remove(dbPath);
@@ -98,7 +95,7 @@ TEST(GetCommandTest, NoNewProductsToRecommend)
         "GET 1 104",
     });
 
-    // No products to recommend — empty payload, but header still present.
+    // No products to recommend — empty.
     EXPECT_EQ(result, "200 Ok\n\n\n");
 
     std::filesystem::remove(dbPath);

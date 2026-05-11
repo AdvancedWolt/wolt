@@ -9,9 +9,7 @@ HelpCommand::HelpCommand(const CommandManager& manager)
 
 std::string HelpCommand::getSyntax() const 
 {
-    std::ostringstream oss;
-    oss << "help" << std::endl;
-    return oss.str();
+    return "help\n";
 }
 
 models::CommandResult HelpCommand::execute(const models::ParsedCommand& cmd, Idatabase& db)
@@ -33,7 +31,7 @@ models::CommandResult HelpCommand::execute(const models::ParsedCommand& cmd, Ida
         }
         out += syntax;
     }
-    out += getSyntax();        // append "help\n" at the end
+    out += getSyntax();        // append help's syntax at the end
 
     return {true, out};
 }

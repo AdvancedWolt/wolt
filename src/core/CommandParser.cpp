@@ -1,5 +1,6 @@
 #include "core/CommandParser.hpp"
 
+#include <algorithm>
 #include <cctype>
 
 namespace {
@@ -19,7 +20,7 @@ models::ParsedCommand CommandParser::parse(const std::string& line)
     std::string token;
     for (char c : line) {
         if (c == TAB_CHARACTER) {
-            // Tabs aren't allowed by the spec; treat as malformed.
+            // Tabs aren't allowed.
             return {};
         }
 
@@ -37,6 +38,10 @@ models::ParsedCommand CommandParser::parse(const std::string& line)
         if (pc.name.empty()) pc.name = std::move(token);
         else                 pc.args.push_back(std::move(token));
     }
+
+    std::transform(pc.name.begin(), pc.name.end(), pc.name.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+
 
     return pc;
 }

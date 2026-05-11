@@ -47,7 +47,7 @@ bool TxtFile::load()
         const std::string productIdText = line.substr(separatorPosition + 1);
 
         if (!userIdText.empty() && !productIdText.empty()) {
-            m_productsByUser[User(std::stoi(userIdText))].insert(Product(std::stoi(productIdText)));
+            m_productsByUser[User(userIdText)].insert(Product(productIdText));
         }
     }
 
@@ -91,7 +91,7 @@ bool TxtFile::addProducts(const User& user, const std::vector<Product>& products
             continue;
         }
 
-        outputFile << user.getId() << '\t' << product.getId() << std::endl;
+        outputFile << user.id << '\t' << product.id << std::endl;
         if (!outputFile.good()) {
             return false;
         }
@@ -100,4 +100,9 @@ bool TxtFile::addProducts(const User& user, const std::vector<Product>& products
     }
 
     return true;
+}
+
+bool TxtFile::hasUser(const User& user) const
+{
+    return m_productsByUser.find(user) != m_productsByUser.end();
 }

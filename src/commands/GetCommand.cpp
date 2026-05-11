@@ -18,22 +18,25 @@ namespace {
 
 std::string GetCommand::getSyntax() const
 {
-    std::ostringstream oss;
-    oss << "GET, arguments: [userid] [productid]" << std::endl;
-    return oss.str();
+    return "GET, arguments: [userid] [productid]\n";
 }
 
 models::CommandResult GetCommand::execute(const models::ParsedCommand& cmd, Idatabase& db)
 {
-    if (cmd.args.empty()) {
-        return {true, ""};
+    if (cmd.args.size() < 2) {
+        return {false, "400 Bad Request\n"};
     }
 
     const std::string& userId = cmd.args[0];
-    std::vector<std::string> productIds(cmd.args.begin() + 1, cmd.args.end());
+    const std::string& targetProduct = cmd.args[1];
 
-    if (productIds.empty()) {
-        return {true, ""};
+    if (!db.hasUser(User(userId))) {
+        return {false, "404 Not Found\n"};
+    }
+
+    std::vector<std::string> usersWithTarget = getUsersWithProduct(db, targetProduct);
+    if (usersWithTarget.empty()) {
+        return {false, "404 Not Found\n"};
     }
 
     std::vector<std::string> targetUserProducts =
@@ -42,23 +45,20 @@ models::CommandResult GetCommand::execute(const models::ParsedCommand& cmd, Idat
     auto userWeights = countSimilarities(db, userId, targetUserProducts);
 
     auto productRelevence = computeRelevence(
-        db, userId, productIds.front(), targetUserProducts, userWeights);
+        db, userId, targetProduct, targetUserProducts, userWeights);
 
     auto sortedRelevence = sortRelevence(productRelevence);
 
-    std::string output;
+    std::string ids;
     const std::size_t count = std::min(MAX_RECOMMENDATIONS, sortedRelevence.size());
     for (std::size_t i = 0; i < count; ++i) {
         if (i > 0) {
-            output += ' ';
+            ids += ' ';
         }
-        output += sortedRelevence[i].first;
-    }
-    if (!output.empty()) {
-        output += '\n';
+        ids += sortedRelevence[i].first;
     }
 
-    return {true, output};
+    return {true, "200 Ok\n\n" + ids + "\n"};
 }
 
 std::vector<std::pair<std::string, int>> GetCommand::sortRelevence(

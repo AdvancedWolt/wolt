@@ -3,7 +3,6 @@
 #include "models/Protocol.hpp"
 #include <string>
 #include <vector>
-#include <sstream>
 
 // Forward declaration
 class Idatabase;

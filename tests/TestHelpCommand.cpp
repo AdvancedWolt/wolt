@@ -1,40 +1,53 @@
 #include <gtest/gtest.h>
-#include <sstream>
-#include <vector>
-#include <string>
 #include <memory>
-#include "commands/ICommand.hpp"
 #include "commands/HelpCommand.hpp"
-#include "commands/FakeCommand.hpp"
+#include "fakes/FakeCommand.hpp"
+#include "core/CommandManager.hpp"
+#include "db/Idatabase.hpp"
+
+namespace {
+    // Minimal stub — HelpCommand doesn't touch the database, but execute()
+    // requires an Idatabase&.
+    class StubDatabase : public Idatabase {
+    public:
+        bool initialize() override { return true; }
+        bool load() override { return true; }
+        std::vector<Product> getProductsForUser(const User&) const override { return {}; }
+        std::vector<User> getAllUsers() const override { return {}; }
+        bool addProducts(const User&, const std::vector<Product>&) override { return true; }
+        bool hasUser(const User&) const override { return false; }
+    };
+}
 
 TEST(HelpCommandTest, PrintsAllRegisteredCommands)
 {
-    std::vector<std::shared_ptr<ICommand>> fakeCommands;
-    fakeCommands.push_back(std::make_shared<FakeCommand>());
+    CommandManager manager;
+    manager.registerCommand("fake", std::make_unique<FakeCommand>());
 
-    HelpCommand helpCmd(fakeCommands);
-    std::stringstream buffer;
-    helpCmd.execute(buffer);
-    std::string result = buffer.str();
-    // Expect the find result to NOT equal npos
-    EXPECT_NE(result.find("fake"), std::string::npos);
+    HelpCommand helpCmd(manager);
+    StubDatabase db;
+    models::ParsedCommand cmd{"help", {}};
+
+    auto result = helpCmd.execute(cmd, db);
+
+    EXPECT_NE(result.message.find("fake"), std::string::npos);
 }
 
-TEST(HelpCommandTest, EmptyVecDoesNotCrash)
+TEST(HelpCommandTest, EmptyManagerDoesNotCrash)
 {
-    std::vector<std::shared_ptr<ICommand>> emptyVec;
-    HelpCommand helpCmd(emptyVec);
-    std::stringstream buffer;
+    CommandManager manager;
+    HelpCommand helpCmd(manager);
+    StubDatabase db;
+    models::ParsedCommand cmd{"help", {}};
 
-    // This should run without crashing and leave the buffer empty
-    helpCmd.execute(buffer);
-    EXPECT_EQ(buffer.str(), "");
-    EXPECT_NO_THROW(buffer.str());
+    // Should run without crashing; output is just help's own syntax.
+    EXPECT_NO_THROW(helpCmd.execute(cmd, db));
 }
 
 TEST(HelpCommandTest, CorrectSyntaxName)
 {
-    std::vector<std::shared_ptr<ICommand>> dummy;
-    HelpCommand help(dummy);
-    EXPECT_EQ(help.getSyntax(), "help");
+    CommandManager manager;
+    HelpCommand help(manager);
+
+    EXPECT_EQ(help.getSyntax(), "help\n");
 }

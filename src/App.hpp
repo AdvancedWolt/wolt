@@ -16,6 +16,7 @@ private:
 
 public:
     explicit App(std::shared_ptr<Idatabase> database);
+    ~App();
 
     bool initialize();
 

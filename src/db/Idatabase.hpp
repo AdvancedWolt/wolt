@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include "Product.hpp"
+#include "models/Product.hpp"
 #include "User.hpp"
 
 class Idatabase {

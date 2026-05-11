@@ -19,5 +19,5 @@ class IdbManger {
         virtual Status deleteProductsFromUser(const User& user, const std::vector<Product>& products) = 0;
         virtual bool doesUserExist(const User& user) = 0;
         virtual std::vector<User> getUsersWithProduct(const Product& p) = 0;
-        virtual std::vector<User> getUsersWithProducts(const std::vector<const Product&>& targetProducts);
+        virtual std::vector<User> getUsersWithProducts(const std::vector<const Product&>& targetProducts) = 0;
 };

@@ -8,6 +8,7 @@ set(LOGIC_FILES
     commands/RecommendCommand.cpp
     commands/FakeCommand.cpp
     db/TxtFile.cpp
+    db/TxtFileParsing.cpp
     db/User.cpp
     db/Product.cpp
 )

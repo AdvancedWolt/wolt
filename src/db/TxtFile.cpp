@@ -1,78 +1,9 @@
 #include "TxtFile.hpp"
-#include <algorithm>
+#include "TxtFileParsing.hpp"
+
 #include <filesystem>
 #include <fstream>
 #include <sstream>
-
-namespace {
-
-bool tryParseNonNegativeInt(const std::string& text, int& value)
-{
-    if (text.empty()) {
-        return false;
-    }
-
-    for (const char character : text) {
-        if (character < '0' || character > '9') {
-            return false;
-        }
-    }
-
-    value = std::stoi(text);
-    return true;
-}
-
-bool persistProductsByUser(const std::string& filepath,
-                          const std::unordered_map<User, std::unordered_set<Product>>& productsByUser)
-{
-    std::ofstream outputFile(filepath, std::ios::trunc);
-    if (!outputFile.is_open()) {
-        return false;
-    }
-
-    std::vector<int> userIds;
-    userIds.reserve(productsByUser.size());
-    for (const auto& pair : productsByUser) {
-        if (!pair.second.empty()) {
-            userIds.push_back(pair.first.getId());
-        }
-    }
-
-    std::sort(userIds.begin(), userIds.end());
-
-    for (const int userId : userIds) {
-        const auto iterator = productsByUser.find(User(userId));
-        if (iterator == productsByUser.end() || iterator->second.empty()) {
-            continue;
-        }
-
-        std::vector<int> productIds;
-        productIds.reserve(iterator->second.size());
-        for (const Product& product : iterator->second) {
-            productIds.push_back(product.getId());
-        }
-
-        std::sort(productIds.begin(), productIds.end());
-
-        outputFile << userId << '\t';
-        for (std::size_t index = 0; index < productIds.size(); ++index) {
-            if (index > 0) {
-                outputFile << ' ';
-            }
-
-            outputFile << productIds[index];
-        }
-        outputFile << '\n';
-
-        if (!outputFile.good()) {
-            return false;
-        }
-    }
-
-    return outputFile.good();
-}
-
-}
 
 TxtFile::TxtFile(const std::string& filepath) : m_filepath(filepath)
 {}
@@ -107,7 +38,7 @@ bool TxtFile::load()
     }
 
     m_productsByUser.clear();
-
+    // Read the file line by line and populate the in-memory map.
     std::string line;
     while (std::getline(inputFile, line)) {
         std::istringstream lineStream(line);
@@ -117,16 +48,16 @@ bool TxtFile::load()
         }
 
         int userId = 0;
-        if (!tryParseNonNegativeInt(userIdToken, userId)) {
+        if (!txtFileParsing::tryParseNonNegativeInt(userIdToken, userId)) {
             continue;
         }
-
+        // Create the user object and parse the product IDs into the set.
         const User user(userId);
         bool hasAtLeastOneProduct = false;
         std::string productIdToken;
         while (lineStream >> productIdToken) {
             int productId = 0;
-            if (!tryParseNonNegativeInt(productIdToken, productId)) {
+            if (!txtFileParsing::tryParseNonNegativeInt(productIdToken, productId)) {
                 continue;
             }
 
@@ -158,6 +89,7 @@ std::vector<User> TxtFile::getAllUsers() const
     std::vector<User> users;
     users.reserve(m_productsByUser.size());
 
+    // Collect all users from the map keys.
     for (const auto& pair : m_productsByUser) {
         users.push_back(pair.first);
     }
@@ -170,6 +102,7 @@ Status TxtFile::addProducts(const User& user, const std::vector<Product>& produc
     auto& userProducts = m_productsByUser[user];
     bool hasChanges = false;
 
+    // Add only new products; duplicates are ignored by the set.
     for (const auto& product : products) {
         const auto [_, inserted] = userProducts.insert(product);
         if (inserted) {
@@ -181,7 +114,8 @@ Status TxtFile::addProducts(const User& user, const std::vector<Product>& produc
         return Status::ok;
     }
 
-    if (!persistProductsByUser(m_filepath, m_productsByUser)) {
+    // Persist only the affected user line.
+    if (!txtFileParsing::upsertUserProductsLine(m_filepath, user, userProducts)) {
         return Status::noContent;
     }
 
@@ -191,6 +125,7 @@ Status TxtFile::addProducts(const User& user, const std::vector<Product>& produc
 
 Status TxtFile::deleteProductsFromUser(const User& user, const std::vector<Product>& products)
 {
+    // check if user exits. If not, return not found without modifying the file.
     auto userProductsIterator = m_productsByUser.find(user);
     if (userProductsIterator == m_productsByUser.end()) {
         return Status::notFound;
@@ -199,6 +134,7 @@ Status TxtFile::deleteProductsFromUser(const User& user, const std::vector<Produ
     auto& userProducts = userProductsIterator->second;
     bool hasChanges = false;
 
+    // remove only existing products; non-existing products are ignored.
     for (const auto& product : products) {
         const size_t erasedCount = userProducts.erase(product);
         if (erasedCount > 0) {
@@ -210,22 +146,29 @@ Status TxtFile::deleteProductsFromUser(const User& user, const std::vector<Produ
         return Status::ok;
     }
 
+    // If the user has no more products, remove the user line entirely.
     if (userProducts.empty()) {
         m_productsByUser.erase(userProductsIterator);
+        if (!txtFileParsing::removeUserProductsLine(m_filepath, user)) {
+            return Status::noContent;
+        }
+        return Status::ok;
     }
 
-    if (!persistProductsByUser(m_filepath, m_productsByUser)) {
+    if (!txtFileParsing::upsertUserProductsLine(m_filepath, user, userProducts)) {
         return Status::noContent;
     }
 
     return Status::ok;
 }
 
-Status TxtFile::patchProducts(const User& user,const std::vector<Product>& products)
+// Patch behaves like add, but only for an existing user.
+Status TxtFile::patchProducts(const User& user, const std::vector<Product>& products)
 {
-    if(!doesUserExist(user)) {
+    if (!doesUserExist(user)) {
         return Status::notFound;
     }
+
     return addProducts(user, products);
 }
 
@@ -237,8 +180,32 @@ bool TxtFile::doesUserExist(const User& user)
 std::vector<User> TxtFile::getUsersWithProduct(const Product& p)
 {
     std::vector<User> users;
+    // Collect users that contain the requested product.
     for (const auto& pair : m_productsByUser) {
         if (pair.second.find(p) != pair.second.end()) {
+            users.push_back(pair.first);
+        }
+    }
+    return users;
+}
+
+std::vector<User> TxtFile::getUsersWithProducts(const std::vector<const Product&>& targetProducts)
+{
+    std::vector<User> users;
+    for (const auto& pair : m_productsByUser) {
+        const auto& userProducts = pair.second;
+        // Assume the user has all target products until one is missing.
+        bool hasAllTargetProducts = true;
+        for (const auto& targetProduct : targetProducts) {
+            // Stop early once a required product is missing.
+            if (userProducts.find(targetProduct) == userProducts.end()) {
+                hasAllTargetProducts = false;
+                break;
+            }
+        }
+
+        // Keep users that match all target products.
+        if (hasAllTargetProducts) {
             users.push_back(pair.first);
         }
     }

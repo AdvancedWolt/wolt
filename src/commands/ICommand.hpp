@@ -12,7 +12,7 @@ class ICommand {
 public:
     virtual ~ICommand() = default;
 
-    virtual CommandResult execute(const std::vector<std::string>& args, Idatabase& db) = 0;
-    
+    virtual models::CommandResult execute(const models::ParsedCommand& cmd, Idatabase& db) = 0;
+
     virtual std::string getSyntax() const = 0;
 };

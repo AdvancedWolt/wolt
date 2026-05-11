@@ -11,9 +11,9 @@ FetchContent_MakeAvailable(googletest)
 
 # Create one executable that runs all tests
 add_executable(unit_tests
+    TestCommandParser.cpp
     TestHelpCommand.cpp
     TestApp.cpp
-    TestAppInternals.cpp
     TestTxtFile.cpp
     TestRecommendCommand.cpp
 )

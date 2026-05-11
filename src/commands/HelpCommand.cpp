@@ -1,9 +1,11 @@
 #include "commands/HelpCommand.hpp"
+#include "core/CommandManager.hpp"
 
-HelpCommand::HelpCommand(const std::vector<std::string>& syntaxes)
-    : m_syntaxes(syntaxes) 
-{
-}
+#include <algorithm>
+
+HelpCommand::HelpCommand(const CommandManager& manager)
+    : m_manager(manager)
+{}
 
 std::string HelpCommand::getSyntax() const 
 {
@@ -12,17 +14,29 @@ std::string HelpCommand::getSyntax() const
     return oss.str();
 }
 
-CommandResult HelpCommand::execute(const std::vector<std::string>& args, Idatabase& db) 
+models::CommandResult HelpCommand::execute(const models::ParsedCommand& cmd, Idatabase& db)
 {
-    (void)args; 
-    (void)db;  
-    
-    std::string message;
-    
-    // Loop through the strings and append them to the message
-    for (const std::string& syntax : m_syntaxes) {
-        message +=  syntax;
-    }
+    (void)cmd;
+    (void)db;
 
-    return {true, message};
+    // Pairs of (name, syntax) for every registered command.
+    auto pairs = m_manager.getNamedSyntaxes();
+
+    // Sort alphabetically by name.
+    std::sort(pairs.begin(), pairs.end(),
+        [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    std::string out;
+    for (const auto& [name, syntax] : pairs) {
+        if (name == "help") {
+            continue;          // help goes last, not in the middle
+        }
+        out += syntax;
+    }
+    out += getSyntax();        // append "help\n" at the end
+
+    return {true, out};
 }
+
+
+

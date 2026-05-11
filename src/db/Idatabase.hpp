@@ -2,8 +2,10 @@
 
 #include <string>
 #include <vector>
-#include "models/Product.hpp"
-#include "User.hpp"
+
+// Forward declarations: Tells the compiler "These exist somewhere"
+struct User;    
+struct Product;
 
 class Idatabase {
     public:
@@ -14,4 +16,5 @@ class Idatabase {
         virtual std::vector<Product> getProductsForUser(const User& user) const = 0;
         virtual std::vector<User> getAllUsers() const = 0;
         virtual bool addProducts(const User& user, const std::vector<Product>& products) = 0;
+        virtual bool hasUser(const User& user) = 0;
 };

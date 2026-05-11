@@ -1,5 +1,5 @@
 #pragma once
 
-#include "AddCommand.hpp"
+#include "PostCommand.hpp"
 #include "HelpCommand.hpp"
-#include "RecommendCommand.hpp"
+#include "GetCommand.hpp"

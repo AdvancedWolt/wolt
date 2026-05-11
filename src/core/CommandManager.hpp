@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+// Forward declarations
 class ICommand;
 class Idatabase;
 
@@ -16,7 +17,7 @@ private:
 public:
     void registerCommand(const std::string& name, std::unique_ptr<ICommand> cmd);
 
-    CommandResult execute(const ParsedCommand& pc, Idatabase& db);
+    models::CommandResult execute(const models::ParsedCommand& pc, Idatabase& db);
 
     bool hasCommand(const std::string& name) const;
 

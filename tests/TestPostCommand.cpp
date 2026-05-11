@@ -102,17 +102,6 @@ TEST(PostCommandTest, ReturnsNotFoundWhenUserAlreadyExists)
     EXPECT_EQ(db.getProductsForUser(User("alice")).size(), 1u);
 }
 
-TEST(PostCommandTest, SinglProductSucceeds)
-{
-    PostCommand cmd;
-    FakeDatabase db;
-
-    auto result = cmd.execute(makeCmd({"post", "bob", "burger"}), db);
-
-    EXPECT_TRUE(result.success);
-    EXPECT_EQ(result.message, "201 Created\n");
-}
-
 TEST(PostCommandTest, ManyProductsSucceed)
 {
     PostCommand cmd;

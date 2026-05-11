@@ -5,8 +5,8 @@
 
 class CommandParser {
 public:
-    // Parses a single line into name + args.
-    // Returns ParsedCommand with empty name if the line is blank or malformed
-    // the dispatcher then sends 400 Bad Request.
+    // Splits a line into a command name and its args.
+    // Lowercases the name so commands are case-insensitive. args stay as-is.
+    // Tabs and blank lines produce an empty result (the dispatcher turns that into 400).
     static models::ParsedCommand parse(const std::string& line);
 };

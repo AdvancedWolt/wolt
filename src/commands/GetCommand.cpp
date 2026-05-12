@@ -35,9 +35,6 @@ models::CommandResult GetCommand::execute(const models::ParsedCommand& cmd, Idat
     }
 
     std::vector<std::string> usersWithTarget = getUsersWithProduct(db, targetProduct);
-    if (usersWithTarget.empty()) {
-        return {false, "404 Not Found\n"};
-    }
 
     std::vector<std::string> targetUserProducts =
         toIds<Product>(db.getProductsForUser(User(userId)));

@@ -1,14 +1,40 @@
-#include "HelpCommand.hpp"
+#include "commands/HelpCommand.hpp"
+#include "core/CommandManager.hpp"
 
-const std::string HelpCommand::s_syntax = "help";
+#include <algorithm>
 
-HelpCommand::HelpCommand(const std::vector<std::shared_ptr<ICommand>>& commands)
-    : m_commands(commands)
+HelpCommand::HelpCommand(const CommandManager& manager)
+    : m_manager(manager)
 {}
 
-void HelpCommand::execute(std::ostream& out)
+std::string HelpCommand::getSyntax() const 
 {
-    for (const std::shared_ptr<ICommand>& command : m_commands) {
-        out << command->getSyntax() << std::endl;
-    }
+    return "help\n";
 }
+
+models::CommandResult HelpCommand::execute(const models::ParsedCommand& cmd, IdbManager& db)
+{
+    (void)cmd;
+    (void)db;
+
+    // Pairs of (name, syntax) for every registered command.
+    auto pairs = m_manager.getNamedSyntaxes();
+
+    // Sort alphabetically by name.
+    std::sort(pairs.begin(), pairs.end(),
+        [](const auto& a, const auto& b) { return a.first < b.first; });
+
+    std::string out;
+    for (const auto& [name, syntax] : pairs) {
+        if (name == "help") {
+            continue;          // help goes last, not in the middle
+        }
+        out += syntax;
+    }
+    out += getSyntax();        // append help's syntax at the end
+
+    return {true, out};
+}
+
+
+

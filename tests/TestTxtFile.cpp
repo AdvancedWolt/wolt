@@ -2,12 +2,11 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
-#include <sstream>
 #include <string>
 #include <vector>
 #include "db/TxtFile.hpp"
-#include "db/User.hpp"
-#include "db/Product.hpp"
+#include "models/User.hpp"
+#include "models/Product.hpp"
 
 namespace {
 
@@ -19,9 +18,9 @@ std::filesystem::path makeTempFile(const std::string& name)
     return tempFile;
 }
 
-std::vector<int> sortedProductIds(const std::vector<Product>& products)
+std::vector<std::string> sortedProductIds(const std::vector<Product>& products)
 {
-    std::vector<int> ids;
+    std::vector<std::string> ids;
     ids.reserve(products.size());
     for (const Product& product : products) {
         ids.push_back(product.getId());
@@ -30,9 +29,9 @@ std::vector<int> sortedProductIds(const std::vector<Product>& products)
     return ids;
 }
 
-std::vector<int> sortedUserIds(const std::vector<User>& users)
+std::vector<std::string> sortedUserIds(const std::vector<User>& users)
 {
-    std::vector<int> ids;
+    std::vector<std::string> ids;
     ids.reserve(users.size());
     for (const User& user : users) {
         ids.push_back(user.getId());
@@ -62,21 +61,22 @@ TEST(TxtFileTest, GetProductsForUserReturnsOnlyRequestedUserProducts)
 
     {
         std::ofstream outputFile(tempFile);
-        outputFile << "42 1 3\n";
-        outputFile << "99 2\n";
+        outputFile << "alice\tpizza\n";
+        outputFile << "bob\tburger\n";
+        outputFile << "alice\tsushi\n";
     }
 
     TxtFile database(tempFile.string());
     ASSERT_TRUE(database.load());
 
-    const std::vector<Product> products = database.getProductsForUser(User(42));
+    const std::vector<Product> products = database.getProductsForUser(User("alice"));
     ASSERT_EQ(products.size(), 2);
 
-    const std::vector<int> ids = sortedProductIds(products);
-    EXPECT_EQ(ids[0], 1);
-    EXPECT_EQ(ids[1], 3);
+    const std::vector<std::string> ids = sortedProductIds(products);
+    EXPECT_EQ(ids[0], "pizza");
+    EXPECT_EQ(ids[1], "sushi");
 
-    EXPECT_TRUE(database.getProductsForUser(User(7)).empty());
+    EXPECT_TRUE(database.getProductsForUser(User("charlie")).empty());
 
     std::filesystem::remove(tempFile);
 }
@@ -87,18 +87,21 @@ TEST(TxtFileTest, LoadDeduplicatesRepeatedLines)
 
     {
         std::ofstream outputFile(tempFile);
-        outputFile << "1 10 10 10 20\n";
+        outputFile << "alice\tpizza\n";
+        outputFile << "alice\tpizza\n";
+        outputFile << "alice\tpizza\n";
+        outputFile << "alice\tsushi\n";
     }
 
     TxtFile database(tempFile.string());
     ASSERT_TRUE(database.load());
 
-    const std::vector<Product> products = database.getProductsForUser(User(1));
+    const std::vector<Product> products = database.getProductsForUser(User("alice"));
     ASSERT_EQ(products.size(), 2);
 
-    const std::vector<int> ids = sortedProductIds(products);
-    EXPECT_EQ(ids[0], 10);
-    EXPECT_EQ(ids[1], 20);
+    const std::vector<std::string> ids = sortedProductIds(products);
+    EXPECT_EQ(ids[0], "pizza");
+    EXPECT_EQ(ids[1], "sushi");
 
     std::filesystem::remove(tempFile);
 }
@@ -111,15 +114,17 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesWithinSameCall)
     ASSERT_TRUE(database.initialize());
     ASSERT_TRUE(database.load());
 
-    const std::vector<Product> products = {Product(7), Product(7), Product(8), Product(7)};
-    ASSERT_TRUE(database.addProducts(User(5), products));
+    const std::vector<Product> products = {
+        Product("pizza"), Product("pizza"), Product("sushi"), Product("pizza")
+    };
+    ASSERT_EQ(database.addProducts(User("alice"), products), Status::ok);
 
-    const std::vector<Product> stored = database.getProductsForUser(User(5));
+    const std::vector<Product> stored = database.getProductsForUser(User("alice"));
     ASSERT_EQ(stored.size(), 2);
 
-    const std::vector<int> ids = sortedProductIds(stored);
-    EXPECT_EQ(ids[0], 7);
-    EXPECT_EQ(ids[1], 8);
+    const std::vector<std::string> ids = sortedProductIds(stored);
+    EXPECT_EQ(ids[0], "pizza");
+    EXPECT_EQ(ids[1], "sushi");
 
     EXPECT_EQ(readAllLines(tempFile).size(), 2u);
 
@@ -134,8 +139,8 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesAcrossCalls)
         TxtFile database(tempFile.string());
         ASSERT_TRUE(database.initialize());
         ASSERT_TRUE(database.load());
-        ASSERT_TRUE(database.addProducts(User(1), {Product(100), Product(200)}));
-        ASSERT_TRUE(database.addProducts(User(1), {Product(100), Product(300)}));
+        ASSERT_EQ(database.addProducts(User("alice"), {Product("pizza"), Product("sushi")}), Status::ok);
+        ASSERT_EQ(database.addProducts(User("alice"), {Product("pizza"), Product("ramen")}), Status::ok);
     }
 
     EXPECT_EQ(readAllLines(tempFile).size(), 3u);
@@ -143,11 +148,11 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesAcrossCalls)
     TxtFile reloaded(tempFile.string());
     ASSERT_TRUE(reloaded.load());
 
-    const std::vector<int> ids = sortedProductIds(reloaded.getProductsForUser(User(1)));
+    const std::vector<std::string> ids = sortedProductIds(reloaded.getProductsForUser(User("alice")));
     ASSERT_EQ(ids.size(), 3u);
-    EXPECT_EQ(ids[0], 100);
-    EXPECT_EQ(ids[1], 200);
-    EXPECT_EQ(ids[2], 300);
+    EXPECT_EQ(ids[0], "pizza");
+    EXPECT_EQ(ids[1], "ramen");
+    EXPECT_EQ(ids[2], "sushi");
 
     std::filesystem::remove(tempFile);
 }
@@ -158,19 +163,21 @@ TEST(TxtFileTest, GetAllUsersReturnsEachUserOnce)
 
     {
         std::ofstream outputFile(tempFile);
-        outputFile << "1 10 11\n";
-        outputFile << "2 20 21\n";
-        outputFile << "3 30\n";
+        outputFile << "alice\tpizza\n";
+        outputFile << "bob\tburger\n";
+        outputFile << "alice\tsushi\n";
+        outputFile << "charlie\ttaco\n";
+        outputFile << "bob\tramen\n";
     }
 
     TxtFile database(tempFile.string());
     ASSERT_TRUE(database.load());
 
-    const std::vector<int> ids = sortedUserIds(database.getAllUsers());
+    const std::vector<std::string> ids = sortedUserIds(database.getAllUsers());
     ASSERT_EQ(ids.size(), 3u);
-    EXPECT_EQ(ids[0], 1);
-    EXPECT_EQ(ids[1], 2);
-    EXPECT_EQ(ids[2], 3);
+    EXPECT_EQ(ids[0], "alice");
+    EXPECT_EQ(ids[1], "bob");
+    EXPECT_EQ(ids[2], "charlie");
 
     std::filesystem::remove(tempFile);
 }
@@ -186,7 +193,7 @@ TEST(TxtFileTest, LoadEmptyFileSucceedsWithNoUsers)
     ASSERT_TRUE(database.load());
 
     EXPECT_TRUE(database.getAllUsers().empty());
-    EXPECT_TRUE(database.getProductsForUser(User(1)).empty());
+    EXPECT_TRUE(database.getProductsForUser(User("alice")).empty());
 
     std::filesystem::remove(tempFile);
 }
@@ -197,20 +204,20 @@ TEST(TxtFileTest, LoadIgnoresMalformedLines)
 
     {
         std::ofstream outputFile(tempFile);
-        outputFile << "1 10\n";
+        outputFile << "alice\tpizza\n";
         outputFile << "no-tab-here\n";
         outputFile << "\n";
-        outputFile << "2 20\n";
+        outputFile << "bob\tburger\n";
     }
 
     TxtFile database(tempFile.string());
     ASSERT_TRUE(database.load());
 
     EXPECT_EQ(database.getAllUsers().size(), 2u);
-    ASSERT_EQ(database.getProductsForUser(User(1)).size(), 1u);
-    EXPECT_EQ(database.getProductsForUser(User(1))[0].getId(), 10);
-    ASSERT_EQ(database.getProductsForUser(User(2)).size(), 1u);
-    EXPECT_EQ(database.getProductsForUser(User(2))[0].getId(), 20);
+    ASSERT_EQ(database.getProductsForUser(User("alice")).size(), 1u);
+    EXPECT_EQ(database.getProductsForUser(User("alice"))[0].getId(), "pizza");
+    ASSERT_EQ(database.getProductsForUser(User("bob")).size(), 1u);
+    EXPECT_EQ(database.getProductsForUser(User("bob"))[0].getId(), "burger");
 
     std::filesystem::remove(tempFile);
 }
@@ -229,17 +236,17 @@ TEST(TxtFileTest, LoadSupportsSingleUserLineWithMultipleProducts)
 
     {
         std::ofstream outputFile(tempFile);
-        outputFile << "7 100 200 300\n";
+        outputFile << "alice\tpizza\tsushi\tramen\n";
     }
 
     TxtFile database(tempFile.string());
     ASSERT_TRUE(database.load());
 
-    const std::vector<int> ids = sortedProductIds(database.getProductsForUser(User(7)));
+    const std::vector<std::string> ids = sortedProductIds(database.getProductsForUser(User("alice")));
     ASSERT_EQ(ids.size(), 3u);
-    EXPECT_EQ(ids[0], 100);
-    EXPECT_EQ(ids[1], 200);
-    EXPECT_EQ(ids[2], 300);
+    EXPECT_EQ(ids[0], "pizza");
+    EXPECT_EQ(ids[1], "ramen");
+    EXPECT_EQ(ids[2], "sushi");
 
     std::filesystem::remove(tempFile);
 }

@@ -2,9 +2,9 @@
 
 #include <string>
 #include <vector>
-#include "Product.hpp"
-#include "User.hpp"
-#include "../Status.hpp"
+#include "models/Product.hpp"
+#include "models/User.hpp"
+#include "Status.hpp"
 
 class IdbManager {
     public:
@@ -26,6 +26,6 @@ class IdbManager {
         virtual Status deleteProductsFromUser(const User& user, const std::vector<Product>& products) = 0;
         
         /*---------------------------------Querys---------------------------------------*/
-        virtual bool doesUserExist(const User& user) const = 0;
+        virtual bool hasUser(const User& user) const = 0;
         
 };

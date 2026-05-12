@@ -4,12 +4,10 @@
 #include <unordered_set>
 #include <vector>
 
-#include "Product.hpp"
-#include "User.hpp"
+#include "models/Product.hpp"
+#include "models/User.hpp"
 
 namespace txtFileParsing {
-
-bool tryParseNonNegativeInt(const std::string& text, int& value);
 
 bool upsertUserProductsLine(const std::string& filepath,
                             const User& user,

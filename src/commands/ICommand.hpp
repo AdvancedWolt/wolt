@@ -1,15 +1,17 @@
 #pragma once
 
-#include <ostream>
+#include "models/Protocol.hpp"
 #include <string>
-#include <memory>
+#include <vector>
+
+// Forward declaration
+class IdbManager;
 
 class ICommand {
-    public:
-        // Virtual destructor ensures derived class destructors are called, preventing memory leaks.
-        virtual ~ICommand()
-        {}
+public:
+    virtual ~ICommand() = default;
 
-        virtual void execute(std::ostream& out) = 0;
-        virtual std::string getSyntax() const = 0;
+    virtual models::CommandResult execute(const models::ParsedCommand& cmd, IdbManager& db) = 0;
+
+    virtual std::string getSyntax() const = 0;
 };

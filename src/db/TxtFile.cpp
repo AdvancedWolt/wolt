@@ -43,25 +43,19 @@ bool TxtFile::load()
     while (std::getline(inputFile, line)) {
         std::istringstream lineStream(line);
         std::string userIdToken;
-        if (!(lineStream >> userIdToken)) {
+        if (!(lineStream >> userIdToken) || userIdToken.empty()) {
             continue;
         }
 
-        int userId = 0;
-        if (!txtFileParsing::tryParseNonNegativeInt(userIdToken, userId)) {
-            continue;
-        }
         // Create the user object and parse the product IDs into the set.
-        const User user(userId);
+        const User user(userIdToken);
         bool hasAtLeastOneProduct = false;
         std::string productIdToken;
         while (lineStream >> productIdToken) {
-            int productId = 0;
-            if (!txtFileParsing::tryParseNonNegativeInt(productIdToken, productId)) {
+            if (productIdToken.empty()) {
                 continue;
             }
-
-            m_productsByUser[user].insert(Product(productId));
+            m_productsByUser[user].insert(Product(productIdToken));
             hasAtLeastOneProduct = true;
         }
 
@@ -122,7 +116,6 @@ Status TxtFile::addProducts(const User& user, const std::vector<Product>& produc
     return Status::ok;
 }
 
-
 Status TxtFile::deleteProductsFromUser(const User& user, const std::vector<Product>& products)
 {
     // check if user exits. If not, return not found without modifying the file.
@@ -165,14 +158,14 @@ Status TxtFile::deleteProductsFromUser(const User& user, const std::vector<Produ
 // Patch behaves like add, but only for an existing user.
 Status TxtFile::patchProducts(const User& user, const std::vector<Product>& products)
 {
-    if (!doesUserExist(user)) {
+    if (!hasUser(user)) {
         return Status::notFound;
     }
 
     return addProducts(user, products);
 }
 
-bool TxtFile::doesUserExist(const User& user) const
+bool TxtFile::hasUser(const User& user) const
 {
     return m_productsByUser.find(user) != m_productsByUser.end();
 }

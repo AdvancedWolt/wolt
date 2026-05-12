@@ -7,26 +7,10 @@
 
 namespace txtFileParsing {
 
-bool tryParseNonNegativeInt(const std::string& text, int& value)
-{
-    if (text.empty()) {
-        return false;
-    }
-
-    for (const char character : text) {
-        if (character < '0' || character > '9') {
-            return false;
-        }
-    }
-
-    value = std::stoi(text);
-    return true;
-}
-
-std::vector<std::string> buildUserProductsLines(const int userId,
+std::vector<std::string> buildUserProductsLines(const std::string& userId,
                                                 const std::unordered_set<Product>& products)
 {
-    std::vector<int> productIds;
+    std::vector<std::string> productIds;
     productIds.reserve(products.size());
     for (const Product& product : products) {
         productIds.push_back(product.getId());
@@ -36,7 +20,7 @@ std::vector<std::string> buildUserProductsLines(const int userId,
 
     std::vector<std::string> lines;
     lines.reserve(productIds.size());
-    for (const int productId : productIds) {
+    for (const std::string& productId : productIds) {
         std::ostringstream lineStream;
         lineStream << userId << '\t' << productId;
         lines.push_back(lineStream.str());
@@ -49,7 +33,7 @@ bool upsertUserProductsLine(const std::string& filepath,
                             const User& user,
                             const std::unordered_set<Product>& products)
 {
-    const int targetUserId = user.getId();
+    const std::string& targetUserId = user.getId();
     const std::vector<std::string> updatedLines = buildUserProductsLines(targetUserId, products);
 
     std::vector<std::string> lines;
@@ -59,12 +43,9 @@ bool upsertUserProductsLine(const std::string& filepath,
         while (std::getline(inputFile, line)) {
             std::istringstream lineStream(line);
             std::string userIdToken;
-            if (lineStream >> userIdToken) {
-                int parsedUserId = 0;
-                if (tryParseNonNegativeInt(userIdToken, parsedUserId) && parsedUserId == targetUserId) {
-                    // Drop every existing line for this user; replacements are appended below.
-                    continue;
-                }
+            if (lineStream >> userIdToken && userIdToken == targetUserId) {
+                // Drop every existing line for this user; replacements are appended below.
+                continue;
             }
 
             lines.push_back(line);
@@ -105,7 +86,7 @@ bool appendUserProductLines(const std::string& filepath,
         return false;
     }
 
-    const int userId = user.getId();
+    const std::string& userId = user.getId();
     for (const Product& product : products) {
         outputFile << userId << '\t' << product.getId() << '\n';
         if (!outputFile.good()) {
@@ -118,7 +99,7 @@ bool appendUserProductLines(const std::string& filepath,
 
 bool removeUserProductsLine(const std::string& filepath, const User& user)
 {
-    const int targetUserId = user.getId();
+    const std::string& targetUserId = user.getId();
     std::ifstream inputFile(filepath);
     if (!inputFile.is_open()) {
         return false;
@@ -130,11 +111,8 @@ bool removeUserProductsLine(const std::string& filepath, const User& user)
     while (std::getline(inputFile, line)) {
         std::istringstream lineStream(line);
         std::string userIdToken;
-        if (lineStream >> userIdToken) {
-            int parsedUserId = 0;
-            if (tryParseNonNegativeInt(userIdToken, parsedUserId) && parsedUserId == targetUserId) {
-                continue;
-            }
+        if (lineStream >> userIdToken && userIdToken == targetUserId) {
+            continue;
         }
 
         lines.push_back(line);

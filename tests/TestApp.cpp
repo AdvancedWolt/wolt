@@ -2,49 +2,54 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
-#include <sstream>
+#include <string>
 #include "App.hpp"
 #include "db/TxtFile.hpp"
 
 class AppTest : public ::testing::Test {
-    protected:
-        const std::filesystem::path m_tempFile =
-            std::filesystem::temp_directory_path() / "wolt_app_test.txt";
+protected:
+    const std::filesystem::path m_tempFile =
+        std::filesystem::temp_directory_path() / "wolt_app_test.txt";
 
-        void SetUp() override
-        {
-            std::filesystem::remove(m_tempFile);
-        }
+    void SetUp() override
+    {
+        std::filesystem::remove(m_tempFile);
+    }
 
-        void TearDown() override
-        {
-            std::filesystem::remove(m_tempFile);
-        }
+    void TearDown() override
+    {
+        std::filesystem::remove(m_tempFile);
+    }
+
+    std::unique_ptr<App> makeApp()
+    {
+        auto db = std::make_shared<TxtFile>(m_tempFile.string());
+        auto app = std::make_unique<App>(db);
+        app->initialize();
+        return app;
+    }
 };
 
 TEST_F(AppTest, HelpPrintsExpectedCommands)
 {
-    std::istringstream input("help\n");
-    std::ostringstream output;
-    auto database = std::make_shared<TxtFile>(m_tempFile.string());
+    auto app = makeApp();
 
-    App app(input, output, database);
-    app.run();
+    std::string output = app->handleLine("help");
 
-    EXPECT_EQ(output.str(),
-              "post [userid] [productid1] [productid2] ...\n"
-              "recommend [userid] [productid]\n"
+    // all commands alphabetical, help last.
+    EXPECT_EQ(output,
+              "GET, arguments: [userid] [productid]\n"
+              "POST, arguments: [userid] [productid1] [productid2] ...\n"
               "help\n");
 }
 
 TEST_F(AppTest, PostCommandPersistsProductsToFile)
 {
-    std::istringstream input("post 42 1 2\n");
-    std::ostringstream output;
-    auto database = std::make_shared<TxtFile>(m_tempFile.string());
+    auto app = makeApp();
 
-    App app(input, output, database);
-    app.run();
+    std::string response = app->handleLine("POST 42 1 2");
+
+    EXPECT_EQ(response, "201 Created\n");
 
     std::ifstream savedFile(m_tempFile);
     ASSERT_TRUE(savedFile.is_open());
@@ -54,9 +59,21 @@ TEST_F(AppTest, PostCommandPersistsProductsToFile)
     std::getline(savedFile, firstLine);
     std::getline(savedFile, secondLine);
 
-    EXPECT_EQ(firstLine, "42\t1");
+    EXPECT_EQ(firstLine,  "42\t1");
     EXPECT_EQ(secondLine, "42\t2");
-    EXPECT_EQ(output.str(), "");
 
     savedFile.close();
+}
+
+TEST_F(AppTest, HelpAcceptsAnyCase)
+{
+    auto app = makeApp();
+    const std::string expected =
+        "GET, arguments: [userid] [productid]\n"
+        "POST, arguments: [userid] [productid1] [productid2] ...\n"
+        "help\n";
+
+    EXPECT_EQ(app->handleLine("help"), expected);
+    EXPECT_EQ(app->handleLine("HELP"), expected);
+    EXPECT_EQ(app->handleLine("HeLp"), expected);
 }

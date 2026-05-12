@@ -47,7 +47,7 @@ bool TxtFile::load()
         const std::string productIdText = line.substr(separatorPosition + 1);
 
         if (!userIdText.empty() && !productIdText.empty()) {
-            m_productsByUser[User(std::stoi(userIdText))].insert(Product(std::stoi(productIdText)));
+            m_productsByUser[User(userIdText)].insert(Product(productIdText));
         }
     }
 
@@ -100,4 +100,9 @@ bool TxtFile::addProducts(const User& user, const std::vector<Product>& products
     }
 
     return true;
+}
+
+bool TxtFile::hasUser(const User& user) const
+{
+    return m_productsByUser.find(user) != m_productsByUser.end();
 }

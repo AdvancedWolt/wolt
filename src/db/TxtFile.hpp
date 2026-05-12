@@ -20,4 +20,5 @@ class TxtFile : public Idatabase {
         std::vector<Product> getProductsForUser(const User& user) const override;
         std::vector<User> getAllUsers() const override;
         bool addProducts(const User& user, const std::vector<Product>& products) override;
+        bool hasUser(const User& user) const override;
 };

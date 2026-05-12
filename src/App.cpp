@@ -1,40 +1,49 @@
 #include "App.hpp"
-#include "AppInternals.hpp"
+#include "core/CommandManager.hpp"
+#include "core/CommandParser.hpp"
+#include "commands/Commands.hpp"
+#include "db/Idatabase.hpp"
+#include "models/Protocol.hpp"
+
 #include <utility>
 
-App::App(std::istream& input,
-         std::ostream& output,
-         std::shared_ptr<Idatabase> database)
-    : m_input(input), m_output(output), m_database(std::move(database))
+App::App(std::shared_ptr<Idatabase> database)
+    : m_database(std::move(database))
+{}
+
+App::~App() = default;
+
+bool App::initialize()
 {
-    if (m_database != nullptr) {
-        if (m_database->initialize()) {
-            m_database->load();
-        }
-    }
+    if (!m_database) return false;
+    if (!m_database->initialize() || !m_database->load()) return false;
+
+    m_commandManager = std::make_unique<CommandManager>();
+    _setupCommands();
+
+    m_initialized = true;
+    return true;
 }
 
-void App::run()
+void App::_setupCommands()
 {
-    std::string currentLine;
-    while (std::getline(m_input, currentLine)) {
-        _handleLine(currentLine);
-    }
+    m_commandManager->registerCommand("post", std::make_unique<PostCommand>());
+    m_commandManager->registerCommand("get",  std::make_unique<GetCommand>());
+    // TBD: patch, delete
+
+    m_commandManager->registerCommand("help",
+        std::make_unique<HelpCommand>(*m_commandManager));
 }
 
-void App::_handleLine(const std::string& line)
+std::string App::handleLine(const std::string& line)
 {
-    bool isValidLineFormat = true;
-    const std::vector<std::string> tokens = AppInternals::parseLine(line, isValidLineFormat);
-    if (!isValidLineFormat || tokens.empty()) {
-        return;
+    if (!m_initialized) return "";
+
+    models::ParsedCommand pc = CommandParser::parse(line);
+    if (pc.name.empty()) {
+        return "";  // empty line, ignore silently
     }
 
-    // App knows only how to parse the input line and ask the registered builder
-    // for a command object. Adding a new command now means registering a builder,
-    // instead of changing the command dispatch flow.
-    std::unique_ptr<ICommand> command = AppInternals::buildCommand(tokens, m_database);
-    if (command != nullptr) {
-        command->execute(m_output);
-    }
+    models::CommandResult result = m_commandManager->execute(pc, *m_database);
+    return result.message;
 }

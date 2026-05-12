@@ -1,15 +1,14 @@
 # Collect all the logic files 
 set(LOGIC_FILES
     App.cpp
-    AppInternals.cpp
+    core/CommandParser.cpp
+    core/CommandManager.cpp
     commands/HelpCommand.cpp
-    commands/AddCommand.cpp
-    commands/SyntaxCommand.cpp
-    commands/RecommendCommand.cpp
-    commands/FakeCommand.cpp
+    commands/GetCommand.cpp
+    commands/PostCommand.cpp
     db/TxtFile.cpp
-    db/User.cpp
-    db/Product.cpp
+    models/User.cpp        
+    models/Product.cpp     
 )
 
 # Create the Library for the logic files

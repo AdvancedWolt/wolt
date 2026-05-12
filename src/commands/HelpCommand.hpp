@@ -1,20 +1,17 @@
 #pragma once
 
-#include "ICommand.hpp"
-#include <memory>
+#include "commands/ICommand.hpp"
 #include <string>
-#include <vector>
+
+class CommandManager;  // forward decl
 
 class HelpCommand : public ICommand {
-    private:
-        const std::vector<std::shared_ptr<ICommand>>& m_commands;
+private:
+    const CommandManager& m_manager;
 
-    public:
-        static const std::string s_syntax;
+public:
+    explicit HelpCommand(const CommandManager& manager);
 
-        explicit HelpCommand(const std::vector<std::shared_ptr<ICommand>>& commands);
-
-        void execute(std::ostream& out) override;
-        std::string getSyntax() const override { return s_syntax; }
+    std::string getSyntax() const override;
+    models::CommandResult execute(const models::ParsedCommand& cmd, Idatabase& db) override;
 };
-

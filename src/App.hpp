@@ -1,6 +1,6 @@
 #pragma once
 
-#include "db/Idatabase.hpp"
+#include "db/IdbManager.hpp"
 #include <istream>
 #include <memory>
 #include <ostream>
@@ -11,14 +11,14 @@ class App {
     private:
         std::istream& m_input;
         std::ostream& m_output;
-        std::shared_ptr<Idatabase> m_database;
+        std::shared_ptr<IdbManager> m_database;
 
         void _handleLine(const std::string& line);
 
     public:
         App(std::istream& input,
             std::ostream& output,
-            std::shared_ptr<Idatabase> database);
+            std::shared_ptr<IdbManager> database);
 
         void run();
 };

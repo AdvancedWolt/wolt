@@ -23,8 +23,8 @@ bool tryParseNonNegativeInt(const std::string& text, int& value)
     return true;
 }
 
-std::string buildUserProductsLine(const int userId,
-                                  const std::unordered_set<Product>& products)
+std::vector<std::string> buildUserProductsLines(const int userId,
+                                                const std::unordered_set<Product>& products)
 {
     std::vector<int> productIds;
     productIds.reserve(products.size());
@@ -34,13 +34,15 @@ std::string buildUserProductsLine(const int userId,
 
     std::sort(productIds.begin(), productIds.end());
 
-    std::ostringstream line;
-    line << userId;
+    std::vector<std::string> lines;
+    lines.reserve(productIds.size());
     for (const int productId : productIds) {
-        line << '\t' << productId;
+        std::ostringstream lineStream;
+        lineStream << userId << '\t' << productId;
+        lines.push_back(lineStream.str());
     }
 
-    return line.str();
+    return lines;
 }
 
 bool upsertUserProductsLine(const std::string& filepath,
@@ -48,47 +50,32 @@ bool upsertUserProductsLine(const std::string& filepath,
                             const std::unordered_set<Product>& products)
 {
     const int targetUserId = user.getId();
-    const std::string updatedLine = buildUserProductsLine(targetUserId, products);
-
-    std::ifstream inputFile(filepath);
-    if (!inputFile.is_open()) {
-        std::ofstream outputFile(filepath, std::ios::app);
-        if (!outputFile.is_open()) {
-            return false;
-        }
-
-        outputFile << updatedLine << '\n';
-        return outputFile.good();
-    }
+    const std::vector<std::string> updatedLines = buildUserProductsLines(targetUserId, products);
 
     std::vector<std::string> lines;
-    std::string line;
-    bool replacedExistingLine = false;
-
-    while (std::getline(inputFile, line)) {
-        std::istringstream lineStream(line);
-        std::string userIdToken;
-        if (lineStream >> userIdToken) {
-            int parsedUserId = 0;
-            if (tryParseNonNegativeInt(userIdToken, parsedUserId) && parsedUserId == targetUserId) {
-                if (!replacedExistingLine) {
-                    lines.push_back(updatedLine);
-                    replacedExistingLine = true;
+    std::ifstream inputFile(filepath);
+    if (inputFile.is_open()) {
+        std::string line;
+        while (std::getline(inputFile, line)) {
+            std::istringstream lineStream(line);
+            std::string userIdToken;
+            if (lineStream >> userIdToken) {
+                int parsedUserId = 0;
+                if (tryParseNonNegativeInt(userIdToken, parsedUserId) && parsedUserId == targetUserId) {
+                    // Drop every existing line for this user; replacements are appended below.
+                    continue;
                 }
-                continue;
             }
+
+            lines.push_back(line);
         }
 
-        lines.push_back(line);
+        if (!inputFile.good() && !inputFile.eof()) {
+            return false;
+        }
     }
 
-    if (!inputFile.good() && !inputFile.eof()) {
-        return false;
-    }
-
-    if (!replacedExistingLine) {
-        lines.push_back(updatedLine);
-    }
+    lines.insert(lines.end(), updatedLines.begin(), updatedLines.end());
 
     std::ofstream outputFile(filepath, std::ios::trunc);
     if (!outputFile.is_open()) {

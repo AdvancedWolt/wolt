@@ -172,12 +172,12 @@ Status TxtFile::patchProducts(const User& user, const std::vector<Product>& prod
     return addProducts(user, products);
 }
 
-bool TxtFile::doesUserExist(const User& user)
+bool TxtFile::doesUserExist(const User& user) const
 {
     return m_productsByUser.find(user) != m_productsByUser.end();
 }
 
-std::vector<User> TxtFile::getUsersWithProduct(const Product& p)
+std::vector<User> TxtFile::getUsersWithProduct(const Product& p) const
 {
     std::vector<User> users;
     // Collect users that contain the requested product.
@@ -189,7 +189,7 @@ std::vector<User> TxtFile::getUsersWithProduct(const Product& p)
     return users;
 }
 
-std::vector<User> TxtFile::getUsersWithProducts(const std::vector<const Product>& targetProducts)
+std::vector<User> TxtFile::getUsersWithProducts(const std::vector<Product>& targetProducts) const
 {
     std::vector<User> users;
     for (const auto& pair : m_productsByUser) {

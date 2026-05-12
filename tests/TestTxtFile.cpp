@@ -121,7 +121,7 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesWithinSameCall)
     EXPECT_EQ(ids[0], 7);
     EXPECT_EQ(ids[1], 8);
 
-    EXPECT_EQ(readAllLines(tempFile).size(), 1u);
+    EXPECT_EQ(readAllLines(tempFile).size(), 2u);
 
     std::filesystem::remove(tempFile);
 }
@@ -138,7 +138,7 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesAcrossCalls)
         ASSERT_TRUE(database.addProducts(User(1), {Product(100), Product(300)}));
     }
 
-    EXPECT_EQ(readAllLines(tempFile).size(), 1u);
+    EXPECT_EQ(readAllLines(tempFile).size(), 3u);
 
     TxtFile reloaded(tempFile.string());
     ASSERT_TRUE(reloaded.load());

@@ -4,7 +4,7 @@
 
 App::App(std::istream& input,
          std::ostream& output,
-         std::shared_ptr<Idatabase> database)
+         std::shared_ptr<IdbManager> database)
     : m_input(input), m_output(output), m_database(std::move(database))
 {
     if (m_database != nullptr) {

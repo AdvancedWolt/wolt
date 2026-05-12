@@ -13,10 +13,10 @@ namespace AppInternals {
     constexpr std::size_t FIRST_PRODUCT_INDEX = 2;
 
     constexpr std::size_t HELP_ARGUMENT_COUNT = 1;
-    constexpr std::size_t ADD_MINIMUM_ARGUMENT_COUNT = 3;
+    constexpr std::size_t POST_MINIMUM_ARGUMENT_COUNT = 3;
     constexpr std::size_t RECOMMEND_ARGUMENT_COUNT = 3;
 
-    const std::string ADD_COMMAND_NAME = "add";
+    const std::string POST_COMMAND_NAME = "post";
     const std::string HELP_COMMAND_NAME = "help";
     const std::string RECOMMEND_COMMAND_NAME = "recommend";
 
@@ -38,19 +38,19 @@ namespace AppInternals {
     // command. Returning nullptr means the input is not a valid command.
     using CommandBuilder = std::unique_ptr<ICommand> (*)(
         const std::vector<std::string>&,
-        const std::shared_ptr<Idatabase>&);
+        const std::shared_ptr<IdbManager>&);
 
     std::unique_ptr<ICommand> buildPostCommand(
         const std::vector<std::string>& tokens,
-        const std::shared_ptr<Idatabase>& database);
+        const std::shared_ptr<IdbManager>& database);
 
     std::unique_ptr<ICommand> buildHelpCommand(
         const std::vector<std::string>& tokens,
-        const std::shared_ptr<Idatabase>& database);
+        const std::shared_ptr<IdbManager>& database);
 
     std::unique_ptr<ICommand> buildRecommendCommand(
         const std::vector<std::string>& tokens,
-        const std::shared_ptr<Idatabase>& database);
+        const std::shared_ptr<IdbManager>& database);
 
     // Maps the command name from tokens[0] to the function that knows how to
     // validate its arguments and create the command object.
@@ -122,7 +122,7 @@ namespace AppInternals {
 
     std::unique_ptr<ICommand> buildPostCommand(
         const std::vector<std::string>& tokens,
-        const std::shared_ptr<Idatabase>& database)
+        const std::shared_ptr<IdbManager>& database)
     {
         if (tokens.size() < POST_MINIMUM_ARGUMENT_COUNT) {
             return nullptr;
@@ -141,7 +141,7 @@ namespace AppInternals {
 
     std::unique_ptr<ICommand> buildHelpCommand(
         const std::vector<std::string>& tokens,
-        const std::shared_ptr<Idatabase>& database)
+        const std::shared_ptr<IdbManager>& database)
     {
         (void)database;
 
@@ -154,7 +154,7 @@ namespace AppInternals {
 
     std::unique_ptr<ICommand> buildRecommendCommand(
     const std::vector<std::string>& tokens,
-    const std::shared_ptr<Idatabase>& database)
+    const std::shared_ptr<IdbManager>& database)
     {
         if (tokens.size() != RECOMMEND_ARGUMENT_COUNT) {
             return nullptr;
@@ -171,7 +171,7 @@ namespace AppInternals {
 
     std::unique_ptr<ICommand> buildCommand(
         const std::vector<std::string>& tokens,
-        const std::shared_ptr<Idatabase>& database)
+        const std::shared_ptr<IdbManager>& database)
     {
         const auto commandBuilderIterator = COMMAND_BUILDERS.find(tokens[COMMAND_NAME_INDEX]);
         if (commandBuilderIterator == COMMAND_BUILDERS.end()) {

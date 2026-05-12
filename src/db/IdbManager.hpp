@@ -18,7 +18,7 @@ class IdbManager {
         virtual std::vector<Product> getProductsForUser(const User& user) const = 0;
         virtual std::vector<User> getAllUsers() const = 0;
         virtual std::vector<User> getUsersWithProduct(const Product& p) const = 0;
-        virtual std::vector<User> getUsersWithProducts(const std::vector<const Product>& targetProducts) const = 0;
+        virtual std::vector<User> getUsersWithProducts(const std::vector<Product>& targetProducts) const = 0;
 
         /*---------------------------------Commands---------------------------------------*/
         virtual Status addProducts(const User& user, const std::vector<Product>& products) = 0;

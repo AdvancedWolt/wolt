@@ -1,7 +1,7 @@
 #pragma once
 
 #include "commands/ICommand.hpp"
-#include "db/Idatabase.hpp"
+#include "db/IdbManager.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -14,5 +14,5 @@ namespace AppInternals {
 
     std::unique_ptr<ICommand> buildCommand(
         const std::vector<std::string>& tokens,
-        const std::shared_ptr<Idatabase>& database);
+        const std::shared_ptr<IdbManager>& database);
 }

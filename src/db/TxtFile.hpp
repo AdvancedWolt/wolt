@@ -1,11 +1,11 @@
 #pragma once
 
-#include "IdbManger.hpp"
+#include "IdbManager.hpp"
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 
-class TxtFile : public IdbManger {
+class TxtFile : public IdbManager {
     private:
         using ProductsByUser = std::unordered_map<User, std::unordered_set<Product>>;
 
@@ -21,8 +21,8 @@ class TxtFile : public IdbManger {
         /*---------------------------------Getters---------------------------------------*/
         std::vector<Product> getProductsForUser(const User& user) const override;
         std::vector<User> getAllUsers() const override;
-        std::vector<User> getUsersWithProduct(const Product& p) override;
-        std::vector<User> getUsersWithProducts(const std::vector<const Product&>& targetProducts) override;
+        std::vector<User> getUsersWithProduct(const Product& p) const override;
+        std::vector<User> getUsersWithProducts(const std::vector<const Product>& targetProducts) const override;
         
         /*---------------------------------Commands---------------------------------------*/
         Status addProducts(const User& user, const std::vector<Product>& products) override;        
@@ -30,5 +30,5 @@ class TxtFile : public IdbManger {
         Status patchProducts(const User& user,const std::vector<Product>& products) override;
         
         /*---------------------------------Querys---------------------------------------*/
-        bool doesUserExist(const User& user) override;
+        bool doesUserExist(const User& user) const override;
 };

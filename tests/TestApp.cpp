@@ -32,14 +32,14 @@ TEST_F(AppTest, HelpPrintsExpectedCommands)
     app.run();
 
     EXPECT_EQ(output.str(),
-              "add [userid] [productid1] [productid2] ...\n"
+              "post [userid] [productid1] [productid2] ...\n"
               "recommend [userid] [productid]\n"
               "help\n");
 }
 
 TEST_F(AppTest, PostCommandPersistsProductsToFile)
 {
-    std::istringstream input("add 42 1 2\n");
+    std::istringstream input("post 42 1 2\n");
     std::ostringstream output;
     auto database = std::make_shared<TxtFile>(m_tempFile.string());
 

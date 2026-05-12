@@ -189,7 +189,7 @@ std::vector<User> TxtFile::getUsersWithProduct(const Product& p)
     return users;
 }
 
-std::vector<User> TxtFile::getUsersWithProducts(const std::vector<const Product&>& targetProducts)
+std::vector<User> TxtFile::getUsersWithProducts(const std::vector<const Product>& targetProducts)
 {
     std::vector<User> users;
     for (const auto& pair : m_productsByUser) {

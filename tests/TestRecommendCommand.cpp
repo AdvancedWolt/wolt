@@ -7,7 +7,7 @@
 #include "commands/ICommand.hpp"
 #include "commands/RecommendCommand.hpp"
 #include "commands/PostCommand.hpp"
-#include "../src/App.hpp"
+#include "App.hpp"
 #include "db/TxtFile.hpp"
 
 TEST(RecommendCommandTest, FullScenarioRecommendation)
@@ -39,9 +39,9 @@ TEST(RecommendCommandTest, FullScenarioRecommendation)
 TEST(RecommendCommandTest, EdgeCase_NobodyWatchedTargetProduct)
 {
     std::istringstream input(
-        "add 1 100 101\n"
-        "add 2 100 102 103\n"
-        "add 3 101 105 106\n"
+        "post 1 100 101\n"
+        "post 2 100 102 103\n"
+        "post 3 101 105 106\n"
         "recommend 1 999\n" // Product 999 was never watched
     );
     std::ostringstream output;
@@ -56,8 +56,8 @@ TEST(RecommendCommandTest, EdgeCase_NobodyWatchedTargetProduct)
 TEST(RecommendCommandTest, EdgeCase_TieBreakerSorting)
 {
     std::istringstream input(
-        "add 1 100\n"
-        "add 2 100 104 205 101 300\n"
+        "post 1 100\n"
+        "post 2 100 104 205 101 300\n"
         "recommend 1 104\n"
     );
     std::ostringstream output;
@@ -74,8 +74,8 @@ TEST(RecommendCommandTest, EdgeCase_TieBreakerSorting)
 TEST(RecommendCommandTest, EdgeCase_NoNewProductsToRecommend)
 {
     std::istringstream input(
-        "add 1 100 101\n"
-        "add 2 100 101 104\n"
+        "post 1 100 101\n"
+        "post 2 100 101 104\n"
         "recommend 1 104\n"
     );
     std::ostringstream output;
@@ -94,8 +94,8 @@ TEST(RecommendCommandTest, Persistence_RecommendationsWorkAfterRestart)
     
     {
         std::istringstream setupInput(
-            "add 1 100 101\n"
-            "add 2 100 104 105\n"
+            "post 1 100 101\n"
+            "post 2 100 104 105\n"
         );
         std::ostringstream dummyOutput;
         auto dbSetup = std::make_shared<TxtFile>(dbPath);
@@ -105,7 +105,7 @@ TEST(RecommendCommandTest, Persistence_RecommendationsWorkAfterRestart)
     }
 
     // Start a brand new app instance pointing to the same file
-    // We only provide the 'recommend' command. No 'add' commands
+    // We only provide the 'recommend' command. No 'post' commands
     std::istringstream runInput("recommend 1 104\n");
     std::ostringstream finalOutput;
     
@@ -121,11 +121,11 @@ TEST(RecommendCommandTest, Persistence_RecommendationsWorkAfterRestart)
 TEST(RecommendCommandTest, EdgeCase_DuplicateProductEntries)
 {
     std::istringstream input(
-        "add 1 100\n"
-        "add 1 100\n"
-        "add 1 100\n"             // Added across multiple lines
-        "add 1 101\n"
-        "add 2 100 100 104 105\n" // Added multiple times in one line
+        "post 1 100\n"
+        "post 1 100\n"
+        "post 1 100\n"             // Added across multiple lines
+        "post 1 101\n"
+        "post 2 100 100 104 105\n" // Added multiple times in one line
         "recommend 1 104\n"
     );
     std::ostringstream output;

@@ -6,7 +6,7 @@
 
 const std::string PostCommand::s_syntax = "post [userid] [productid1] [productid2] ...";
 
-PostCommand::PostCommand(std::shared_ptr<IdbManger> database,
+PostCommand::PostCommand(std::shared_ptr<IdbManager> database,
                          std::string userId,
                          std::vector<std::string> productIds)
     : m_database(std::move(database)),

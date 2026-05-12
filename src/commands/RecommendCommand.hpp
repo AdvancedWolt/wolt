@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ICommand.hpp"
-#include "db/IdbManger.hpp"
+#include "db/IdbManager.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -13,7 +13,7 @@
 
 class RecommendCommand : public ICommand {
     private:
-        std::shared_ptr<IdbManger> m_database;
+        std::shared_ptr<IdbManager> m_database;
         std::string m_userId;
         std::vector<std::string> m_productId;
 
@@ -30,7 +30,7 @@ class RecommendCommand : public ICommand {
     public:
         static const std::string s_syntax;
 
-        RecommendCommand(std::shared_ptr<IdbManger> database,
+        RecommendCommand(std::shared_ptr<IdbManager> database,
                          std::string userId,
                          std::vector<std::string> productId);
 

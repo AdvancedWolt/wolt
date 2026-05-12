@@ -16,7 +16,7 @@ namespace {
 
 const std::string RecommendCommand::s_syntax = "recommend [userid] [productid]";
 
-RecommendCommand::RecommendCommand(std::shared_ptr<IdbManger> database,
+RecommendCommand::RecommendCommand(std::shared_ptr<IdbManager> database,
                        std::string userId,
                        std::vector<std::string> productIds)
     : m_database(std::move(database)),

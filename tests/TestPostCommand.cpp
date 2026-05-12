@@ -15,7 +15,7 @@ public:
     bool load() override { return true; }
 
     bool hasUser(const User& user) const override {
-        return m_users.find(user.id) != m_users.end();
+        return m_users.find(user.getId()) != m_users.end();
     }
 
     std::vector<User> getAllUsers() const override {
@@ -25,7 +25,7 @@ public:
     }
 
     std::vector<Product> getProductsForUser(const User& user) const override {
-        auto it = m_users.find(user.id);
+        auto it = m_users.find(user.getId());
         if (it == m_users.end()) return {};
         return it->second;
     }
@@ -33,7 +33,7 @@ public:
     bool addProducts(const User& user, const std::vector<Product>& products) override {
         if (m_failOnAdd) return false;
         for (const auto& p : products) {
-            m_users[user.id].push_back(p);
+            m_users[user.getId()].push_back(p);
         }
         return true;
     }

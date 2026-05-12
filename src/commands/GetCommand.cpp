@@ -3,14 +3,14 @@
 #include <algorithm>
 
 namespace {
-    // Extract string ids from a vector of User/Product (both have a `.id` field).
+    // Extract string ids from a vector of User/Product (both have a getId() field).
     template <typename T>
     std::vector<std::string> toIds(const std::vector<T>& items)
     {
         std::vector<std::string> ids;
         ids.reserve(items.size());
         for (const T& item : items) {
-            ids.push_back(item.id);
+            ids.push_back(item.getId());
         }
         return ids;
     }
@@ -35,7 +35,7 @@ models::CommandResult GetCommand::execute(const models::ParsedCommand& cmd, Idat
     }
 
     std::vector<std::string> usersWithTarget = getUsersWithProduct(db, targetProduct);
-
+    
     std::vector<std::string> targetUserProducts =
         toIds<Product>(db.getProductsForUser(User(userId)));
 

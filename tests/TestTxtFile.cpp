@@ -23,7 +23,7 @@ std::vector<std::string> sortedProductIds(const std::vector<Product>& products)
     std::vector<std::string> ids;
     ids.reserve(products.size());
     for (const Product& product : products) {
-        ids.push_back(product.id);
+        ids.push_back(product.getId());
     }
     std::sort(ids.begin(), ids.end());
     return ids;
@@ -34,7 +34,7 @@ std::vector<std::string> sortedUserIds(const std::vector<User>& users)
     std::vector<std::string> ids;
     ids.reserve(users.size());
     for (const User& user : users) {
-        ids.push_back(user.id);
+        ids.push_back(user.getId());
     }
     std::sort(ids.begin(), ids.end());
     return ids;
@@ -215,9 +215,9 @@ TEST(TxtFileTest, LoadIgnoresMalformedLines)
 
     EXPECT_EQ(database.getAllUsers().size(), 2u);
     ASSERT_EQ(database.getProductsForUser(User("alice")).size(), 1u);
-    EXPECT_EQ(database.getProductsForUser(User("alice"))[0].id, "pizza");
+    EXPECT_EQ(database.getProductsForUser(User("alice"))[0].getId(), "pizza");
     ASSERT_EQ(database.getProductsForUser(User("bob")).size(), 1u);
-    EXPECT_EQ(database.getProductsForUser(User("bob"))[0].id, "burger");
+    EXPECT_EQ(database.getProductsForUser(User("bob"))[0].getId(), "burger");
 
     std::filesystem::remove(tempFile);
 }

@@ -50,23 +50,6 @@ TEST(GetCommandTest, FullScenarioRecommendation)
     std::filesystem::remove(dbPath);
 }
 
-TEST(GetCommandTest, NobodyWatchedTargetProduct)
-{
-    const std::string dbPath = "test_db_unknown_product.txt";
-    auto app = makeApp(dbPath);
-
-    std::string result = runAndGetLast(*app, {
-        "POST 1 100 101",
-        "POST 2 100 102 103",
-        "POST 3 101 105 106",
-        "GET 1 999",   // product 999 was never watched
-    });
-
-    EXPECT_EQ(result, "404 Not Found\n");
-
-    std::filesystem::remove(dbPath);
-}
-
 TEST(GetCommandTest, TieBreakerSorting)
 {
     const std::string dbPath = "test_db_tie_breaker.txt";

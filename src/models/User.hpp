@@ -1,20 +1,25 @@
 #pragma once
-#include <string>
+
 #include <functional>
+#include <string>
 
-struct User {
-    std::string id;
+class User {
+public:
+    explicit User(std::string id);
 
-    User(const std::string& newId) : id(newId) {}
+    const std::string& getId() const;
 
-    bool operator==(const User& other) const { return id == other.id; }
+    bool operator==(const User& other) const;
+
+private:
+    std::string m_id;
 };
 
 namespace std {
     template <>
     struct hash<User> {
         std::size_t operator()(const User& u) const noexcept {
-            return std::hash<std::string>{}(u.id);
+            return std::hash<std::string>{}(u.getId());
         }
     };
 }

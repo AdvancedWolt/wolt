@@ -91,7 +91,7 @@ bool TxtFile::addProducts(const User& user, const std::vector<Product>& products
             continue;
         }
 
-        outputFile << user.id << '\t' << product.id << std::endl;
+        outputFile << user.getId() << '\t' << product.getId() << std::endl;
         if (!outputFile.good()) {
             return false;
         }

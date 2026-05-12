@@ -7,34 +7,34 @@
 
 namespace txtFileParsing {
 
-std::vector<std::string> buildUserProductsLines(const std::string& userId,
-                                                const std::unordered_set<Product>& products)
+namespace {
+
+std::string buildUserProductsLine(const std::string& userId,
+                                  const std::unordered_set<Product>& products)
 {
     std::vector<std::string> productIds;
     productIds.reserve(products.size());
     for (const Product& product : products) {
         productIds.push_back(product.getId());
     }
-
     std::sort(productIds.begin(), productIds.end());
 
-    std::vector<std::string> lines;
-    lines.reserve(productIds.size());
+    std::ostringstream lineStream;
+    lineStream << userId;
     for (const std::string& productId : productIds) {
-        std::ostringstream lineStream;
-        lineStream << userId << '\t' << productId;
-        lines.push_back(lineStream.str());
+        lineStream << '\t' << productId;
     }
-
-    return lines;
+    return lineStream.str();
 }
+
+}  // namespace
 
 bool upsertUserProductsLine(const std::string& filepath,
                             const User& user,
                             const std::unordered_set<Product>& products)
 {
     const std::string& targetUserId = user.getId();
-    const std::vector<std::string> updatedLines = buildUserProductsLines(targetUserId, products);
+    const std::string newLine = buildUserProductsLine(targetUserId, products);
 
     std::vector<std::string> lines;
     std::ifstream inputFile(filepath);
@@ -44,19 +44,17 @@ bool upsertUserProductsLine(const std::string& filepath,
             std::istringstream lineStream(line);
             std::string userIdToken;
             if (lineStream >> userIdToken && userIdToken == targetUserId) {
-                // Drop every existing line for this user; replacements are appended below.
+                // Drop the existing line for this user; it gets replaced.
                 continue;
             }
-
             lines.push_back(line);
         }
-
         if (!inputFile.good() && !inputFile.eof()) {
             return false;
         }
     }
 
-    lines.insert(lines.end(), updatedLines.begin(), updatedLines.end());
+    lines.push_back(newLine);
 
     std::ofstream outputFile(filepath, std::ios::trunc);
     if (!outputFile.is_open()) {
@@ -73,9 +71,9 @@ bool upsertUserProductsLine(const std::string& filepath,
     return outputFile.good();
 }
 
-bool appendUserProductLines(const std::string& filepath,
-                            const User& user,
-                            const std::vector<Product>& products)
+bool appendUserProductLine(const std::string& filepath,
+                           const User& user,
+                           const std::unordered_set<Product>& products)
 {
     if (products.empty()) {
         return true;
@@ -86,14 +84,7 @@ bool appendUserProductLines(const std::string& filepath,
         return false;
     }
 
-    const std::string& userId = user.getId();
-    for (const Product& product : products) {
-        outputFile << userId << '\t' << product.getId() << '\n';
-        if (!outputFile.good()) {
-            return false;
-        }
-    }
-
+    outputFile << buildUserProductsLine(user.getId(), products) << '\n';
     return outputFile.good();
 }
 

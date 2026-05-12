@@ -38,6 +38,7 @@ TEST_F(AppTest, HelpPrintsExpectedCommands)
 
     // all commands alphabetical, help last.
     EXPECT_EQ(output,
+              "200 Ok\n\n"
               "GET, arguments: [userid] [productid]\n"
               "POST, arguments: [userid] [productid1] [productid2] ...\n"
               "help\n");
@@ -54,13 +55,11 @@ TEST_F(AppTest, PostCommandPersistsProductsToFile)
     std::ifstream savedFile(m_tempFile);
     ASSERT_TRUE(savedFile.is_open());
 
-    std::string firstLine;
-    std::string secondLine;
-    std::getline(savedFile, firstLine);
-    std::getline(savedFile, secondLine);
+    std::string line;
+    std::getline(savedFile, line);
 
-    EXPECT_EQ(firstLine,  "42\t1");
-    EXPECT_EQ(secondLine, "42\t2");
+    // One line per user; products sorted on the line.
+    EXPECT_EQ(line, "42\t1\t2");
 
     savedFile.close();
 }
@@ -69,6 +68,7 @@ TEST_F(AppTest, HelpAcceptsAnyCase)
 {
     auto app = makeApp();
     const std::string expected =
+        "200 Ok\n\n"
         "GET, arguments: [userid] [productid]\n"
         "POST, arguments: [userid] [productid1] [productid2] ...\n"
         "help\n";

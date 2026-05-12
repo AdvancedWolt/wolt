@@ -47,7 +47,6 @@ bool TxtFile::load()
             continue;
         }
 
-        // Create the user object and parse the product IDs into the set.
         const User user(userIdToken);
         bool hasAtLeastOneProduct = false;
         std::string productIdToken;
@@ -83,7 +82,6 @@ std::vector<User> TxtFile::getAllUsers() const
     std::vector<User> users;
     users.reserve(m_productsByUser.size());
 
-    // Collect all users from the map keys.
     for (const auto& pair : m_productsByUser) {
         users.push_back(pair.first);
     }
@@ -91,12 +89,12 @@ std::vector<User> TxtFile::getAllUsers() const
     return users;
 }
 
-Status TxtFile::addProducts(const User& user, const std::vector<Product>& products)
+models::Status TxtFile::addProducts(const User& user, const std::vector<Product>& products)
 {
-    auto& userProducts = m_productsByUser[user];
-    std::vector<Product> newlyInserted;
+    const bool userExistedBefore = m_productsByUser.find(user) != m_productsByUser.end();
+    auto& userProducts = m_productsByUser[user];  // may create an empty entry
 
-    // Add only new products; duplicates are ignored by the set.
+    std::vector<Product> newlyInserted;
     for (const auto& product : products) {
         const auto [_, inserted] = userProducts.insert(product);
         if (inserted) {
@@ -105,61 +103,78 @@ Status TxtFile::addProducts(const User& user, const std::vector<Product>& produc
     }
 
     if (newlyInserted.empty()) {
-        return Status::ok;
+        // Created an empty entry just now? Drop it; nothing actually changed.
+        if (!userExistedBefore) {
+            m_productsByUser.erase(user);
+        }
+        return models::Status::ok;
     }
 
-    // Append only the new lines; no full-file rewrite for the add path.
-    if (!txtFileParsing::appendUserProductLines(m_filepath, user, newlyInserted)) {
-        return Status::noContent;
+    // Existing user: rewrite their line. New user: append a single new line.
+    const bool diskOk = userExistedBefore
+        ? txtFileParsing::upsertUserProductsLine(m_filepath, user, userProducts)
+        : txtFileParsing::appendUserProductLine(m_filepath, user, userProducts);
+
+    if (!diskOk) {
+        // Disk write failed - roll back the in-memory insertions so the
+        // map matches what's on disk.
+        for (const auto& product : newlyInserted) {
+            userProducts.erase(product);
+        }
+        if (!userExistedBefore) {
+            m_productsByUser.erase(user);
+        }
+        return models::Status::noContent;
     }
 
-    return Status::ok;
+    return models::Status::ok;
 }
 
-Status TxtFile::deleteProductsFromUser(const User& user, const std::vector<Product>& products)
+models::Status TxtFile::deleteProductsFromUser(const User& user, const std::vector<Product>& products)
 {
-    // check if user exits. If not, return not found without modifying the file.
     auto userProductsIterator = m_productsByUser.find(user);
     if (userProductsIterator == m_productsByUser.end()) {
-        return Status::notFound;
+        return models::Status::notFound;
     }
 
     auto& userProducts = userProductsIterator->second;
-    bool hasChanges = false;
+    std::vector<Product> actuallyErased;
 
-    // remove only existing products; non-existing products are ignored.
     for (const auto& product : products) {
-        const size_t erasedCount = userProducts.erase(product);
-        if (erasedCount > 0) {
-            hasChanges = true;
+        if (userProducts.erase(product) > 0) {
+            actuallyErased.push_back(product);
         }
     }
 
-    if (!hasChanges) {
-        return Status::ok;
+    if (actuallyErased.empty()) {
+        return models::Status::ok;
     }
 
-    // If the user has no more products, remove the user line entirely.
-    if (userProducts.empty()) {
+    const bool willRemoveUser = userProducts.empty();
+    const bool diskOk = willRemoveUser
+        ? txtFileParsing::removeUserProductsLine(m_filepath, user)
+        : txtFileParsing::upsertUserProductsLine(m_filepath, user, userProducts);
+
+    if (!diskOk) {
+        // Roll back: re-insert the products we just erased.
+        for (const auto& product : actuallyErased) {
+            userProducts.insert(product);
+        }
+        return models::Status::noContent;
+    }
+
+    if (willRemoveUser) {
         m_productsByUser.erase(userProductsIterator);
-        if (!txtFileParsing::removeUserProductsLine(m_filepath, user)) {
-            return Status::noContent;
-        }
-        return Status::ok;
     }
 
-    if (!txtFileParsing::upsertUserProductsLine(m_filepath, user, userProducts)) {
-        return Status::noContent;
-    }
-
-    return Status::ok;
+    return models::Status::ok;
 }
 
 // Patch behaves like add, but only for an existing user.
-Status TxtFile::patchProducts(const User& user, const std::vector<Product>& products)
+models::Status TxtFile::patchProducts(const User& user, const std::vector<Product>& products)
 {
     if (!hasUser(user)) {
-        return Status::notFound;
+        return models::Status::notFound;
     }
 
     return addProducts(user, products);
@@ -173,32 +188,8 @@ bool TxtFile::hasUser(const User& user) const
 std::vector<User> TxtFile::getUsersWithProduct(const Product& p) const
 {
     std::vector<User> users;
-    // Collect users that contain the requested product.
     for (const auto& pair : m_productsByUser) {
         if (pair.second.find(p) != pair.second.end()) {
-            users.push_back(pair.first);
-        }
-    }
-    return users;
-}
-
-std::vector<User> TxtFile::getUsersWithProducts(const std::vector<Product>& targetProducts) const
-{
-    std::vector<User> users;
-    for (const auto& pair : m_productsByUser) {
-        const auto& userProducts = pair.second;
-        // Assume the user has all target products until one is missing.
-        bool hasAllTargetProducts = true;
-        for (const auto& targetProduct : targetProducts) {
-            // Stop early once a required product is missing.
-            if (userProducts.find(targetProduct) == userProducts.end()) {
-                hasAllTargetProducts = false;
-                break;
-            }
-        }
-
-        // Keep users that match all target products.
-        if (hasAllTargetProducts) {
             users.push_back(pair.first);
         }
     }

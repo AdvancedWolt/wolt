@@ -8,17 +8,17 @@ std::string PostCommand::getSyntax() const
     return "POST, arguments: [userid] [productid1] [productid2] ...\n";
 }
 
-models::CommandResult PostCommand::execute(const models::ParsedCommand& cmd, IdbManager& db)
+models::Response PostCommand::execute(const models::ParsedCommand& cmd, IdbManager& db)
 {
     if (cmd.args.size() < 2) {
-        return {false, "400 Bad Request\n"};
+        return models::Response::badRequest();
     }
 
     const User user(cmd.args[0]);
 
     // POST is valid only if the user doesn't already exist.
     if (db.hasUser(user)) {
-        return {false, "404 Not Found\n"};
+        return models::Response::notFound();
     }
 
     std::vector<Product> products;
@@ -27,9 +27,9 @@ models::CommandResult PostCommand::execute(const models::ParsedCommand& cmd, Idb
         products.emplace_back(cmd.args[i]);
     }
 
-    if (db.addProducts(user, products) != Status::ok) {
-        return {false, "400 Bad Request\n"};
+    if (db.addProducts(user, products) != models::Status::ok) {
+        return models::Response::badRequest();
     }
 
-    return {true, "201 Created\n"};
+    return models::Response::created();
 }

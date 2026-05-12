@@ -12,7 +12,7 @@ private:
     std::unique_ptr<CommandManager> m_commandManager;
     bool m_initialized = false;
 
-    void _setupCommands();
+    void setupCommands();
 
 public:
     explicit App(std::shared_ptr<IdbManager> database);

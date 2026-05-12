@@ -8,6 +8,8 @@
 #include "models/User.hpp"
 #include "models/Product.hpp"
 
+using models::Status;
+
 namespace {
 
 std::filesystem::path makeTempFile(const std::string& name)
@@ -126,7 +128,8 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesWithinSameCall)
     EXPECT_EQ(ids[0], "pizza");
     EXPECT_EQ(ids[1], "sushi");
 
-    EXPECT_EQ(readAllLines(tempFile).size(), 2u);
+    // One line per user, regardless of product count.
+    EXPECT_EQ(readAllLines(tempFile).size(), 1u);
 
     std::filesystem::remove(tempFile);
 }
@@ -143,7 +146,8 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesAcrossCalls)
         ASSERT_EQ(database.addProducts(User("alice"), {Product("pizza"), Product("ramen")}), Status::ok);
     }
 
-    EXPECT_EQ(readAllLines(tempFile).size(), 3u);
+    // Still one line per user after subsequent add — upsert path rewrote it.
+    EXPECT_EQ(readAllLines(tempFile).size(), 1u);
 
     TxtFile reloaded(tempFile.string());
     ASSERT_TRUE(reloaded.load());

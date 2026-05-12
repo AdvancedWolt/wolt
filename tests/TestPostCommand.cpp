@@ -6,6 +6,8 @@
 #include "models/User.hpp"
 #include "models/Product.hpp"
 
+using models::Status;
+
 namespace {
 
 // Create a fake DB, we're testing POST, not the DB.
@@ -41,7 +43,6 @@ public:
     Status patchProducts(const User&, const std::vector<Product>&) override { return Status::ok; }
     Status deleteProductsFromUser(const User&, const std::vector<Product>&) override { return Status::ok; }
     std::vector<User> getUsersWithProduct(const Product&) const override { return {}; }
-    std::vector<User> getUsersWithProducts(const std::vector<Product>&) const override { return {}; }
 
     void failNextAdd() { m_failOnAdd = true; }
 
@@ -65,8 +66,8 @@ TEST(PostCommandTest, CreatesNewUserWithProducts)
 
     auto result = cmd.execute(makeCmd({"post", "alice", "pizza", "sushi"}), db);
 
-    EXPECT_TRUE(result.success);
-    EXPECT_EQ(result.message, "201 Created\n");
+    EXPECT_EQ(result.status(), Status::created);
+    EXPECT_EQ(result.toWire(), "201 Created\n");
     EXPECT_TRUE(db.hasUser(User("alice")));
     EXPECT_EQ(db.getProductsForUser(User("alice")).size(), 2u);
 }
@@ -78,8 +79,8 @@ TEST(PostCommandTest, ReturnsBadRequestWhenNoArgs)
 
     auto result = cmd.execute(makeCmd({"post"}), db);
 
-    EXPECT_FALSE(result.success);
-    EXPECT_EQ(result.message, "400 Bad Request\n");
+    EXPECT_EQ(result.status(), Status::badRequest);
+    EXPECT_EQ(result.toWire(), "400 Bad Request\n");
 }
 
 TEST(PostCommandTest, ReturnsBadRequestWhenOnlyUserId)
@@ -89,8 +90,8 @@ TEST(PostCommandTest, ReturnsBadRequestWhenOnlyUserId)
 
     auto result = cmd.execute(makeCmd({"post", "alice"}), db);
 
-    EXPECT_FALSE(result.success);
-    EXPECT_EQ(result.message, "400 Bad Request\n");
+    EXPECT_EQ(result.status(), Status::badRequest);
+    EXPECT_EQ(result.toWire(), "400 Bad Request\n");
     EXPECT_FALSE(db.hasUser(User("alice")));
 }
 
@@ -102,8 +103,8 @@ TEST(PostCommandTest, ReturnsNotFoundWhenUserAlreadyExists)
 
     auto result = cmd.execute(makeCmd({"post", "alice", "sushi"}), db);
 
-    EXPECT_FALSE(result.success);
-    EXPECT_EQ(result.message, "404 Not Found\n");
+    EXPECT_EQ(result.status(), Status::notFound);
+    EXPECT_EQ(result.toWire(), "404 Not Found\n");
     EXPECT_EQ(db.getProductsForUser(User("alice")).size(), 1u);
 }
 
@@ -115,7 +116,7 @@ TEST(PostCommandTest, ManyProductsSucceed)
     auto result = cmd.execute(
         makeCmd({"post", "charlie", "a", "b", "c", "d", "e", "f", "g"}), db);
 
-    EXPECT_TRUE(result.success);
+    EXPECT_EQ(result.status(), Status::created);
     EXPECT_EQ(db.getProductsForUser(User("charlie")).size(), 7u);
 }
 
@@ -127,8 +128,8 @@ TEST(PostCommandTest, DifferentUsersAreIndependent)
     cmd.execute(makeCmd({"post", "alice", "pizza"}), db);
     auto result = cmd.execute(makeCmd({"post", "bob", "burger"}), db);
 
-    EXPECT_TRUE(result.success);
-    EXPECT_EQ(result.message, "201 Created\n");
+    EXPECT_EQ(result.status(), Status::created);
+    EXPECT_EQ(result.toWire(), "201 Created\n");
     EXPECT_TRUE(db.hasUser(User("alice")));
     EXPECT_TRUE(db.hasUser(User("bob")));
 }
@@ -148,6 +149,6 @@ TEST(PostCommandTest, ReturnsBadRequestWhenDbAddFails)
 
     auto result = cmd.execute(makeCmd({"post", "alice", "pizza"}), db);
 
-    EXPECT_FALSE(result.success);
-    EXPECT_EQ(result.message, "400 Bad Request\n");
+    EXPECT_EQ(result.status(), Status::badRequest);
+    EXPECT_EQ(result.toWire(), "400 Bad Request\n");
 }

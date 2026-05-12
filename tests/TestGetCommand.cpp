@@ -16,10 +16,18 @@ namespace {
         return last;
     }
 
-    // Fresh App with an initialized DB file.
-    std::unique_ptr<App> makeApp(const std::string& dbPath)
+    std::filesystem::path makeTempDb(const std::string& name)
     {
-        auto db = std::make_shared<TxtFile>(dbPath);
+        const std::filesystem::path tempFile =
+            std::filesystem::temp_directory_path() / name;
+        std::filesystem::remove(tempFile);
+        return tempFile;
+    }
+
+    // Fresh App with an initialized DB file.
+    std::unique_ptr<App> makeApp(const std::filesystem::path& dbPath)
+    {
+        auto db = std::make_shared<TxtFile>(dbPath.string());
         auto app = std::make_unique<App>(db);
         app->initialize();
         return app;
@@ -28,7 +36,7 @@ namespace {
 
 TEST(GetCommandTest, FullScenarioRecommendation)
 {
-    const std::string dbPath = "test_db_full.txt";
+    const auto dbPath = makeTempDb("wolt_get_full.txt");
     auto app = makeApp(dbPath);
 
     std::string result = runAndGetLast(*app, {
@@ -52,7 +60,7 @@ TEST(GetCommandTest, FullScenarioRecommendation)
 
 TEST(GetCommandTest, TieBreakerSorting)
 {
-    const std::string dbPath = "test_db_tie_breaker.txt";
+    const auto dbPath = makeTempDb("wolt_get_tie_breaker.txt");
     auto app = makeApp(dbPath);
 
     std::string result = runAndGetLast(*app, {
@@ -69,7 +77,7 @@ TEST(GetCommandTest, TieBreakerSorting)
 
 TEST(GetCommandTest, NoNewProductsToRecommend)
 {
-    const std::string dbPath = "test_db_no_new.txt";
+    const auto dbPath = makeTempDb("wolt_get_no_new.txt");
     auto app = makeApp(dbPath);
 
     std::string result = runAndGetLast(*app, {
@@ -86,7 +94,7 @@ TEST(GetCommandTest, NoNewProductsToRecommend)
 
 TEST(GetCommandTest, RecommendationsWorkAfterRestart)
 {
-    const std::string dbPath = "test_db_persistence.txt";
+    const auto dbPath = makeTempDb("wolt_get_persistence.txt");
 
     // First app: set up state, then dies.
     {
@@ -106,7 +114,7 @@ TEST(GetCommandTest, RecommendationsWorkAfterRestart)
 
 TEST(GetCommandTest, DuplicateProductEntries)
 {
-    const std::string dbPath = "test_db_duplicates.txt";
+    const auto dbPath = makeTempDb("wolt_get_duplicates.txt");
     auto app = makeApp(dbPath);
 
     std::string result = runAndGetLast(*app, {

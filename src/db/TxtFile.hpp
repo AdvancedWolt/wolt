@@ -22,12 +22,11 @@ class TxtFile : public IdbManager {
         std::vector<Product> getProductsForUser(const User& user) const override;
         std::vector<User> getAllUsers() const override;
         std::vector<User> getUsersWithProduct(const Product& p) const override;
-        std::vector<User> getUsersWithProducts(const std::vector<Product>& targetProducts) const override;
 
         /*---------------------------------Commands---------------------------------------*/
-        Status addProducts(const User& user, const std::vector<Product>& products) override;
-        Status deleteProductsFromUser(const User& user, const std::vector<Product>& products) override;
-        Status patchProducts(const User& user,const std::vector<Product>& products) override;
+        models::Status addProducts(const User& user, const std::vector<Product>& products) override;
+        models::Status deleteProductsFromUser(const User& user, const std::vector<Product>& products) override;
+        models::Status patchProducts(const User& user,const std::vector<Product>& products) override;
 
         /*---------------------------------Querys---------------------------------------*/
         bool hasUser(const User& user) const override;

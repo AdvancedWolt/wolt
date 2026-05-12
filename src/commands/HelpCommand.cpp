@@ -12,7 +12,7 @@ std::string HelpCommand::getSyntax() const
     return "help\n";
 }
 
-models::CommandResult HelpCommand::execute(const models::ParsedCommand& cmd, IdbManager& db)
+models::Response HelpCommand::execute(const models::ParsedCommand& cmd, IdbManager& db)
 {
     (void)cmd;
     (void)db;
@@ -33,7 +33,7 @@ models::CommandResult HelpCommand::execute(const models::ParsedCommand& cmd, Idb
     }
     out += getSyntax();        // append help's syntax at the end
 
-    return {true, out};
+    return models::Response::ok(out);
 }
 
 

@@ -8,8 +8,10 @@ set(LOGIC_FILES
     commands/PostCommand.cpp
     db/TxtFile.cpp
     db/TxtFileParsing.cpp
+    db/DbHelper.cpp
     models/User.cpp
     models/Product.cpp
+    models/Response.cpp
 )
 
 # Create the Library for the logic files

@@ -5,6 +5,8 @@
 #include "fakes/FakeCommand.hpp"
 #include "db/IdbManager.hpp"
 
+using models::Status;
+
 namespace {
 
 class StubDatabase : public IdbManager {
@@ -15,7 +17,6 @@ public:
     std::vector<Product> getProductsForUser(const User&) const override { return {}; }
     std::vector<User> getAllUsers() const override { return {}; }
     std::vector<User> getUsersWithProduct(const Product&) const override { return {}; }
-    std::vector<User> getUsersWithProducts(const std::vector<Product>&) const override { return {}; }
     Status addProducts(const User&, const std::vector<Product>&) override { return Status::ok; }
     Status patchProducts(const User&, const std::vector<Product>&) override { return Status::ok; }
     Status deleteProductsFromUser(const User&, const std::vector<Product>&) override { return Status::ok; }
@@ -31,8 +32,8 @@ TEST(CommandManagerTest, DispatchesToRegisteredCommand)
     StubDatabase db;
     auto result = manager.execute({"fake", {}}, db);
 
-    EXPECT_TRUE(result.success);
-    EXPECT_EQ(result.message, "Fake command executed successfully.\n");
+    EXPECT_EQ(result.status(), Status::ok);
+    EXPECT_EQ(result.body(), "Fake command executed successfully.\n");
 }
 
 TEST(CommandManagerTest, UnknownCommandReturns400)
@@ -42,8 +43,8 @@ TEST(CommandManagerTest, UnknownCommandReturns400)
 
     auto result = manager.execute({"nonexistent", {}}, db);
 
-    EXPECT_FALSE(result.success);
-    EXPECT_EQ(result.message, "400 Bad Request\n");
+    EXPECT_EQ(result.status(), Status::badRequest);
+    EXPECT_EQ(result.toWire(), "400 Bad Request\n");
 }
 
 TEST(CommandManagerTest, EmptyNameReturns400)
@@ -54,8 +55,8 @@ TEST(CommandManagerTest, EmptyNameReturns400)
 
     auto result = manager.execute({"", {}}, db);
 
-    EXPECT_FALSE(result.success);
-    EXPECT_EQ(result.message, "400 Bad Request\n");
+    EXPECT_EQ(result.status(), Status::badRequest);
+    EXPECT_EQ(result.toWire(), "400 Bad Request\n");
 }
 
 TEST(CommandManagerTest, CommandLookupIsExactMatch)
@@ -64,10 +65,8 @@ TEST(CommandManagerTest, CommandLookupIsExactMatch)
     manager.registerCommand("post", std::make_unique<FakeCommand>());
     StubDatabase db;
 
-    EXPECT_EQ(manager.execute({"post", {}}, db).message,
-              "Fake command executed successfully.\n");
-    EXPECT_EQ(manager.execute({"POST", {}}, db).message,
-              "400 Bad Request\n");   // manager doesn't normalize; parser does
+    EXPECT_EQ(manager.execute({"post", {}}, db).status(), Status::ok);
+    EXPECT_EQ(manager.execute({"POST", {}}, db).status(), Status::badRequest);  // manager doesn't normalize; parser does
 }
 
 TEST(CommandManagerTest, RegisterReplacesExistingCommand)
@@ -79,7 +78,7 @@ TEST(CommandManagerTest, RegisterReplacesExistingCommand)
     StubDatabase db;
     auto result = manager.execute({"fake", {}}, db);
 
-    EXPECT_TRUE(result.success);
+    EXPECT_EQ(result.status(), Status::ok);
 }
 
 TEST(CommandManagerTest, RegisterNullDoesNotCrash)
@@ -90,7 +89,7 @@ TEST(CommandManagerTest, RegisterNullDoesNotCrash)
     StubDatabase db;
     auto result = manager.execute({"null", {}}, db);
 
-    EXPECT_EQ(result.message, "400 Bad Request\n");
+    EXPECT_EQ(result.toWire(), "400 Bad Request\n");
 }
 
 TEST(CommandManagerTest, GetNamedSyntaxesReturnsAllRegistered)
@@ -121,5 +120,5 @@ TEST(CommandManagerTest, ArgsArePassedThroughToCommand)
     StubDatabase db;
     auto result = manager.execute({"fake", {"arg1", "arg2", "arg3"}}, db);
 
-    EXPECT_TRUE(result.success);
+    EXPECT_EQ(result.status(), Status::ok);
 }

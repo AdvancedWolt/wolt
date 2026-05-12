@@ -92,6 +92,30 @@ bool upsertUserProductsLine(const std::string& filepath,
     return outputFile.good();
 }
 
+bool appendUserProductLines(const std::string& filepath,
+                            const User& user,
+                            const std::vector<Product>& products)
+{
+    if (products.empty()) {
+        return true;
+    }
+
+    std::ofstream outputFile(filepath, std::ios::app);
+    if (!outputFile.is_open()) {
+        return false;
+    }
+
+    const int userId = user.getId();
+    for (const Product& product : products) {
+        outputFile << userId << '\t' << product.getId() << '\n';
+        if (!outputFile.good()) {
+            return false;
+        }
+    }
+
+    return outputFile.good();
+}
+
 bool removeUserProductsLine(const std::string& filepath, const User& user)
 {
     const int targetUserId = user.getId();

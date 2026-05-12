@@ -100,22 +100,22 @@ std::vector<User> TxtFile::getAllUsers() const
 Status TxtFile::addProducts(const User& user, const std::vector<Product>& products)
 {
     auto& userProducts = m_productsByUser[user];
-    bool hasChanges = false;
+    std::vector<Product> newlyInserted;
 
     // Add only new products; duplicates are ignored by the set.
     for (const auto& product : products) {
         const auto [_, inserted] = userProducts.insert(product);
         if (inserted) {
-            hasChanges = true;
+            newlyInserted.push_back(product);
         }
     }
 
-    if (!hasChanges) {
+    if (newlyInserted.empty()) {
         return Status::ok;
     }
 
-    // Persist only the affected user line.
-    if (!txtFileParsing::upsertUserProductsLine(m_filepath, user, userProducts)) {
+    // Append only the new lines; no full-file rewrite for the add path.
+    if (!txtFileParsing::appendUserProductLines(m_filepath, user, newlyInserted)) {
         return Status::noContent;
     }
 

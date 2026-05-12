@@ -1,5 +1,6 @@
 #include "commands/GetCommand.hpp"
 #include "models/Product.hpp"
+#include "models/User.hpp"
 
 #include <algorithm>
 

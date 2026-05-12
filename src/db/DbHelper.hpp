@@ -14,6 +14,6 @@ namespace dbHelper {
 using ProductsByUser =
     std::unordered_map<std::string, std::unordered_set<std::string>>;
 
-ProductsByUser buildProductsByUser(IdbManager& db);
+ProductsByUser buildProductsByUser(const IdbManager& db);
 
 } // namespace dbHelper

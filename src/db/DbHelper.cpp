@@ -8,7 +8,7 @@
 
 namespace dbHelper {
 
-ProductsByUser buildProductsByUser(IdbManager& db)
+ProductsByUser buildProductsByUser(const IdbManager& db)
 {
     ProductsByUser productsByUser;
     for (const User& user : db.getAllUsers()) {

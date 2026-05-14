@@ -37,11 +37,15 @@ Response::Response(Status status, std::string body)
     : m_status(status), m_body(std::move(body))
 {}
 
+Response::Response(Status status)
+    : m_status(status) , m_body("")
+{}
+
 Response Response::ok(std::string body) { return Response(Status::ok, std::move(body)); }
-Response Response::created()            { return Response(Status::created,    ""); }
-Response Response::badRequest()         { return Response(Status::badRequest, ""); }
-Response Response::notFound()           { return Response(Status::notFound,   ""); }
-Response Response::noContent()          { return Response(Status::noContent,  ""); }
+Response Response::created()            { return Response(Status::created); }
+Response Response::badRequest()         { return Response(Status::badRequest); }
+Response Response::notFound()           { return Response(Status::notFound); }
+Response Response::noContent()          { return Response(Status::noContent); }
 
 std::string Response::toWire() const
 {

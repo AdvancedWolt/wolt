@@ -24,7 +24,7 @@ public:
 
 private:
     Response(Status status, std::string body);
-
+    Response(Status status);
     Status m_status;
     std::string m_body;
 };

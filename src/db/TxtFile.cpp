@@ -91,8 +91,8 @@ std::vector<User> TxtFile::getAllUsers() const
 
 models::Status TxtFile::addProducts(const User& user, const std::vector<Product>& products)
 {
-    const bool userExistedBefore = m_productsByUser.find(user) != m_productsByUser.end();
-    auto& userProducts = m_productsByUser[user];  // may create an empty entry
+    const auto [userIterator, userCreated] = m_productsByUser.try_emplace(user);
+    auto& userProducts = userIterator->second;
 
     std::vector<Product> newlyInserted;
     for (const auto& product : products) {
@@ -103,17 +103,16 @@ models::Status TxtFile::addProducts(const User& user, const std::vector<Product>
     }
 
     if (newlyInserted.empty()) {
-        // Created an empty entry just now? Drop it; nothing actually changed.
-        if (!userExistedBefore) {
-            m_productsByUser.erase(user);
+        if (userCreated) {
+            m_productsByUser.erase(userIterator);
         }
         return models::Status::ok;
     }
 
     // Existing user: rewrite their line. New user: append a single new line.
-    const bool diskOk = userExistedBefore
-        ? txtFileParsing::upsertUserProductsLine(m_filepath, user, userProducts)
-        : txtFileParsing::appendUserProductLine(m_filepath, user, userProducts);
+    const bool diskOk = userCreated
+        ? txtFileParsing::appendUserProductLine(m_filepath, user, userProducts)
+        : txtFileParsing::upsertUserProductsLine(m_filepath, user, userProducts);
 
     if (!diskOk) {
         // Disk write failed - roll back the in-memory insertions so the
@@ -121,8 +120,8 @@ models::Status TxtFile::addProducts(const User& user, const std::vector<Product>
         for (const auto& product : newlyInserted) {
             userProducts.erase(product);
         }
-        if (!userExistedBefore) {
-            m_productsByUser.erase(user);
+        if (userCreated) {
+            m_productsByUser.erase(userIterator);
         }
         return models::Status::noContent;
     }

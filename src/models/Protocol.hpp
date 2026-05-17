@@ -4,10 +4,6 @@
 #include <vector>
 
 namespace models {
-    struct CommandResult {
-        bool success;
-        std::string message;
-    };
 
     struct ParsedCommand {
         std::string name;

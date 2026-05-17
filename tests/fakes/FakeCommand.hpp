@@ -7,5 +7,5 @@ public:
     FakeCommand() = default;
 
     std::string getSyntax() const override;
-    models::CommandResult execute(const models::ParsedCommand& cmd, Idatabase& db) override;
+    models::Response execute(const models::ParsedCommand& cmd, IdbManager& db) override;
 };

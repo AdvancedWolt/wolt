@@ -8,6 +8,8 @@
 #include "models/User.hpp"
 #include "models/Product.hpp"
 
+using models::Status;
+
 namespace {
 
 std::filesystem::path makeTempFile(const std::string& name)
@@ -106,7 +108,7 @@ TEST(TxtFileTest, LoadDeduplicatesRepeatedLines)
     std::filesystem::remove(tempFile);
 }
 
-TEST(TxtFileTest, AddProductsSkipsDuplicatesWithinSameCall)
+TEST(TxtFileTest, postProductsSkipsDuplicatesWithinSameCall)
 {
     const auto tempFile = makeTempFile("wolt_txt_file_dedup_call_test.txt");
 
@@ -117,7 +119,7 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesWithinSameCall)
     const std::vector<Product> products = {
         Product("pizza"), Product("pizza"), Product("sushi"), Product("pizza")
     };
-    ASSERT_TRUE(database.addProducts(User("alice"), products));
+    ASSERT_EQ(database.postProducts(User("alice"), products), Status::ok);
 
     const std::vector<Product> stored = database.getProductsForUser(User("alice"));
     ASSERT_EQ(stored.size(), 2);
@@ -126,12 +128,13 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesWithinSameCall)
     EXPECT_EQ(ids[0], "pizza");
     EXPECT_EQ(ids[1], "sushi");
 
-    EXPECT_EQ(readAllLines(tempFile).size(), 2u);
+    // One line per user, regardless of product count.
+    EXPECT_EQ(readAllLines(tempFile).size(), 1u);
 
     std::filesystem::remove(tempFile);
 }
 
-TEST(TxtFileTest, AddProductsSkipsDuplicatesAcrossCalls)
+TEST(TxtFileTest, postProductsSkipsDuplicatesAcrossCalls)
 {
     const auto tempFile = makeTempFile("wolt_txt_file_dedup_persist_test.txt");
 
@@ -139,11 +142,12 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesAcrossCalls)
         TxtFile database(tempFile.string());
         ASSERT_TRUE(database.initialize());
         ASSERT_TRUE(database.load());
-        ASSERT_TRUE(database.addProducts(User("alice"), {Product("pizza"), Product("sushi")}));
-        ASSERT_TRUE(database.addProducts(User("alice"), {Product("pizza"), Product("ramen")}));
+        ASSERT_EQ(database.postProducts(User("alice"), {Product("pizza"), Product("sushi")}), Status::ok);
+        ASSERT_EQ(database.postProducts(User("alice"), {Product("pizza"), Product("ramen")}), Status::ok);
     }
 
-    EXPECT_EQ(readAllLines(tempFile).size(), 3u);
+    // Still one line per user after subsequent add — upsert path rewrote it.
+    EXPECT_EQ(readAllLines(tempFile).size(), 1u);
 
     TxtFile reloaded(tempFile.string());
     ASSERT_TRUE(reloaded.load());
@@ -228,4 +232,25 @@ TEST(TxtFileTest, LoadOnMissingFileReturnsFalse)
 
     TxtFile database(tempFile.string());
     EXPECT_FALSE(database.load());
+}
+
+TEST(TxtFileTest, LoadSupportsSingleUserLineWithMultipleProducts)
+{
+    const auto tempFile = makeTempFile("wolt_txt_file_multi_product_line_test.txt");
+
+    {
+        std::ofstream outputFile(tempFile);
+        outputFile << "alice\tpizza\tsushi\tramen\n";
+    }
+
+    TxtFile database(tempFile.string());
+    ASSERT_TRUE(database.load());
+
+    const std::vector<std::string> ids = sortedProductIds(database.getProductsForUser(User("alice")));
+    ASSERT_EQ(ids.size(), 3u);
+    EXPECT_EQ(ids[0], "pizza");
+    EXPECT_EQ(ids[1], "ramen");
+    EXPECT_EQ(ids[2], "sushi");
+
+    std::filesystem::remove(tempFile);
 }

@@ -2,12 +2,12 @@
 #include "core/CommandManager.hpp"
 #include "core/CommandParser.hpp"
 #include "commands/Commands.hpp"
-#include "db/Idatabase.hpp"
+#include "db/IdbManager.hpp"
 #include "models/Protocol.hpp"
 
 #include <utility>
 
-App::App(std::shared_ptr<Idatabase> database)
+App::App(std::shared_ptr<IdbManager> database)
     : m_database(std::move(database))
 {}
 
@@ -19,13 +19,13 @@ bool App::initialize()
     if (!m_database->initialize() || !m_database->load()) return false;
 
     m_commandManager = std::make_unique<CommandManager>();
-    _setupCommands();
+    setupCommands();
 
     m_initialized = true;
     return true;
 }
 
-void App::_setupCommands()
+void App::setupCommands()
 {
     m_commandManager->registerCommand("post", std::make_unique<PostCommand>());
     m_commandManager->registerCommand("get",  std::make_unique<GetCommand>());
@@ -44,6 +44,5 @@ std::string App::handleLine(const std::string& line)
         return "";  // empty line, ignore silently
     }
 
-    models::CommandResult result = m_commandManager->execute(pc, *m_database);
-    return result.message;
+    return m_commandManager->execute(pc, *m_database).toWire();
 }

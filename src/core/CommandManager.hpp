@@ -1,6 +1,7 @@
 #pragma once
 
 #include "models/Protocol.hpp"
+#include "models/Response.hpp"
 
 #include <memory>
 #include <string>
@@ -9,7 +10,7 @@
 #include <vector>
 
 class ICommand;
-class Idatabase;
+class IdbManager;
 
 /**
  * Owns the registered commands and dispatches incoming ParsedCommands to them.
@@ -23,7 +24,7 @@ public:
 
     // Look up pc.name in the registry and forward to that command's execute.
     // Returns 400 Bad Request if the name isn't registered.
-    models::CommandResult execute(const models::ParsedCommand& pc, Idatabase& db);
+    models::Response execute(const models::ParsedCommand& pc, IdbManager& db);
 
     // Returns (name, syntax) pairs for every registered command.
     // Used by HelpCommand to format the help output (alphabetical, help last).

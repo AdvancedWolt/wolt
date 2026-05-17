@@ -3,18 +3,23 @@
 #include "commands/HelpCommand.hpp"
 #include "fakes/FakeCommand.hpp"
 #include "core/CommandManager.hpp"
-#include "db/Idatabase.hpp"
+#include "db/IdbManager.hpp"
+
+using models::Status;
 
 namespace {
     // Minimal stub — HelpCommand doesn't touch the database, but execute()
-    // requires an Idatabase&.
-    class StubDatabase : public Idatabase {
+    // requires an IdbManager&.
+    class StubDatabase : public IdbManager {
     public:
         bool initialize() override { return true; }
         bool load() override { return true; }
         std::vector<Product> getProductsForUser(const User&) const override { return {}; }
         std::vector<User> getAllUsers() const override { return {}; }
-        bool addProducts(const User&, const std::vector<Product>&) override { return true; }
+        std::vector<User> getUsersWithProduct(const Product&) const override { return {}; }
+        Status postProducts(const User&, const std::vector<Product>&) override { return Status::ok; }
+        Status patchProducts(const User&, const std::vector<Product>&) override { return Status::ok; }
+        Status deleteProductsFromUser(const User&, const std::vector<Product>&) override { return Status::ok; }
         bool hasUser(const User&) const override { return false; }
     };
 }
@@ -30,7 +35,8 @@ TEST(HelpCommandTest, PrintsAllRegisteredCommands)
 
     auto result = helpCmd.execute(cmd, db);
 
-    EXPECT_NE(result.message.find("fake"), std::string::npos);
+    EXPECT_EQ(result.status(), Status::ok);
+    EXPECT_NE(result.body().find("fake"), std::string::npos);
 }
 
 TEST(HelpCommandTest, EmptyManagerDoesNotCrash)

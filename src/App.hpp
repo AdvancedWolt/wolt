@@ -3,19 +3,19 @@
 #include <memory>
 #include <string>
 
-class Idatabase;
+class IdbManager;
 class CommandManager;
 
 class App {
 private:
-    std::shared_ptr<Idatabase> m_database;
+    std::shared_ptr<IdbManager> m_database;
     std::unique_ptr<CommandManager> m_commandManager;
     bool m_initialized = false;
 
-    void _setupCommands();
+    void setupCommands();
 
 public:
-    explicit App(std::shared_ptr<Idatabase> database);
+    explicit App(std::shared_ptr<IdbManager> database);
     ~App();
 
     bool initialize();

@@ -1,6 +1,6 @@
 #include "core/CommandManager.hpp"
 #include "commands/ICommand.hpp"
-#include "db/Idatabase.hpp"
+#include "db/IdbManager.hpp"
 
 void CommandManager::registerCommand(const std::string& name, std::unique_ptr<ICommand> cmd)
 {
@@ -9,11 +9,11 @@ void CommandManager::registerCommand(const std::string& name, std::unique_ptr<IC
     }
 }
 
-models::CommandResult CommandManager::execute(const models::ParsedCommand& pc, Idatabase& db)
+models::Response CommandManager::execute(const models::ParsedCommand& pc, IdbManager& db)
 {
     auto it = m_registry.find(pc.name);
     if (it == m_registry.end()) {
-        return {false, "400 Bad Request\n"};
+        return models::Response::badRequest();
     }
     return it->second->execute(pc, db);
 }

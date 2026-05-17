@@ -1,70 +1,117 @@
 #include "commands/GetCommand.hpp"
+#include "models/Product.hpp"
+#include "models/User.hpp"
 
 #include <algorithm>
-
-namespace {
-    // Extract string ids from a vector of User/Product (both have a getId() field).
-    template <typename T>
-    std::vector<std::string> toIds(const std::vector<T>& items)
-    {
-        std::vector<std::string> ids;
-        ids.reserve(items.size());
-        for (const T& item : items) {
-            ids.push_back(item.getId());
-        }
-        return ids;
-    }
-}
 
 std::string GetCommand::getSyntax() const
 {
     return "GET, arguments: [userid] [productid]\n";
 }
 
-models::CommandResult GetCommand::execute(const models::ParsedCommand& cmd, Idatabase& db)
+models::Response GetCommand::execute(const models::ParsedCommand& cmd, IdbManager& db)
 {
     if (cmd.args.size() < 2) {
-        return {false, "400 Bad Request\n"};
+        return models::Response::badRequest();
     }
 
     const std::string& userId = cmd.args[0];
     const std::string& targetProduct = cmd.args[1];
 
     if (!db.hasUser(User(userId))) {
-        return {false, "404 Not Found\n"};
+        return models::Response::notFound();
     }
 
-    std::vector<std::string> usersWithTarget = getUsersWithProduct(db, targetProduct);
-    
-    std::vector<std::string> targetUserProducts =
-        toIds<Product>(db.getProductsForUser(User(userId)));
+    const dbHelper::ProductsByUser productsByUser = dbHelper::buildProductsByUser(db);
+    const auto& targetUserProducts = productsByUser.at(userId);
 
-    auto userWeights = countSimilarities(db, userId, targetUserProducts);
+    auto userWeights = countSimilarities(userId, targetUserProducts, productsByUser);
 
-    auto productRelevence = computeRelevence(
-        db, userId, targetProduct, targetUserProducts, userWeights);
+    auto productRelevance = computeRelevance(
+        userId, targetProduct, targetUserProducts, userWeights, productsByUser);
 
-    auto sortedRelevence = sortRelevence(productRelevence);
+    auto sortedRelevance = sortRelevance(productRelevance);
 
     std::string ids;
-    const std::size_t count = std::min(MAX_RECOMMENDATIONS, sortedRelevence.size());
+    const std::size_t count = std::min(MAX_RECOMMENDATIONS, sortedRelevance.size());
     for (std::size_t i = 0; i < count; ++i) {
         if (i > 0) {
             ids += ' ';
         }
-        ids += sortedRelevence[i].first;
+        ids += sortedRelevance[i].first;
     }
 
-    return {true, "200 Ok\n\n" + ids + "\n"};
+    return models::Response::ok(ids + "\n");
 }
 
-std::vector<std::pair<std::string, int>> GetCommand::sortRelevence(
-    const std::unordered_map<std::string, int>& productRelevence)
+std::unordered_map<std::string, int> GetCommand::countSimilarities(
+    const std::string& targetUserId,
+    const std::unordered_set<std::string>& targetUserProducts,
+    const dbHelper::ProductsByUser& productsByUser)
+{
+    std::unordered_map<std::string, int> userWeights;
+
+    for (const auto& [userId, products] : productsByUser) {
+        if (userId == targetUserId) {
+            continue;
+        }
+
+        for (const auto& product : products) {
+            if (targetUserProducts.contains(product)) {
+                ++userWeights[userId];
+            }
+        }
+    }
+
+    return userWeights;
+}
+
+std::unordered_map<std::string, int> GetCommand::computeRelevance(
+    const std::string& targetUserId,
+    const std::string& targetProduct,
+    const std::unordered_set<std::string>& targetUserProducts,
+    const std::unordered_map<std::string, int>& userWeights,
+    const dbHelper::ProductsByUser& productsByUser)
+{
+    std::unordered_map<std::string, int> productRelevance;
+
+    for (const auto& [userId, weight] : userWeights) {
+        if (weight == 0 || userId == targetUserId) {
+            continue;
+        }
+
+        const auto it = productsByUser.find(userId);
+        if (it == productsByUser.end()) {
+            continue;
+        }
+        const auto& userProducts = it->second;
+
+        // Only count users who actually watched the target product.
+        if (!userProducts.contains(targetProduct)) {
+            continue;
+        }
+
+        for (const auto& product : userProducts) {
+            if (product == targetProduct) {
+                continue;
+            }
+            if (targetUserProducts.contains(product)) {
+                continue;
+            }
+            productRelevance[product] += weight;
+        }
+    }
+
+    return productRelevance;
+}
+
+std::vector<std::pair<std::string, int>> GetCommand::sortRelevance(
+    const std::unordered_map<std::string, int>& productRelevance)
 {
     std::vector<std::pair<std::string, int>> sorted;
-    sorted.reserve(productRelevence.size());
+    sorted.reserve(productRelevance.size());
 
-    for (const auto& pair : productRelevence) {
+    for (const auto& pair : productRelevance) {
         if (pair.second > 0) {
             sorted.push_back(pair);
         }
@@ -79,97 +126,4 @@ std::vector<std::pair<std::string, int>> GetCommand::sortRelevence(
         });
 
     return sorted;
-}
-
-std::unordered_map<std::string, int> GetCommand::countSimilarities(
-    Idatabase& db,
-    const std::string& targetUserId,
-    const std::vector<std::string>& targetUserProducts)
-{
-    std::unordered_map<std::string, int> userWeights;
-    std::vector<std::string> userIds = toIds<User>(db.getAllUsers());
-
-    std::unordered_set<std::string> targetSet(
-        targetUserProducts.begin(), targetUserProducts.end());
-
-    for (const auto& user : userIds) {
-        if (user == targetUserId) {
-            continue;
-        }
-
-        std::vector<std::string> currentUserProducts =
-            toIds<Product>(db.getProductsForUser(User(user)));
-
-        std::unordered_set<std::string> currentUserSet(
-            currentUserProducts.begin(), currentUserProducts.end());
-
-        for (const auto& product : currentUserSet) {
-            if (targetSet.contains(product)) {
-                ++userWeights[user];
-            }
-        }
-    }
-
-    return userWeights;
-}
-
-std::unordered_map<std::string, int> GetCommand::computeRelevence(
-    Idatabase& db,
-    const std::string& targetUserId,
-    const std::string& targetProduct,
-    const std::vector<std::string>& targetUserProducts,
-    const std::unordered_map<std::string, int>& userWeights)
-{
-    std::unordered_map<std::string, int> productRelevence;
-
-    std::unordered_set<std::string> alreadyWatched(
-        targetUserProducts.begin(), targetUserProducts.end());
-
-    std::vector<std::string> watchersList = getUsersWithProduct(db, targetProduct);
-    std::unordered_set<std::string> targetProductWatchers(
-        watchersList.begin(), watchersList.end());
-
-    for (const auto& [user, weight] : userWeights) {
-        if (weight == 0 || user == targetUserId) {
-            continue;
-        }
-        if (!targetProductWatchers.contains(user)) {
-            continue;
-        }
-
-        std::vector<std::string> userProducts =
-            toIds<Product>(db.getProductsForUser(User(user)));
-
-        for (const auto& product : userProducts) {
-            if (product == targetProduct) {
-                continue;
-            }
-            if (alreadyWatched.contains(product)) {
-                continue;
-            }
-            productRelevence[product] += weight;
-        }
-    }
-
-    return productRelevence;
-}
-
-std::vector<std::string> GetCommand::getUsersWithProduct(
-    Idatabase& db,
-    const std::string& targetProduct)
-{
-    std::vector<std::string> usersWithProduct;
-    std::vector<std::string> allUsers = toIds<User>(db.getAllUsers());
-
-    for (const auto& user : allUsers) {
-        std::vector<std::string> userProducts =
-            toIds<Product>(db.getProductsForUser(User(user)));
-
-        if (std::find(userProducts.begin(), userProducts.end(), targetProduct)
-            != userProducts.end()) {
-            usersWithProduct.push_back(user);
-        }
-    }
-
-    return usersWithProduct;
 }

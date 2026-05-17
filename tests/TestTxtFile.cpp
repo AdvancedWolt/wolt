@@ -108,7 +108,7 @@ TEST(TxtFileTest, LoadDeduplicatesRepeatedLines)
     std::filesystem::remove(tempFile);
 }
 
-TEST(TxtFileTest, AddProductsSkipsDuplicatesWithinSameCall)
+TEST(TxtFileTest, postProductsSkipsDuplicatesWithinSameCall)
 {
     const auto tempFile = makeTempFile("wolt_txt_file_dedup_call_test.txt");
 
@@ -119,7 +119,7 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesWithinSameCall)
     const std::vector<Product> products = {
         Product("pizza"), Product("pizza"), Product("sushi"), Product("pizza")
     };
-    ASSERT_EQ(database.addProducts(User("alice"), products), Status::ok);
+    ASSERT_EQ(database.postProducts(User("alice"), products), Status::ok);
 
     const std::vector<Product> stored = database.getProductsForUser(User("alice"));
     ASSERT_EQ(stored.size(), 2);
@@ -134,7 +134,7 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesWithinSameCall)
     std::filesystem::remove(tempFile);
 }
 
-TEST(TxtFileTest, AddProductsSkipsDuplicatesAcrossCalls)
+TEST(TxtFileTest, postProductsSkipsDuplicatesAcrossCalls)
 {
     const auto tempFile = makeTempFile("wolt_txt_file_dedup_persist_test.txt");
 
@@ -142,8 +142,8 @@ TEST(TxtFileTest, AddProductsSkipsDuplicatesAcrossCalls)
         TxtFile database(tempFile.string());
         ASSERT_TRUE(database.initialize());
         ASSERT_TRUE(database.load());
-        ASSERT_EQ(database.addProducts(User("alice"), {Product("pizza"), Product("sushi")}), Status::ok);
-        ASSERT_EQ(database.addProducts(User("alice"), {Product("pizza"), Product("ramen")}), Status::ok);
+        ASSERT_EQ(database.postProducts(User("alice"), {Product("pizza"), Product("sushi")}), Status::ok);
+        ASSERT_EQ(database.postProducts(User("alice"), {Product("pizza"), Product("ramen")}), Status::ok);
     }
 
     // Still one line per user after subsequent add — upsert path rewrote it.

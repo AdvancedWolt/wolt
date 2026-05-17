@@ -32,7 +32,7 @@ public:
         return it->second;
     }
 
-    Status addProducts(const User& user, const std::vector<Product>& products) override {
+    Status postProducts(const User& user, const std::vector<Product>& products) override {
         if (m_failOnAdd) return Status::noContent;
         for (const auto& p : products) {
             m_users[user.getId()].push_back(p);

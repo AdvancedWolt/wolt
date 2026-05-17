@@ -27,7 +27,7 @@ models::Response PostCommand::execute(const models::ParsedCommand& cmd, IdbManag
         products.emplace_back(cmd.args[i]);
     }
 
-    if (db.addProducts(user, products) != models::Status::ok) {
+    if (db.postProducts(user, products) != models::Status::ok) {
         return models::Response::badRequest();
     }
 

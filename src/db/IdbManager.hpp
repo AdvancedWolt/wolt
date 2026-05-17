@@ -20,7 +20,7 @@ class IdbManager {
         virtual std::vector<User> getUsersWithProduct(const Product& p) const = 0;
 
         /*---------------------------------Commands---------------------------------------*/
-        virtual models::Status addProducts(const User& user, const std::vector<Product>& products) = 0;
+        virtual models::Status postProducts(const User& user, const std::vector<Product>& products) = 0;
         virtual models::Status patchProducts(const User& user,const std::vector<Product>& products) = 0;
         virtual models::Status deleteProductsFromUser(const User& user, const std::vector<Product>& products) = 0;
 

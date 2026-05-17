@@ -24,7 +24,7 @@ class TxtFile : public IdbManager {
         std::vector<User> getUsersWithProduct(const Product& p) const override;
 
         /*---------------------------------Commands---------------------------------------*/
-        models::Status addProducts(const User& user, const std::vector<Product>& products) override;
+        models::Status postProducts(const User& user, const std::vector<Product>& products) override;
         models::Status deleteProductsFromUser(const User& user, const std::vector<Product>& products) override;
         models::Status patchProducts(const User& user,const std::vector<Product>& products) override;
 

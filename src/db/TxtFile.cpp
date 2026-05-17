@@ -89,7 +89,7 @@ std::vector<User> TxtFile::getAllUsers() const
     return users;
 }
 
-models::Status TxtFile::addProducts(const User& user, const std::vector<Product>& products)
+models::Status TxtFile::postProducts(const User& user, const std::vector<Product>& products)
 {
     const auto [userIterator, userCreated] = m_productsByUser.try_emplace(user);
     auto& userProducts = userIterator->second;
@@ -159,7 +159,7 @@ models::Status TxtFile::deleteProductsFromUser(const User& user, const std::vect
         for (const auto& product : actuallyErased) {
             userProducts.insert(product);
         }
-        return models::Status::noContent;
+        return models::Status::notFound;
     }
 
     if (willRemoveUser) {
@@ -176,7 +176,7 @@ models::Status TxtFile::patchProducts(const User& user, const std::vector<Produc
         return models::Status::notFound;
     }
 
-    return addProducts(user, products);
+    return postProducts(user, products);
 }
 
 bool TxtFile::hasUser(const User& user) const

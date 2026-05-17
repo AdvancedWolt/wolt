@@ -17,7 +17,7 @@ public:
     std::vector<Product> getProductsForUser(const User&) const override { return {}; }
     std::vector<User> getAllUsers() const override { return {}; }
     std::vector<User> getUsersWithProduct(const Product&) const override { return {}; }
-    Status addProducts(const User&, const std::vector<Product>&) override { return Status::ok; }
+    Status postProducts(const User&, const std::vector<Product>&) override { return Status::ok; }
     Status patchProducts(const User&, const std::vector<Product>&) override { return Status::ok; }
     Status deleteProductsFromUser(const User&, const std::vector<Product>&) override { return Status::ok; }
 };

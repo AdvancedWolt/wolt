@@ -34,7 +34,7 @@ models::Response DeleteCommand::execute(const models::ParsedCommand& cmd, IdbMan
     auto existing = db.getProductsForUser(user);
 
     for (const auto& p : products) {
-        if (std::find(existing.begin(), existing.end(), p) == existing.end()) {
+        if (!std::ranges::contains(existing, p)) {
             return models::Response::notFound(); 
         }
     }

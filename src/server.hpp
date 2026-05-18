@@ -21,4 +21,5 @@ private:
     int  m_port;
     int  m_serverFd = -1;
     bool m_running  = false;
+    static constexpr std::size_t BACKLOG = 1;
 };

@@ -93,7 +93,7 @@ class ServerTest : public ::testing::Test {
 protected:
     void SetUp() override
     {
-        m_port = 19876; // fixed test port; unlikely to conflict
+        m_port = 19876; 
 
         auto db = std::make_shared<StubDatabase>();
         m_server = std::make_unique<Server>(std::move(db), m_port);
@@ -199,15 +199,20 @@ TEST_F(ServerTest, ClientDisconnectDoesNotCrash)
     int fd = connectToServer(m_port);
     ASSERT_GE(fd, 0);
 
-    // Close immediately without sending anything
+    // disconnect immediately
     ::close(fd);
 
-    // Give server a moment to process the disconnect
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-    // Server should still be alive — connect again
+    // reconnect
     int fd2 = connectToServer(m_port);
-    EXPECT_GE(fd2, 0);
+    ASSERT_GE(fd2, 0);
+
+    // THIS is the missing part in original test:
+    std::string response = sendAndReceive(fd2, "NOTACOMMAND");
+
+    EXPECT_NE(response.find("400"), std::string::npos);
+
     ::close(fd2);
 }
 

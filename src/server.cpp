@@ -40,7 +40,7 @@ bool Server::initialize()
         return false;
     }
 
-    if (::listen(m_serverFd, 1) < 0) {   // backlog=1: one client at a time
+    if (::listen(m_serverFd, BACKLOG) < 0) {   // backlog=1: one client at a time
         std::cerr << "listen() failed\n";
         return false;
     }

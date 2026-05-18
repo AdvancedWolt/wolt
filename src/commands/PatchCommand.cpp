@@ -18,11 +18,6 @@ models::Response PatchCommand::execute(const models::ParsedCommand& cmd, IdbMana
 
     const User user(cmd.args[0]);
 
-    // PATCH is valid only if user already exists
-    if (!db.hasUser(user)) {
-        return models::Response::notFound();
-    }
-
     std::vector<Product> products;
     products.reserve(cmd.args.size() - 1);
 
@@ -30,7 +25,7 @@ models::Response PatchCommand::execute(const models::ParsedCommand& cmd, IdbMana
         products.emplace_back(cmd.args[i]);
     }
 
-    if (db.postProducts(user, products) != models::Status::ok) {
+    if (db.patchProducts(user, products) != models::Status::ok) {
         return models::Response::badRequest();
     }
 

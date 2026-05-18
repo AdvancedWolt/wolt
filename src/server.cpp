@@ -99,7 +99,6 @@ void Server::handleClient(int clientFd)
             std::string line = leftover.substr(0, pos);
             leftover.erase(0, pos + 1);
 
-            // strip \r if present (Windows compatibility)
             if (!line.empty() && line.back() == '\r')
                 line.pop_back();
 

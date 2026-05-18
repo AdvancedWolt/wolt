@@ -6,6 +6,7 @@ set(LOGIC_FILES
     commands/HelpCommand.cpp
     commands/GetCommand.cpp
     commands/PostCommand.cpp
+    commands/DeleteCommand.cpp
     db/TxtFile.cpp
     db/TxtFileParsing.cpp
     db/DbHelper.cpp

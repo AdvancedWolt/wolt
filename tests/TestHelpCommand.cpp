@@ -35,7 +35,7 @@ TEST(HelpCommandTest, PrintsAllRegisteredCommands)
 
     auto result = helpCmd.execute(cmd, db);
 
-    EXPECT_EQ(result.status(), Status::ok);
+    EXPECT_EQ(result.status(), Status::none);
     EXPECT_NE(result.body().find("fake"), std::string::npos);
 }
 

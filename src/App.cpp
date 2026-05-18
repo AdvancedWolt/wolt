@@ -30,7 +30,7 @@ void App::setupCommands()
     m_commandManager->registerCommand("post", std::make_unique<PostCommand>());
     m_commandManager->registerCommand("get",  std::make_unique<GetCommand>());
     m_commandManager->registerCommand("delete", std::make_unique<DeleteCommand>());
-    // TBD: patch
+    m_commandManager->registerCommand("patch", std::make_unique<PatchCommand>());
 
     m_commandManager->registerCommand("help",
         std::make_unique<HelpCommand>(*m_commandManager));

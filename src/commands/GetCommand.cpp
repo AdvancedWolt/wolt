@@ -41,7 +41,7 @@ models::Response GetCommand::execute(const models::ParsedCommand& cmd, IdbManage
         ids += sortedRelevance[i].first;
     }
 
-    return models::Response::ok(ids + "\n");
+    return models::Response::ok(ids);
 }
 
 std::unordered_map<std::string, int> GetCommand::countSimilarities(

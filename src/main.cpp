@@ -1,4 +1,4 @@
-#include "Server.hpp"
+#include "server.hpp"
 #include "db/TxtFile.hpp"
 #include <iostream>
 #include <cstdlib>

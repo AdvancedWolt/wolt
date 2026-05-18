@@ -38,10 +38,10 @@ TEST_F(AppTest, HelpPrintsExpectedCommands)
 
     // all commands alphabetical, help last.
     EXPECT_EQ(output,
-              "200 Ok\n\n"
+              "200 Ok\n"
               "GET, arguments: [userid] [productid]\n"
               "POST, arguments: [userid] [productid1] [productid2] ...\n"
-              "help\n");
+              "help\n\n");
 }
 
 TEST_F(AppTest, PostCommandPersistsProductsToFile)
@@ -50,7 +50,7 @@ TEST_F(AppTest, PostCommandPersistsProductsToFile)
 
     std::string response = app->handleLine("POST 42 1 2");
 
-    EXPECT_EQ(response, "201 Created\n");
+    EXPECT_EQ(response, "201 Created\n\n");
 
     std::ifstream savedFile(m_tempFile);
     ASSERT_TRUE(savedFile.is_open());
@@ -68,7 +68,7 @@ TEST_F(AppTest, HelpAcceptsAnyCase)
 {
     auto app = makeApp();
     const std::string expected =
-        "200 Ok\n\n"
+        "200 Ok\n"
         "GET, arguments: [userid] [productid]\n"
         "POST, arguments: [userid] [productid1] [productid2] ...\n"
         "help\n";

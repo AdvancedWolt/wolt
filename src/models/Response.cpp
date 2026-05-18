@@ -50,7 +50,15 @@ Response Response::noContent()          { return Response(Status::noContent); }
 std::string Response::toWire() const
 {
     const std::string line = statusLine(m_status);
-    return m_body.empty() ? line : line + "\n" + m_body;
+    std::string result = m_body.empty() ? line : line + m_body;
+
+    if (result.empty() || result.back() != '\n') {
+        result += '\n';
+    }
+    // Add the extra newline so the client encounters an empty line
+    result += '\n';
+
+    return result;
 }
 
 } // namespace models

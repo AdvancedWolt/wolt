@@ -67,7 +67,7 @@ TEST(PostCommandTest, CreatesNewUserWithProducts)
     auto result = cmd.execute(makeCmd({"post", "alice", "pizza", "sushi"}), db);
 
     EXPECT_EQ(result.status(), Status::created);
-    EXPECT_EQ(result.toWire(), "201 Created\n");
+    EXPECT_EQ(result.toWire(), "201 Created\n\n");
     EXPECT_TRUE(db.hasUser(User("alice")));
     EXPECT_EQ(db.getProductsForUser(User("alice")).size(), 2u);
 }
@@ -80,7 +80,7 @@ TEST(PostCommandTest, ReturnsBadRequestWhenNoArgs)
     auto result = cmd.execute(makeCmd({"post"}), db);
 
     EXPECT_EQ(result.status(), Status::badRequest);
-    EXPECT_EQ(result.toWire(), "400 Bad Request\n");
+    EXPECT_EQ(result.toWire(), "400 Bad Request\n\n");
 }
 
 TEST(PostCommandTest, ReturnsBadRequestWhenOnlyUserId)
@@ -91,7 +91,7 @@ TEST(PostCommandTest, ReturnsBadRequestWhenOnlyUserId)
     auto result = cmd.execute(makeCmd({"post", "alice"}), db);
 
     EXPECT_EQ(result.status(), Status::badRequest);
-    EXPECT_EQ(result.toWire(), "400 Bad Request\n");
+    EXPECT_EQ(result.toWire(), "400 Bad Request\n\n");
     EXPECT_FALSE(db.hasUser(User("alice")));
 }
 
@@ -104,7 +104,7 @@ TEST(PostCommandTest, ReturnsNotFoundWhenUserAlreadyExists)
     auto result = cmd.execute(makeCmd({"post", "alice", "sushi"}), db);
 
     EXPECT_EQ(result.status(), Status::notFound);
-    EXPECT_EQ(result.toWire(), "404 Not Found\n");
+    EXPECT_EQ(result.toWire(), "404 Not Found\n\n");
     EXPECT_EQ(db.getProductsForUser(User("alice")).size(), 1u);
 }
 
@@ -129,7 +129,7 @@ TEST(PostCommandTest, DifferentUsersAreIndependent)
     auto result = cmd.execute(makeCmd({"post", "bob", "burger"}), db);
 
     EXPECT_EQ(result.status(), Status::created);
-    EXPECT_EQ(result.toWire(), "201 Created\n");
+    EXPECT_EQ(result.toWire(), "201 Created\n\n");
     EXPECT_TRUE(db.hasUser(User("alice")));
     EXPECT_TRUE(db.hasUser(User("bob")));
 }
@@ -150,5 +150,5 @@ TEST(PostCommandTest, ReturnsBadRequestWhenDbAddFails)
     auto result = cmd.execute(makeCmd({"post", "alice", "pizza"}), db);
 
     EXPECT_EQ(result.status(), Status::badRequest);
-    EXPECT_EQ(result.toWire(), "400 Bad Request\n");
+    EXPECT_EQ(result.toWire(), "400 Bad Request\n\n");
 }

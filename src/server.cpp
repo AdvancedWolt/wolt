@@ -1,4 +1,4 @@
-#include "Server.hpp"
+#include "server.hpp"
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -63,7 +63,7 @@ void Server::acceptLoop()
         if (clientFd < 0) break;
 
         std::cout << "Client connected\n";
-        handleClient(clientFd);           // blocks until client disconnects
+        handleClient(clientFd);          
         ::close(clientFd);
         std::cout << "Client disconnected\n";
         // loop back, ready for the next client

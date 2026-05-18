@@ -55,7 +55,7 @@ Response Response::bodyOnly(std::string body)
 
 std::string Response::toWire() const
 {
-        if (m_status == Status::none) {
+    if (m_status == Status::none) {
         std::string out = m_body;
         if (!out.empty() && out.back() != '\n') {
             out += '\n';
@@ -63,19 +63,13 @@ std::string Response::toWire() const
         return out;
     }
 
-    const std::string line = statusLine(m_status);
+    std::string line = statusLine(m_status);
 
     if (m_body.empty()) {
         return line;
     }
-
-    std::string out = line + "\n" + m_body;
-
-    if (out.back() != '\n') {
-        out += '\n';
-    }
-
-    return out;
+    
+    return line + "\n" + m_body + (m_body.back() == '\n' ? "" : "\n");
 }
 
 } // namespace models

@@ -3,6 +3,8 @@
 #include "models/User.hpp"
 #include "models/Product.hpp"
 
+#include <algorithm>
+
 std::string DeleteCommand::getSyntax() const
 {
     return "DELETE, arguments: [userid] [productid1] [productid2] ...\n";
@@ -33,7 +35,7 @@ models::Response DeleteCommand::execute(const models::ParsedCommand& cmd, IdbMan
 
     for (const auto& p : products) {
         if (std::find(existing.begin(), existing.end(), p) == existing.end()) {
-            return models::Response::badRequest(); 
+            return models::Response::notFound(); 
         }
     }
 

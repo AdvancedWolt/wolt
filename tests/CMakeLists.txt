@@ -19,6 +19,7 @@ add_executable(unit_tests
     TestPostCommand.cpp            
     TestApp.cpp
     TestTxtFile.cpp
+    TestDeleteCommand.cpp
 )
 
 # Link to Logic Library and the GTest Main entry point

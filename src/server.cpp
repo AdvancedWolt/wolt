@@ -72,30 +72,47 @@ void Server::acceptLoop()
 
 void Server::handleClient(int clientFd)
 {
-    FILE* stream = ::fdopen(clientFd, "r+");
-    if (!stream) return;
+    char buffer[4096];
+    std::string leftover;
 
-    char*  rawLine = nullptr;
-    size_t cap     = 0;
+    while (true)
+    {
+        int read_bytes = ::recv(clientFd, buffer, sizeof(buffer), 0);
 
-    while (::getline(&rawLine, &cap, stream) != -1) {
-        std::string line(rawLine);
-        // strip \r\n
-        while (!line.empty() && (line.back() == '\n' || line.back() == '\r'))
-            line.pop_back();
+        if (read_bytes == 0) {
+            // client closed connection
+            break;
+        }
 
-        if (line.empty()) continue;
+        if (read_bytes < 0) {
+            perror("recv error");
+            break;
+        }
 
-        std::string response = m_app.handleLine(line);
+        // append new data to leftover buffer
+        leftover.append(buffer, read_bytes);
 
-        // guarantee response ends with exactly one \n (framing contract)
-        if (response.empty() || response.back() != '\n')
-            response += '\n';
+        // process full lines
+        size_t pos;
+        while ((pos = leftover.find('\n')) != std::string::npos)
+        {
+            std::string line = leftover.substr(0, pos);
+            leftover.erase(0, pos + 1);
 
-        ::fputs(response.c_str(), stream);
-        ::fflush(stream);
+            // strip \r if present (Windows compatibility)
+            if (!line.empty() && line.back() == '\r')
+                line.pop_back();
+
+            if (line.empty())
+                continue;
+
+            std::string response = m_app.handleLine(line);
+
+            // ensure exactly one newline at end
+            if (response.empty() || response.back() != '\n')
+                response += '\n';
+
+            ::send(clientFd, response.c_str(), response.size(), 0);
+        }
     }
-
-    ::free(rawLine);
-    ::fclose(stream);   // also closes clientFd
 }

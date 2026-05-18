@@ -8,8 +8,6 @@
 namespace models {
 namespace {
 
-// Single source of truth for the wire phrase that goes with each Status.
-// To add a new Status: add the enum value in Status.hpp and one entry here.
 constexpr std::array<std::pair<Status, std::string_view>, 5> kStatusPhrases = {{
     {Status::ok,         "Ok"},
     {Status::created,    "Created"},
@@ -28,6 +26,9 @@ std::string_view phraseFor(Status status)
 
 std::string statusLine(Status status)
 {
+    if (status == Status::none) {
+        return "";
+    }
     return std::format("{} {}\n", static_cast<int>(status), phraseFor(status));
 }
 
@@ -38,7 +39,7 @@ Response::Response(Status status, std::string body)
 {}
 
 Response::Response(Status status)
-    : m_status(status) , m_body("")
+    : m_status(status), m_body("")
 {}
 
 Response Response::ok(std::string body) { return Response(Status::ok, std::move(body)); }
@@ -47,18 +48,34 @@ Response Response::badRequest()         { return Response(Status::badRequest); }
 Response Response::notFound()           { return Response(Status::notFound); }
 Response Response::noContent()          { return Response(Status::noContent); }
 
+Response Response::bodyOnly(std::string body)
+{
+    return Response(Status::none, std::move(body));
+}
+
 std::string Response::toWire() const
 {
-    const std::string line = statusLine(m_status);
-    std::string result = m_body.empty() ? line : line + m_body;
-
-    if (result.empty() || result.back() != '\n') {
-        result += '\n';
+        if (m_status == Status::none) {
+        std::string out = m_body;
+        if (!out.empty() && out.back() != '\n') {
+            out += '\n';
+        }
+        return out;
     }
-    // Add the extra newline so the client encounters an empty line
-    result += '\n';
 
-    return result;
+    const std::string line = statusLine(m_status);
+
+    if (m_body.empty()) {
+        return line;
+    }
+
+    std::string out = line + "\n" + m_body;
+
+    if (out.back() != '\n') {
+        out += '\n';
+    }
+
+    return out;
 }
 
 } // namespace models

@@ -53,7 +53,7 @@ TEST(GetCommandTest, FullScenarioRecommendation)
         "GET 1 104",
     });
 
-    EXPECT_EQ(result, "200 Ok\n105 106 111 110 112 113 107 108 109 114\n");
+    EXPECT_EQ(result, "200 Ok\n\n105 106 111 110 112 113 107 108 109 114\n");
 
     std::filesystem::remove(dbPath);
 }
@@ -70,7 +70,7 @@ TEST(GetCommandTest, TieBreakerSorting)
     });
 
     // All recommended products have relevance 1; sort by id ascending.
-    EXPECT_EQ(result, "200 Ok\n 101 205 300\n");
+    EXPECT_EQ(result, "200 Ok\n\n101 205 300\n");
 
     std::filesystem::remove(dbPath);
 }
@@ -87,7 +87,7 @@ TEST(GetCommandTest, NoNewProductsToRecommend)
     });
 
     // No products to recommend — empty.
-    EXPECT_EQ(result, "200 Ok\n\n");
+    EXPECT_EQ(result, "200 Ok\n\n\n");
 
     std::filesystem::remove(dbPath);
 }
@@ -107,7 +107,7 @@ TEST(GetCommandTest, RecommendationsWorkAfterRestart)
     auto runApp = makeApp(dbPath);
     std::string result = runApp->handleLine("GET 1 104");
 
-    EXPECT_EQ(result, "200 Ok\n 105\n");
+    EXPECT_EQ(result, "200 Ok\n\n105\n");
 
     std::filesystem::remove(dbPath);
 }
@@ -126,7 +126,7 @@ TEST(GetCommandTest, DuplicateProductEntries)
         "GET 1 104",
     });
 
-    EXPECT_EQ(result, "200 Ok\n 105\n");
+    EXPECT_EQ(result, "200 Ok\n\n105\n");
 
     std::filesystem::remove(dbPath);
 }

@@ -44,7 +44,7 @@ TEST(CommandManagerTest, UnknownCommandReturns400)
     auto result = manager.execute({"nonexistent", {}}, db);
 
     EXPECT_EQ(result.status(), Status::badRequest);
-    EXPECT_EQ(result.toWire(), "400 Bad Request\n\n");
+    EXPECT_EQ(result.toWire(), "400 Bad Request\n");
 }
 
 TEST(CommandManagerTest, EmptyNameReturns400)
@@ -56,7 +56,7 @@ TEST(CommandManagerTest, EmptyNameReturns400)
     auto result = manager.execute({"", {}}, db);
 
     EXPECT_EQ(result.status(), Status::badRequest);
-    EXPECT_EQ(result.toWire(), "400 Bad Request\n\n");
+    EXPECT_EQ(result.toWire(), "400 Bad Request\n");
 }
 
 TEST(CommandManagerTest, CommandLookupIsExactMatch)
@@ -89,7 +89,7 @@ TEST(CommandManagerTest, RegisterNullDoesNotCrash)
     StubDatabase db;
     auto result = manager.execute({"null", {}}, db);
 
-    EXPECT_EQ(result.toWire(), "400 Bad Request\n\n");
+    EXPECT_EQ(result.toWire(), "400 Bad Request\n");
 }
 
 TEST(CommandManagerTest, GetNamedSyntaxesReturnsAllRegistered)

@@ -19,3 +19,4 @@ ENTRYPOINT ["./build/src/wolt_app"]
 # To build: docker build -t wolt-app . 
 # To run tests: docker run -it --entrypoint ./build/tests/unit_tests wolt-app
 # To run server on port 8080: docker run -it -p 8080:8080 wolt-app 8080
+# To run client: (not using docker) python src/client.py [port]

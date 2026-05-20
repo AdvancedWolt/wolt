@@ -32,4 +32,5 @@ private:
     static constexpr std::size_t BUFFER_SIZE = 4096;
     static constexpr char CR = '\r'; // carrige return
     static constexpr char LF = '\n'; // line feed
+    static constexpr int SERVER_DOWN = -1;
 };

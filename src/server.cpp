@@ -19,26 +19,26 @@ bool Server::initialize() {
         return false;
     }
 
-    m_servSock = ::socket(AF_INET, SOCK_STREAM, 0);
+    m_servSock = socket(AF_INET, SOCK_STREAM, 0);
     if (m_servSock < 0) {
         std::cerr << "socket() failed: " << std::strerror(errno) << std::endl;
         return false;
     }
 
     int opt = 1;
-    ::setsockopt(m_servSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(m_servSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     sockaddr_in addr{};
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port        = htons(static_cast<uint16_t>(m_port));
 
-    if (::bind(m_servSock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
+    if (bind(m_servSock, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) < 0) {
         std::cerr << "bind() failed: " << std::strerror(errno) << std::endl;
         return false;
     }
 
-    if (::listen(m_servSock, BACKLOG) < 0) {
+    if (listen(m_servSock, BACKLOG) < 0) {
         std::cerr << "listen() failed: " << std::strerror(errno) << std::endl;
         return false;
     }
@@ -55,14 +55,14 @@ void Server::run() {
 void Server::stop() {
     m_running = false;
     if (m_servSock >= 0) {
-        ::close(m_servSock);
-        m_servSock = -1;
+        close(m_servSock);
+        m_servSock = SERVER_DOWN;
     }
 }
 
 void Server::acceptLoop() {
     while (m_running) {
-        int clientSock = ::accept(m_servSock, nullptr, nullptr);
+        int clientSock = accept(m_servSock, nullptr, nullptr);
         if (clientSock < 0) {
             std::cerr << "accept() failed: " << std::strerror(errno) << std::endl;
             continue; // Keep server running for next connection
@@ -70,7 +70,7 @@ void Server::acceptLoop() {
 
         std::cout << "Client connected" << std::endl;
         handleClient(clientSock);
-        ::close(clientSock);
+        close(clientSock);
         std::cout << "Client disconnected" << std::endl;
     }
 }
@@ -80,7 +80,7 @@ void Server::handleClient(int clientSock) {
     std::string leftover;
 
     while (m_running) {
-        ssize_t read_bytes = ::recv(clientSock, buffer, sizeof(buffer), 0);
+        ssize_t read_bytes = recv(clientSock, buffer, sizeof(buffer), 0);
 
         if (read_bytes == 0) {
             break; // Clean disconnect
@@ -105,7 +105,7 @@ void Server::handleClient(int clientSock) {
 
             std::string response = m_app.handleLine(line);
 
-            ::send(clientSock, response.c_str(), response.size(), 0);
+            send(clientSock, response.c_str(), response.size(), 0);
         }
     }
 }

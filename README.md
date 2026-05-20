@@ -6,6 +6,96 @@ A product recommendation engine implemented as a Client-Server architecture over
 The exercise solution is saved in the branch called **'ex2'**.
 
 ---
+## Design & Extensibility Questions (SOLID Reflection)
+
+### 1. Command names changed (add → POST, recommend → GET)
+**Did it require touching closed code?**
+Yes, in ex1 command names were hardcoded strings scattered across `AppInternals`
+dispatch logic. There was no registry abstraction.
+
+**Fix applied (ex2):** `CommandManager` holds a
+`std::unordered_map<std::string, ICommand*>` registry. The dispatcher never
+mentions a command name, it just looks up the key and forwards. Renaming a
+command is a single string change at the registration site (e.g. `app.cpp`).
+`CommandParser` lowercases the verb before lookup, so case sensitivity is
+handled in one place too. The dispatcher is now genuinely closed to this change.
+
+---
+
+### 2. New commands added (PATCH, DELETE)
+**Did it require touching closed code?**
+No. Each new command is a self-contained class implementing `ICommand`:
+```cpp
+virtual models::Response execute(const models::ParsedCommand& cmd,
+                                  IdbManager& db) = 0;
+```
+Registration is one line per command at startup. `CommandManager::dispatch`
+and all existing commands are untouched. `HelpCommand` queries the
+`CommandManager` registry dynamically, new commands appear in `help` output
+automatically with zero changes to `HelpCommand` itself.
+This is the Open/Closed Principle working as intended.
+
+---
+
+### 3. Command output format changed
+**Did it require touching closed code?**
+Partially. In ex1 commands returned raw strings and each command owned its
+own formatting. There was no shared wire-format abstraction.
+
+**Fix applied (ex2):** The new `models::Response` class with a `toWire()`
+method centralizes all wire serialization. Commands return a semantic
+`Response` object, not a raw string. Changing how a status serializes to wire bytes now means
+touching only `Response::toWire()`, not every command that produces
+that status. The `models::Status` enum + lookup table further ensure that
+adding or renaming a status phrase is a single-line change.
+
+---
+
+### 4. I/O moved from console to TCP sockets
+**Did it require touching closed code?**
+No. This was the cleanest boundary in the design. Commands operate on
+`ParsedCommand` structs and return `Response` objects, they have
+zero knowledge of transport. The server loop in `main.cpp` owns the
+socket, reads a line, calls `CommandParser` -> `CommandManager`, then
+writes `response.toWire()` to the file descriptor. Switching from
+`std::cin`/`std::cout` to a socket touched only `main.cpp`.
+
+---
+
+Architecture overview:
+```
+[socket fd]
+      │
+      ▼
+┌─────────────────────────────────────────────────────┐
+│  CommandParser                                       │
+│  raw bytes → ParsedCommand                          │
+└─────────────────────────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────────────────────────┐
+│  CommandManager                                      │
+│  registry lookup → dispatch                         │
+└─────────────────────────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────────────────────────┐
+│  ICommand::execute()                                 │
+│  command logic only                                 │
+└─────────────────────────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────────────────────────┐
+│  IdbManager                                          │
+│  abstraction layer for the database                 │
+└─────────────────────────────────────────────────────┘
+```
+
+Each layer is replaceable independently. In ex1, `App` + `AppInternals`
+collapsed several of these layers together, which is why the socket
+migration required no surgery on command or DB code, those layers
+were already properly separated by ex2.
+
 
 # Pictures of the Program
 

@@ -53,29 +53,25 @@ Response Response::bodyOnly(std::string body)
     return Response(Status::none, std::move(body));
 }
 
-Response Response::okWithBody(std::string body) {
-    Response r(Status::ok, std::move(body));
-    r.m_forceBody = true;
-    return r;
-}
-
 std::string Response::toWire() const
 {
+    // Status::none means raw body only (no status line)
     if (m_status == Status::none) {
         std::string out = m_body;
-        if (!out.empty() && out.back() != '\n') {
+        if (!out.empty() && out.back() != '\n')
             out += '\n';
-        }
         return out;
     }
 
     std::string line = statusLine(m_status);
 
-    if (m_body.empty() && !m_forceBody) {
+    // No body: just the status line
+    if (m_body.empty())
         return line;
-    }
 
-    return line + "\n" + m_body + (m_body.empty() || m_body.back() != '\n' ? "\n" : "");
+    // Body present: status line + blank line + body
+    std::string out = line + '\n' + m_body;
+    return out;
 }
 
 } // namespace models

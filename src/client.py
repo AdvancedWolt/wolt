@@ -17,7 +17,7 @@ def main():
             line = input("")
 
             s.sendall((line + '\n').encode())
-            print(s.recv(4096).decode())
+            print(s.recv(4096).decode(), end="")
 
     except (ConnectionResetError, BrokenPipeError):
         print("\n[Error: Connection lost]", file=sys.stderr)

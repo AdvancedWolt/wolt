@@ -36,7 +36,7 @@ models::Response GetCommand::execute(const models::ParsedCommand& cmd, IdbManage
     const std::size_t count = std::min(MAX_RECOMMENDATIONS, sortedRelevance.size());   
 
     if (count == 0) {
-        return models::Response::okWithBody("");
+        return models::Response::ok("\n");
     }
 
     for (std::size_t i = 0; i < count; ++i) {
@@ -46,7 +46,7 @@ models::Response GetCommand::execute(const models::ParsedCommand& cmd, IdbManage
         ids += sortedRelevance[i].first;
     }
 
-    return models::Response::okWithBody(ids);
+    return models::Response::ok(ids + "\n");
 }
 
 std::unordered_map<std::string, int> GetCommand::countSimilarities(

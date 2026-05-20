@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <cstddef>
 
 #include "App.hpp"
 #include "db/IdbManager.hpp"
@@ -8,24 +9,27 @@
 class Server
 {
 public:
-    static constexpr int BACKLOG = 1;
-
     Server(std::shared_ptr<IdbManager> database, int port);
     ~Server();
 
     bool initialize();
-
     void run();
     void stop();
 
-private:
+private: 
+    // Private methods
     void acceptLoop();
     void handleClient(int clientFd);
 
-private:
-    App m_app;
+private: 
+    // Private members
+    App  m_app;
+    int  m_port;
+    int  m_servSock = -1;
+    bool m_running  = false;
 
-    int  m_port      = 0;
-    int  m_serverFd  = -1;
-    bool m_running   = false;
+    static constexpr int BACKLOG = 1; 
+    static constexpr std::size_t BUFFER_SIZE = 4096;
+    static constexpr char CR = '\r'; // carrige return
+    static constexpr char LF = '\n'; // line feed
 };

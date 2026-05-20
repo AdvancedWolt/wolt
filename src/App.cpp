@@ -22,7 +22,7 @@ bool App::initialize()
     setupCommands();
 
     m_initialized = true;
-    return true;
+    return m_initialized;
 }
 
 void App::setupCommands()

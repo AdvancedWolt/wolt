@@ -10,6 +10,7 @@ The exercise solution is saved in the branch called **'ex2'**.
 # Pictures of the Program
 
 ## Build Process
+<img width="811" height="397" alt="image" src="https://github.com/user-attachments/assets/f0805e5f-af15-4bca-993d-f86aa74dbe74" />
 
 ## Test Results
 <img width="1167" height="831" alt="image" src="https://github.com/user-attachments/assets/386c670e-af5d-414b-a64a-f37205811a89" />
@@ -18,8 +19,8 @@ The exercise solution is saved in the branch called **'ex2'**.
 <img width="836" height="831" alt="image" src="https://github.com/user-attachments/assets/8fab0114-ca63-4521-bc58-a48303a17a91" />
 <img width="706" height="684" alt="image" src="https://github.com/user-attachments/assets/6b1941ce-0913-4de3-b97c-ceb26edefade" />
 
-
 ## Demo for the app 
+<img width="1294" height="327" alt="image" src="https://github.com/user-attachments/assets/982db06a-8acd-4a37-b889-25aca9a7e30a" />
 
 ---
 

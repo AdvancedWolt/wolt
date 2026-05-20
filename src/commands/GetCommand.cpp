@@ -33,7 +33,12 @@ models::Response GetCommand::execute(const models::ParsedCommand& cmd, IdbManage
     auto sortedRelevance = sortRelevance(productRelevance);
 
     std::string ids;
-    const std::size_t count = std::min(MAX_RECOMMENDATIONS, sortedRelevance.size());
+    const std::size_t count = std::min(MAX_RECOMMENDATIONS, sortedRelevance.size());   
+
+    if (count == 0) {
+        return models::Response::ok("\n");
+    }
+
     for (std::size_t i = 0; i < count; ++i) {
         if (i > 0) {
             ids += ' ';

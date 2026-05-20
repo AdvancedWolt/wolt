@@ -4,6 +4,7 @@
 #include "commands/Commands.hpp"
 #include "db/IdbManager.hpp"
 #include "models/Protocol.hpp"
+#include "models/Response.hpp"
 
 #include <utility>
 
@@ -22,14 +23,15 @@ bool App::initialize()
     setupCommands();
 
     m_initialized = true;
-    return true;
+    return m_initialized;
 }
 
 void App::setupCommands()
 {
     m_commandManager->registerCommand("post", std::make_unique<PostCommand>());
     m_commandManager->registerCommand("get",  std::make_unique<GetCommand>());
-    // TBD: patch, delete
+    m_commandManager->registerCommand("delete", std::make_unique<DeleteCommand>());
+    m_commandManager->registerCommand("patch", std::make_unique<PatchCommand>());
 
     m_commandManager->registerCommand("help",
         std::make_unique<HelpCommand>(*m_commandManager));
@@ -41,7 +43,7 @@ std::string App::handleLine(const std::string& line)
 
     models::ParsedCommand pc = CommandParser::parse(line);
     if (pc.name.empty()) {
-        return "";  // empty line, ignore silently
+        return models::Response::badRequest().toWire(); 
     }
 
     return m_commandManager->execute(pc, *m_database).toWire();

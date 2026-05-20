@@ -13,8 +13,10 @@ RUN mkdir build && cd build && \
     make -j$(nproc)
 
 # Default command: Runs the target name we defined in src/CMakeLists.txt
-CMD ["./build/src/wolt_app"]
+# Using ENTRYPOINT allows passing arguments (like port number) when running the container
+ENTRYPOINT ["./build/src/wolt_app"]
 
 # To build: docker build -t wolt-app . 
-# To run tests: docker run -it wolt-app ./build/tests/unit_tests
-# To run: docker run -it wolt-app
+# To run tests: docker run -it --entrypoint ./build/tests/unit_tests wolt-app
+# To run server on port 8080: docker run -it -p 8080:8080 wolt-app 8080
+# To run client (not using docker): python3 src/client.py [IP] [port]

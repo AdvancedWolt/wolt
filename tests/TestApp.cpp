@@ -38,8 +38,9 @@ TEST_F(AppTest, HelpPrintsExpectedCommands)
 
     // all commands alphabetical, help last.
     EXPECT_EQ(output,
-              "200 Ok\n\n"
+              "DELETE, arguments: [userid] [productid1] [productid2] ...\n"
               "GET, arguments: [userid] [productid]\n"
+              "PATCH, arguments: [userid] [productid1] [productid2] ...\n"
               "POST, arguments: [userid] [productid1] [productid2] ...\n"
               "help\n");
 }
@@ -68,8 +69,9 @@ TEST_F(AppTest, HelpAcceptsAnyCase)
 {
     auto app = makeApp();
     const std::string expected =
-        "200 Ok\n\n"
+        "DELETE, arguments: [userid] [productid1] [productid2] ...\n"
         "GET, arguments: [userid] [productid]\n"
+        "PATCH, arguments: [userid] [productid1] [productid2] ...\n"
         "POST, arguments: [userid] [productid1] [productid2] ...\n"
         "help\n";
 

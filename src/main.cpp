@@ -1,23 +1,21 @@
-#include "App.hpp"
+#include "server.hpp"
 #include "db/TxtFile.hpp"
-
 #include <iostream>
+#include <cstdlib>
 #include <memory>
-#include <string>
 
-int main()
+int main(int argc, char* argv[])
 {
-    auto database = std::make_shared<TxtFile>("data/views.txt");
-    App app(database);
-
-    if (!app.initialize()) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <port>\n";
         return 1;
     }
 
-    std::string line;
-    while (std::getline(std::cin, line)) {
-        std::cout << app.handleLine(line);
-    }
+    int port = std::atoi(argv[1]);
+    auto database = std::make_shared<TxtFile>("data/views.txt");
+    Server server(std::move(database), port);
 
+    if (!server.initialize()) return 1;
+    server.run();
     return 0;
 }

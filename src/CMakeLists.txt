@@ -6,6 +6,8 @@ set(LOGIC_FILES
     commands/HelpCommand.cpp
     commands/GetCommand.cpp
     commands/PostCommand.cpp
+    commands/DeleteCommand.cpp
+    commands/PatchCommand.cpp
     db/TxtFile.cpp
     db/TxtFileParsing.cpp
     db/DbHelper.cpp
@@ -20,6 +22,6 @@ add_library(WoltLogic ${LOGIC_FILES})
 # Set src as PUBLIC so we can include dirs in a simpler way(without ../src)
 target_include_directories(WoltLogic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_executable(wolt_app main.cpp)
+add_executable(wolt_app main.cpp server.cpp)
 
 target_link_libraries(wolt_app PRIVATE WoltLogic)

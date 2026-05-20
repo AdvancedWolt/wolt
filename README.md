@@ -10,14 +10,16 @@ The exercise solution is saved in the branch called **'ex2'**.
 # Pictures of the Program
 
 ## Build Process
-<img width="870" height="627" alt="image" src="https://github.com/user-attachments/assets/fae9ea4e-45c0-4b4e-99a8-5f5fb2eb2a68" />
 
 ## Test Results
-<img width="1854" height="1168" alt="image" src="https://github.com/user-attachments/assets/2e050376-c3f3-4114-b1e4-b0cb34161968" />
-<img width="1854" height="1168" alt="image" src="https://github.com/user-attachments/assets/e96a27ad-a004-4450-93f0-09afee602dca" />
+<img width="1167" height="831" alt="image" src="https://github.com/user-attachments/assets/386c670e-af5d-414b-a64a-f37205811a89" />
+<img width="962" height="836" alt="image" src="https://github.com/user-attachments/assets/a0b1f581-1f56-466c-b298-a3e53beb3485" />
+<img width="973" height="837" alt="image" src="https://github.com/user-attachments/assets/b361c374-e005-41bb-80cf-98f50b9b1257" />
+<img width="836" height="831" alt="image" src="https://github.com/user-attachments/assets/8fab0114-ca63-4521-bc58-a48303a17a91" />
+<img width="706" height="684" alt="image" src="https://github.com/user-attachments/assets/6b1941ce-0913-4de3-b97c-ceb26edefade" />
 
-## Demo for the app (Example from instructions)
-<img width="870" height="627" alt="image" src="https://github.com/user-attachments/assets/5d6cf446-c96a-43a1-a5d0-be23d8b538b8" />
+
+## Demo for the app 
 
 ---
 

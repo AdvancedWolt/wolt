@@ -15,6 +15,7 @@ public:
     static Response noContent();
 
     static Response bodyOnly(std::string body);
+    static Response okWithBody(std::string body);
 
     Status status() const { return m_status; }
     const std::string& body() const { return m_body; }
@@ -27,6 +28,7 @@ private:
 
     Status m_status;
     std::string m_body;
+    bool m_forceBody = false;
 };
 
 } // namespace models

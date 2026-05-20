@@ -103,16 +103,13 @@ void Server::handleClient(int clientSock) {
                 line.pop_back();
             }
 
-            if (line.empty()) {
-                continue;
-            }
-
             std::string response = m_app.handleLine(line);
 
             // Ensure response ends with newline
             if (response.empty() || response.back() != LF) {
                 response += LF;
             }
+            response += LF; // add the protocol terminator
 
             ::send(clientSock, response.c_str(), response.size(), 0);
         }

@@ -53,6 +53,12 @@ Response Response::bodyOnly(std::string body)
     return Response(Status::none, std::move(body));
 }
 
+Response Response::okWithBody(std::string body) {
+    Response r(Status::ok, std::move(body));
+    r.m_forceBody = true;
+    return r;
+}
+
 std::string Response::toWire() const
 {
     if (m_status == Status::none) {
@@ -65,11 +71,11 @@ std::string Response::toWire() const
 
     std::string line = statusLine(m_status);
 
-    if (m_body.empty()) {
+    if (m_body.empty() && !m_forceBody) {
         return line;
     }
-    
-    return line + "\n" + m_body + (m_body.back() == '\n' ? "" : "\n");
+
+    return line + "\n" + m_body + (m_body.empty() || m_body.back() != '\n' ? "\n" : "");
 }
 
 } // namespace models

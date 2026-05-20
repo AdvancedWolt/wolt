@@ -22,7 +22,7 @@ def main():
 
             while True:
                 # Get user command
-                line = input("> ")
+                line = input("")
 
                 if line.lower() in ("exit", "quit"):
                     break

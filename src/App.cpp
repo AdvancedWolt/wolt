@@ -4,6 +4,7 @@
 #include "commands/Commands.hpp"
 #include "db/IdbManager.hpp"
 #include "models/Protocol.hpp"
+#include "models/Response.hpp"
 
 #include <utility>
 
@@ -42,7 +43,7 @@ std::string App::handleLine(const std::string& line)
 
     models::ParsedCommand pc = CommandParser::parse(line);
     if (pc.name.empty()) {
-        return "";  // empty line, ignore silently
+        return models::Response::badRequest().toWire(); 
     }
 
     return m_commandManager->execute(pc, *m_database).toWire();

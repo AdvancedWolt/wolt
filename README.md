@@ -1,3 +1,4 @@
+*** Ex2 README.md answer to the questions are here, we had forgotten to merge, and didn't want to get late submissions. Sorry for the inconvenience, thank you. ***
 # Wolt Recommendation System
 
 A product recommendation engine implemented as a Client-Server architecture over TCP. The system allows users to track viewed products and receive suggestions based on similar user behavior.

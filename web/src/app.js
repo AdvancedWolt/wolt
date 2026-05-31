@@ -1,17 +1,15 @@
-import express from "express";
+const express = require('express');
+const app = express()
 
-import { errorHandler } from "./middleware/errorHandler.js";
+app.use(express.json())
 
-export function createApp() {
-    const app = express();
-    app.use(express.json());
+const restaurantRoutes = require('./routes/restaurants');
+const productRoutes = require('./routes/products');
+const searchRoutes = require('./routes/search');
+const usersRoutes = require('./routes/users');
 
-    app.use((req, res) => {
-        res.status(404).json({ error: "Route not found" });
-    });
 
-    app.use(errorHandler);
-    return app;
-}
-
-export const app = createApp();
+app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/restaurants/:id/products', productRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/users', usersRoutes);

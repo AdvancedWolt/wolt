@@ -40,3 +40,4 @@ data/*.txt
 *.log
 
 .clangd
+node_modules/

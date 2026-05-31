@@ -1,0 +1,21 @@
+services:
+  cpp-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["8080"]
+    ports:
+      - "8080:8080"
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    environment:
+      PORT: 3000
+      CPP_SERVICE_HOST: cpp-service
+      CPP_SERVICE_PORT: 8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - cpp-service

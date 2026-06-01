@@ -1,12 +1,12 @@
-import net from 'net';
-import tcpConfig from '../config/tcpConfig.js';
+const net = require('net');
+const tcpConfig = require('../config/tcpConfig');
 
 const config = new tcpConfig();
 
 const HOST = config.getHost();
 const PORT = config.getPort();
 
-export function send(command) {
+function send(command) {
     return new Promise((resolve, reject) => {
 
         const client = new net.Socket();
@@ -29,7 +29,7 @@ export function send(command) {
 }
 
 // exported API
-export const tcpClient = {
+const tcpClient = {
 
     // when creating user, no watched products yet
     createUser(userId) {
@@ -60,3 +60,5 @@ export const tcpClient = {
         return send(`RECOMMEND ${userId} ${productId}`);
     }
 };
+
+module.exports = { send, tcpClient };

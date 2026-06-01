@@ -1,4 +1,4 @@
-export default class tcpConfig {
+class tcpConfig {
     constructor() {
         this.host = process.env.CPP_SERVICE_HOST || 'cpp-service';
         this.port = process.env.CPP_SERVICE_PORT || 8080;
@@ -12,3 +12,5 @@ export default class tcpConfig {
         return this.port;
     }
 }
+
+module.exports = tcpConfig;

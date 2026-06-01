@@ -33,7 +33,7 @@ export const tcpClient = {
 
     // when creating user, no watched products yet
     createUser(userId) {
-        return send('POST ${userId}');
+        return send(`POST ${userId}`);
     },
 
     addView(userId, productId) {

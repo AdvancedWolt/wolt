@@ -1,4 +1,7 @@
+version: "3.9"
+
 services:
+
   cpp-service:
     build:
       context: .
@@ -19,3 +22,9 @@ services:
       - "3000:3000"
     depends_on:
       - cpp-service
+
+
+# usage:
+# build: docker compose build
+# run: docker compose up
+# build and run in one command: docker compose up --build

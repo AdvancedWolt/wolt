@@ -12,6 +12,8 @@ RUN mkdir build && cd build && \
     cmake .. && \
     make -j$(nproc)
 
+EXPOSE 8080
+
 # Default command: Runs the target name we defined in src/CMakeLists.txt
 # Using ENTRYPOINT allows passing arguments (like port number) when running the container
 ENTRYPOINT ["./build/src/wolt_app"]

@@ -37,7 +37,7 @@ export const cppClient = {
         return send(`PATCH ${userId} ${productId}`);
     },
 
-    // multiple products. usage exmpaple: await cppClient.addViews(5, [12, 13, 14, 20]);
+    // multiple products. usage exmpaple: (await cppClient.addViews(5, [12, 13, 14, 20]);)
     addViews(userId, productIds) {
         const list = productIds.join(' ');
         return send(`PATCH ${userId} ${list}`);
@@ -47,7 +47,7 @@ export const cppClient = {
         return send(`DELETE ${userId} ${productId}`)
     },
 
-    // multiple products. usage exmpaple: await cppClient.removeViews(5, [12, 13, 14, 20]);
+    // multiple products. usage exmpaple: (await cppClient.removeViews(5, [12, 13, 14, 20]);)
     removeViews(userId, productIds) {
         const list = productIds.join(' ');
         return send(`DELETE ${userId} ${list}`)

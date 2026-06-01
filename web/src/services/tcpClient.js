@@ -1,7 +1,10 @@
 import net from 'net';
+import tcpConfig from '../config/tcpConfig.js';
 
-const HOST = process.env.CPP_SERVICE_HOST || 'cpp-service';
-const PORT = process.env.CPP_SERVICE_PORT || 8080;
+const config = new tcpConfig();
+
+const HOST = config.getHost();
+const PORT = config.getPort();
 
 export function send(command) {
     return new Promise((resolve, reject) => {
@@ -26,7 +29,7 @@ export function send(command) {
 }
 
 // exported API
-export const cppClient = {
+export const tcpClient = {
 
     // when creating user, no watched products yet
     createUser(userId) {

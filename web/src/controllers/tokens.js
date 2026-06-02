@@ -1,7 +1,7 @@
 const User = require('../models/users');
 const Token = require('../models/tokens');
 
-exports.createToken = (req, res) => {
+const createToken = (req, res) => {
     const { username, password } = req.body;
     if (!username) {
         return res.status(400).json({ error: 'Username is required' });
@@ -19,4 +19,8 @@ exports.createToken = (req, res) => {
         token: Token.createToken(user.id),
         userId: user.id
     });
+};
+
+module.exports = {
+    createToken
 };

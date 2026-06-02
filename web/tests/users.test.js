@@ -141,6 +141,7 @@ test('direct user view routes are not exposed', async () => {
 });
 
 test('model view updates do not expose password fields', async () => {
+    tcpClient.createUser = async () => '201 Created';
     tcpClient.addView = async () => '204 No Content';
     tcpClient.removeView = async () => '204 No Content';
 
@@ -157,4 +158,30 @@ test('model view updates do not expose password fields', async () => {
     assert.strictEqual(afterAdd.passwordSalt, undefined);
     assert.strictEqual(afterRemove.passwordHash, undefined);
     assert.strictEqual(afterRemove.passwordSalt, undefined);
+});
+
+test('first model view creates the recommendation user, later views patch it', async () => {
+    const calls = [];
+    tcpClient.createUser = async (userId, productId) => {
+        calls.push({ command: 'POST', userId, productId });
+        return '201 Created';
+    };
+    tcpClient.addView = async (userId, productId) => {
+        calls.push({ command: 'PATCH', userId, productId });
+        return '204 No Content';
+    };
+
+    const created = User.createUser({
+        username: 'gina',
+        password: 'secret',
+        name: 'Gina'
+    });
+
+    await User.addView(created.id, 'product-1');
+    await User.addView(created.id, 'product-2');
+
+    assert.deepStrictEqual(calls, [
+        { command: 'POST', userId: created.id, productId: 'product-1' },
+        { command: 'PATCH', userId: created.id, productId: 'product-2' }
+    ]);
 });

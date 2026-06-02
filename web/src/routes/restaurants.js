@@ -12,5 +12,4 @@ router.route('/:id')
     .patch(restaurant.updateRestaurant)
     .delete(restaurant.deleteRestaurant)
 
-
 module.exports = router

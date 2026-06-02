@@ -1,29 +1,87 @@
-const Products = require('../models/Products')
-
-exports.createProduct = (req, res) => {
-    res.json(Product.createProduct)
-}
-
+const Product = require('../models/products');
+const Restaurant = require('../models/restaurants'); // Used to verify the restaurant exists
 
 exports.getAllProducts = (req, res) => {
-    res.json(Product.getAllProducts)
-}
+    const restaurantId = req.params.id;
 
-
-exports.getProductById = (req, res) => {
-    const product = Product.getProductById(req.params.id)
-    if(!product) {
-        return res.status(404).json( { error: 'Product not found'})
+    // Check if the restaurant exists
+    if (!Restaurant.getRestaurantById(restaurantId)) {
+        return res.status(404).json({ error: 'Restaurant not found' });
     }
 
-    res.json(product)
-}
+    // Get data and return
+    const products = Product.getAllProducts(restaurantId);
+
+    res.status(200).json(products);
+};
+
+exports.createProduct = (req, res) => {
+    const restaurantId = req.params.id;
+    const { name } = req.body;
+
+    if (!Restaurant.getRestaurantById(restaurantId)) {
+        return res.status(404).json({ error: 'Restaurant not found' });
+    }
+
+    if (!name) { 
+        return res.status(400).json({ error: 'Name is required' });
+    }
+
+    const newProduct = Product.createProduct(restaurantId, name);
+
+    // 201 Created. Location header tells the client where to find the new resource.
+    res.status(201).location(`/api/restaurants/${restaurantId}/products/${newProduct.id}`).end();
+};
+
+exports.getProductById = (req, res) => {
+    const { id: restaurantId, pId: productId } = req.params;
+
+    if (!Restaurant.getRestaurantById(restaurantId)) {
+        return res.status(404).json({ error: 'Restaurant not found' });
+    }
+
+    const product = Product.getProductById(restaurantId, productId);
+    
+    if (!product) {
+        return res.status(404).json({ error: 'Product not found' });
+    }
+
+    res.status(200).json(product);
+};
 
 exports.updateProduct = (req, res) => {
-    
-    res.json(Product.updateProduct)
-}
+    const { id: restaurantId, pId: productId } = req.params;
+    const { name } = req.body;
+
+    if (!Restaurant.getRestaurantById(restaurantId)) {
+        return res.status(404).json({ error: 'Restaurant not found' });
+    }
+
+    if (!name) {
+        return res.status(400).json({ error: 'Name is required' });
+    }
+
+    const updatedProduct = Product.updateProduct(restaurantId, productId, name);
+
+    if (!updatedProduct) {
+        return res.status(404).json({ error: 'Product not found' });
+    }
+
+    res.status(204).end(); 
+};
 
 exports.deleteProduct = (req, res) => {
-    res.json(Product.deleteProduct)
-}
+    const { id: restaurantId, pId: productId } = req.params;
+
+    if (!Restaurant.getRestaurantById(restaurantId)) {
+        return res.status(404).json({ error: 'Restaurant not found' });
+    }
+
+    const isDeleted = Product.deleteProduct(restaurantId, productId);
+
+    if (!isDeleted) {
+        return res.status(404).json({ error: 'Product not found' });
+    }
+
+    res.status(204).end();
+};

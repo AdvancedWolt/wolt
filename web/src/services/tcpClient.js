@@ -31,9 +31,8 @@ function send(command) {
 // exported API
 const tcpClient = {
 
-    // when creating user, no watched products yet
-    createUser(userId) {
-        return send(`POST ${userId}`);
+    createUser(userId, productId) {
+        return send(`POST ${userId} ${productId}`);
     },
 
     addView(userId, productId) {

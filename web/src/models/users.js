@@ -85,7 +85,11 @@ const addView = async (id, productId) => {
     const user = users[id]
     if (!user) return null
 
-    await tcpClient.addView(id, productId);
+    if (user.views.length === 0) {
+        await tcpClient.createUser(id, productId);
+    } else {
+        await tcpClient.addView(id, productId);
+    }
 
     if (!user.views.includes(productId)) {
         user.views.push(productId);

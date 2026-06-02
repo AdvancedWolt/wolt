@@ -3,6 +3,8 @@ const assert = require('node:assert');
 const express = require('express');
 const usersRoutes = require('../src/routes/users');
 const tokensRoutes = require('../src/routes/tokens');
+const User = require('../src/models/users');
+const { tcpClient } = require('../src/services/tcpClient');
 
 let server;
 let base;
@@ -124,4 +126,35 @@ test('POST /api/tokens with invalid credentials -> 401', async () => {
     });
 
     assert.strictEqual(res.status, 401);
+});
+
+test('direct user view routes are not exposed', async () => {
+    const created = await request('POST', '/api/users', {
+        username: 'erin',
+        password: 'secret',
+        name: 'Erin'
+    });
+
+    const res = await request('POST', `/api/users/${created.json.id}/views`, { productId: 'p1' });
+
+    assert.strictEqual(res.status, 404);
+});
+
+test('model view updates do not expose password fields', async () => {
+    tcpClient.addView = async () => '204 No Content';
+    tcpClient.removeView = async () => '204 No Content';
+
+    const created = User.createUser({
+        username: 'frank',
+        password: 'secret',
+        name: 'Frank'
+    });
+
+    const afterAdd = await User.addView(created.id, 'product-1');
+    const afterRemove = await User.removeView(created.id, 'product-1');
+
+    assert.strictEqual(afterAdd.passwordHash, undefined);
+    assert.strictEqual(afterAdd.passwordSalt, undefined);
+    assert.strictEqual(afterRemove.passwordHash, undefined);
+    assert.strictEqual(afterRemove.passwordSalt, undefined);
 });

@@ -11,9 +11,9 @@ const publicUser = (user) => {
     return safeUser;
 };
 
-// why : This is a security measure to prevent password leaks even if the database is compromised.
-// how :Store only a salted PBKDF2 hash so the raw password is never saved or returned.
-// The random salt makes identical passwords produce different hashes per user.
+// Why: storing raw passwords would leak every user's password if storage is exposed.
+// How: save a PBKDF2 hash plus a random per-user salt; the salt makes identical
+// passwords produce different hashes, and the original password is never returned.
 const hashPassword = (password, salt) => {
     return crypto
         .pbkdf2Sync(password, salt, 100000, 64, 'sha512')
@@ -37,10 +37,6 @@ const createUser = ({ username, password, name, address }) => {
         views: []
     };
 
-    // Save the new user using the new id.
-    // Note: the C++ recommendation engine has no concept of a product-less
-    // user (POST requires at least one product), so a fresh profile lives
-    // only in this layer until the user views their first product.
     users[id] = newUser;
     usersByUsername[username] = id;
 
@@ -54,7 +50,7 @@ const updateUser = (id, name) => {
 
     // Update properties
     user.name = name;
-    return user
+    return publicUser(user)
 }
 
 
@@ -94,7 +90,7 @@ const addView = async (id, productId) => {
     if (!user.views.includes(productId)) {
         user.views.push(productId);
     }
-    return user
+    return publicUser(user)
 };
 
 
@@ -105,7 +101,7 @@ const removeView = async (id, productId) => {
     await tcpClient.removeView(id, productId);
 
     user.views = user.views.filter((view) => view !== productId);
-    return user
+    return publicUser(user)
 };
 
 

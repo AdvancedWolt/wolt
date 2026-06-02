@@ -9,12 +9,6 @@ router.route('/')
 router.route('/:id')
     .get(user.getUserById)
 
-router.route('/:id/views')
-    .post(user.addView)
-
-router.route('/:id/views/:productId')
-    .delete(user.removeView)
-
 router.route('/:id/recommendations')
     .get(user.getRecommendations)
 

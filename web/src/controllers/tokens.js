@@ -1,5 +1,5 @@
-const crypto = require('crypto');
 const User = require('../models/users');
+const Token = require('../models/tokens');
 
 exports.createToken = (req, res) => {
     const { username, password } = req.body;
@@ -16,7 +16,7 @@ exports.createToken = (req, res) => {
     }
 
     res.status(201).json({
-        token: crypto.randomUUID(),
+        token: Token.createToken(user.id),
         userId: user.id
     });
 };

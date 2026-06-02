@@ -1,7 +1,7 @@
 const Product = require('../models/products');
 const Restaurant = require('../models/restaurants'); // Used to verify the restaurant exists
 
-exports.getAllProducts = (req, res) => {
+const getAllProducts = (req, res) => {
     const restaurantId = req.params.id;
 
     // Check if the restaurant exists
@@ -15,7 +15,7 @@ exports.getAllProducts = (req, res) => {
     res.status(200).json(products);
 };
 
-exports.createProduct = (req, res) => {
+const createProduct = (req, res) => {
     const restaurantId = req.params.id;
     const { name } = req.body;
 
@@ -33,7 +33,7 @@ exports.createProduct = (req, res) => {
     res.status(201).location(`/api/restaurants/${restaurantId}/products/${newProduct.id}`).end();
 };
 
-exports.getProductById = (req, res) => {
+const getProductById = (req, res) => {
     const { id: restaurantId, pId: productId } = req.params;
 
     if (!Restaurant.getRestaurantById(restaurantId)) {
@@ -49,7 +49,7 @@ exports.getProductById = (req, res) => {
     res.status(200).json(product);
 };
 
-exports.updateProduct = (req, res) => {
+const updateProduct = (req, res) => {
     const { id: restaurantId, pId: productId } = req.params;
     const { name } = req.body;
 
@@ -70,7 +70,7 @@ exports.updateProduct = (req, res) => {
     res.status(204).end(); 
 };
 
-exports.deleteProduct = (req, res) => {
+const deleteProduct = (req, res) => {
     const { id: restaurantId, pId: productId } = req.params;
 
     if (!Restaurant.getRestaurantById(restaurantId)) {
@@ -84,4 +84,12 @@ exports.deleteProduct = (req, res) => {
     }
 
     res.status(204).end();
+};
+
+module.exports = {
+    getAllProducts,
+    createProduct,
+    getProductById,
+    updateProduct,
+    deleteProduct
 };

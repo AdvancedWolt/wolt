@@ -2,6 +2,7 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const express = require('express');
 const usersRoutes = require('../src/routes/users');
+const tokensRoutes = require('../src/routes/tokens');
 
 let server;
 let base;
@@ -10,6 +11,7 @@ before(async () => {
     const app = express();
     app.use(express.json());
     app.use('/api/users', usersRoutes);
+    app.use('/api/tokens', tokensRoutes);
     await new Promise((resolve) => {
         server = app.listen(0, resolve);
     });
@@ -36,36 +38,90 @@ const request = async (method, path, body) => {
 };
 
 // Story: As a new user, I want to create an account.
-test('POST /api/users with {name} -> 201 + Location /api/users/:id', async () => {
-    const res = await request('POST', '/api/users', { name: 'Alice' });
+test('POST /api/users with username and password -> 201 + Location /api/users/:id', async () => {
+    const res = await request('POST', '/api/users', {
+        username: 'alice',
+        password: 'secret',
+        name: 'Alice',
+        address: '1 Main St'
+    });
 
     assert.strictEqual(res.status, 201);
     const location = res.headers.get('location');
     assert.match(location, /^\/api\/users\/.+/);
     assert.ok(res.json.id, 'response should include the new id');
+    assert.strictEqual(res.json.username, 'alice');
     assert.strictEqual(res.json.name, 'Alice');
+    assert.strictEqual(res.json.address, '1 Main St');
+    assert.strictEqual(res.json.password, undefined);
+    assert.strictEqual(res.json.passwordHash, undefined);
 });
 
-test('POST /api/users with missing name -> 400', async () => {
-    const res = await request('POST', '/api/users', {});
+test('POST /api/users with missing username -> 400', async () => {
+    const res = await request('POST', '/api/users', { password: 'secret' });
+
+    assert.strictEqual(res.status, 400);
+});
+
+test('POST /api/users with missing password -> 400', async () => {
+    const res = await request('POST', '/api/users', { username: 'no-password' });
 
     assert.strictEqual(res.status, 400);
 });
 
 // Story: As a user, I want to fetch my profile to see my details.
 test('GET /api/users/:id for existing id -> 200 + JSON', async () => {
-    const created = await request('POST', '/api/users', { name: 'Bob' });
+    const created = await request('POST', '/api/users', {
+        username: 'bob',
+        password: 'secret',
+        name: 'Bob'
+    });
     const id = created.json.id;
 
     const res = await request('GET', `/api/users/${id}`);
 
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.json.id, id);
+    assert.strictEqual(res.json.username, 'bob');
     assert.strictEqual(res.json.name, 'Bob');
+    assert.strictEqual(res.json.password, undefined);
+    assert.strictEqual(res.json.passwordHash, undefined);
 });
 
 test('GET /api/users/:id for unknown id -> 404', async () => {
     const res = await request('GET', '/api/users/does-not-exist');
 
     assert.strictEqual(res.status, 404);
+});
+
+test('POST /api/tokens with valid credentials -> 201 + token', async () => {
+    const created = await request('POST', '/api/users', {
+        username: 'carol',
+        password: 'secret',
+        name: 'Carol'
+    });
+
+    const res = await request('POST', '/api/tokens', {
+        username: 'carol',
+        password: 'secret'
+    });
+
+    assert.strictEqual(res.status, 201);
+    assert.ok(res.json.token);
+    assert.strictEqual(res.json.userId, created.json.id);
+});
+
+test('POST /api/tokens with invalid credentials -> 401', async () => {
+    await request('POST', '/api/users', {
+        username: 'dave',
+        password: 'secret',
+        name: 'Dave'
+    });
+
+    const res = await request('POST', '/api/tokens', {
+        username: 'dave',
+        password: 'wrong'
+    });
+
+    assert.strictEqual(res.status, 401);
 });

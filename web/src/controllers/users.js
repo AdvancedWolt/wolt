@@ -1,12 +1,19 @@
 const User = require('../models/users');
 
 exports.createUser = (req, res) => {
-    const { name } = req.body;
-    if (!name) {
-        return res.status(400).json({ error: 'Name is required' });
+    const { username, password, name, address } = req.body;
+    if (!username) {
+        return res.status(400).json({ error: 'Username is required' });
+    }
+    if (!password) {
+        return res.status(400).json({ error: 'Password is required' });
     }
 
-    const newUser = User.createUser(name);
+    const newUser = User.createUser({ username, password, name, address });
+    if (!newUser) {
+        return res.status(409).json({ error: 'Username already exists' });
+    }
+
     res.status(201).location(`/api/users/${newUser.id}`).json(newUser);
 };
 

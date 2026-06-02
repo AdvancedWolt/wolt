@@ -2,19 +2,49 @@ const crypto = require('crypto');
 const { tcpClient } = require('../services/tcpClient');
 
 const users = {}
+const usersByUsername = {}
 
+const publicUser = (user) => {
+    if (!user) return null;
 
-const createUser = (name) => {
+    const { passwordHash, passwordSalt, ...safeUser } = user;
+    return safeUser;
+};
+
+// why : This is a security measure to prevent password leaks even if the database is compromised.
+// how :Store only a salted PBKDF2 hash so the raw password is never saved or returned.
+// The random salt makes identical passwords produce different hashes per user.
+const hashPassword = (password, salt) => {
+    return crypto
+        .pbkdf2Sync(password, salt, 100000, 64, 'sha512')
+        .toString('hex');
+};
+
+const createUser = ({ username, password, name, address }) => {
+    if (usersByUsername[username]) {
+        return null;
+    }
+
     const id = crypto.randomUUID();
-    const newUser = { id: id, name: name, views: [] };
+    const passwordSalt = crypto.randomBytes(16).toString('hex');
+    const newUser = {
+        id,
+        username,
+        name,
+        address,
+        passwordSalt,
+        passwordHash: hashPassword(password, passwordSalt),
+        views: []
+    };
 
     // Save the new user using the new id.
     // Note: the C++ recommendation engine has no concept of a product-less
     // user (POST requires at least one product), so a fresh profile lives
     // only in this layer until the user views their first product.
     users[id] = newUser;
+    usersByUsername[username] = id;
 
-    return newUser;
+    return publicUser(newUser);
 };
 
 
@@ -30,6 +60,7 @@ const updateUser = (id, name) => {
 
 const deleteUser = (id) => {
     if (users[id]) {
+        delete usersByUsername[users[id].username];
         delete users[id];
         return true;
     }
@@ -37,8 +68,19 @@ const deleteUser = (id) => {
 };
 
 // Getters
-const getAllUsers = () => Object.values(users);
-const getUserById = (id) => users[id];
+const getAllUsers = () => Object.values(users).map(publicUser);
+const getUserById = (id) => publicUser(users[id]);
+
+const verifyCredentials = (username, password) => {
+    const id = usersByUsername[username];
+    if (!id) return null;
+
+    const user = users[id];
+    const passwordHash = hashPassword(password, user.passwordSalt);
+    if (passwordHash !== user.passwordHash) return null;
+
+    return publicUser(user);
+};
 
 
 // --- Recommendation engine (backed by the C++ server over TCP) ---
@@ -81,6 +123,7 @@ module.exports = {
     deleteUser,
     getAllUsers,
     getUserById,
+    verifyCredentials,
     addView,
     removeView,
     getRecommendations

@@ -24,8 +24,8 @@ after(() => {
     server.close();
 });
 
-const request = async (method, path, body) => {
-    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+const request = async (method, path, body, headers = {}) => {
+    const opts = { method, headers: { 'Content-Type': 'application/json', ...headers } };
     if (body !== undefined) {
         opts.body = JSON.stringify(body);
     }
@@ -79,8 +79,13 @@ test('GET /api/users/:id for existing id -> 200 + JSON', async () => {
         name: 'Bob'
     });
     const id = created.json.id;
+    const token = await request('POST', '/api/tokens', {
+        username: 'bob',
+        password: 'secret'
+    });
+    const cookie = token.headers.get('set-cookie').split(';')[0];
 
-    const res = await request('GET', `/api/users/${id}`);
+    const res = await request('GET', `/api/users/${id}`, undefined, { Cookie: cookie });
 
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.json.id, id);
@@ -90,10 +95,26 @@ test('GET /api/users/:id for existing id -> 200 + JSON', async () => {
     assert.strictEqual(res.json.passwordHash, undefined);
 });
 
-test('GET /api/users/:id for unknown id -> 404', async () => {
-    const res = await request('GET', '/api/users/does-not-exist');
+test('GET /api/users/:id for an id owned by another token -> 403', async () => {
+    const created = await request('POST', '/api/users', {
+        username: 'unknown-checker',
+        password: 'secret',
+        name: 'Unknown Checker'
+    });
+    const token = await request('POST', '/api/tokens', {
+        username: 'unknown-checker',
+        password: 'secret'
+    });
 
-    assert.strictEqual(res.status, 404);
+    const res = await request(
+        'GET',
+        '/api/users/does-not-exist',
+        undefined,
+        { Authorization: `Bearer ${token.json.token}` }
+    );
+
+    assert.strictEqual(res.status, 403);
+    assert.ok(created.json.id);
 });
 
 test('POST /api/tokens with valid credentials -> 201 + token', async () => {
@@ -111,6 +132,7 @@ test('POST /api/tokens with valid credentials -> 201 + token', async () => {
     assert.strictEqual(res.status, 201);
     assert.ok(res.json.token);
     assert.strictEqual(res.json.userId, created.json.id);
+    assert.match(res.headers.get('set-cookie'), /^token=/);
 });
 
 test('POST /api/tokens with invalid credentials -> 401', async () => {
@@ -126,6 +148,95 @@ test('POST /api/tokens with invalid credentials -> 401', async () => {
     });
 
     assert.strictEqual(res.status, 401);
+});
+
+test('GET /api/users/:id without token -> 401', async () => {
+    const created = await request('POST', '/api/users', {
+        username: 'henry',
+        password: 'secret',
+        name: 'Henry'
+    });
+
+    const res = await request('GET', `/api/users/${created.json.id}`);
+
+    assert.strictEqual(res.status, 401);
+});
+
+test('GET /api/users/:id with another user token -> 403', async () => {
+    const first = await request('POST', '/api/users', {
+        username: 'iris',
+        password: 'secret',
+        name: 'Iris'
+    });
+    await request('POST', '/api/users', {
+        username: 'jane',
+        password: 'secret',
+        name: 'Jane'
+    });
+    const token = await request('POST', '/api/tokens', {
+        username: 'jane',
+        password: 'secret'
+    });
+
+    const res = await request(
+        'GET',
+        `/api/users/${first.json.id}`,
+        undefined,
+        { Authorization: `Bearer ${token.json.token}` }
+    );
+
+    assert.strictEqual(res.status, 403);
+});
+
+test('GET /api/users/:id/recommendations with own cookie -> 200', async () => {
+    tcpClient.getRecommendations = async () => 'product-2 product-3';
+
+    const created = await request('POST', '/api/users', {
+        username: 'kate',
+        password: 'secret',
+        name: 'Kate'
+    });
+    const token = await request('POST', '/api/tokens', {
+        username: 'kate',
+        password: 'secret'
+    });
+    const cookie = token.headers.get('set-cookie').split(';')[0];
+
+    const res = await request(
+        'GET',
+        `/api/users/${created.json.id}/recommendations?productId=product-1`,
+        undefined,
+        { Cookie: cookie }
+    );
+
+    assert.strictEqual(res.status, 200);
+    assert.deepStrictEqual(res.json, { recommendations: 'product-2 product-3' });
+});
+
+test('GET /api/users/:id/recommendations with another user token -> 403', async () => {
+    const first = await request('POST', '/api/users', {
+        username: 'leo',
+        password: 'secret',
+        name: 'Leo'
+    });
+    await request('POST', '/api/users', {
+        username: 'maya',
+        password: 'secret',
+        name: 'Maya'
+    });
+    const token = await request('POST', '/api/tokens', {
+        username: 'maya',
+        password: 'secret'
+    });
+
+    const res = await request(
+        'GET',
+        `/api/users/${first.json.id}/recommendations?productId=product-1`,
+        undefined,
+        { Authorization: `Bearer ${token.json.token}` }
+    );
+
+    assert.strictEqual(res.status, 403);
 });
 
 test('direct user view routes are not exposed', async () => {

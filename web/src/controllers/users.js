@@ -1,4 +1,39 @@
 const User = require('../models/users');
+const Token = require('../models/tokens');
+
+const getCookie = (req, name) => {
+    const cookies = req.get('cookie') || '';
+    const cookie = cookies
+        .split(';')
+        .map((part) => part.trim())
+        .find((part) => part.startsWith(`${name}=`));
+
+    return cookie ? decodeURIComponent(cookie.slice(name.length + 1)) : null;
+};
+
+const getRequestToken = (req) => {
+    const authorization = req.get('authorization') || '';
+    const [scheme, token] = authorization.split(' ');
+    if (scheme?.toLowerCase() === 'bearer') {
+        return token || null;
+    }
+
+    return getCookie(req, 'token');
+};
+
+const requireMatchingUser = (req, res) => {
+    const tokenUserId = Token.getUserId(getRequestToken(req));
+    if (!tokenUserId) {
+        res.status(401).json({ error: 'Authentication required' });
+        return null;
+    }
+    if (tokenUserId !== req.params.id) {
+        res.status(403).json({ error: 'Cannot access another user' });
+        return null;
+    }
+
+    return tokenUserId;
+};
 
 const createUser = (req, res) => {
     const { username, password, name, address } = req.body;
@@ -18,6 +53,8 @@ const createUser = (req, res) => {
 };
 
 const getUserById = (req, res) => {
+    if (!requireMatchingUser(req, res)) return;
+
     const user = User.getUserById(req.params.id);
     if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -27,6 +64,8 @@ const getUserById = (req, res) => {
 };
 
 const getRecommendations = async (req, res) => {
+    if (!requireMatchingUser(req, res)) return;
+
     const { productId } = req.query;
     if (!productId) {
         return res.status(400).json({ error: 'productId query parameter is required' });

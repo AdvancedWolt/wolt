@@ -15,8 +15,10 @@ const createToken = (req, res) => {
         return res.status(401).json({ error: 'Invalid username or password' });
     }
 
-    res.status(201).json({
-        token: Token.createToken(user.id),
+    const token = Token.createToken(user.id);
+
+    res.cookie('token', token, { httpOnly: true, sameSite: 'strict' }).status(201).json({
+        token,
         userId: user.id
     });
 };

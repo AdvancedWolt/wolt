@@ -81,6 +81,9 @@ const verifyCredentials = (username, password) => {
 
 // --- Recommendation engine (backed by the C++ server over TCP) ---
 
+// Future product-view tracking hook.
+// The caller must authenticate the request first and verify that the token
+// belongs to this user id before calling this function.
 const addView = async (id, productId) => {
     const user = users[id]
     if (!user) return null

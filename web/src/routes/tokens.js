@@ -4,6 +4,6 @@ var router = express.Router()
 const tokens = require('../controllers/tokens')
 
 router.route('/')
-    .post(tokens.createToken)
+    .post(tokens.login)
 
 module.exports = router

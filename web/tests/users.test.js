@@ -83,13 +83,8 @@ test('GET /api/users/:id for existing id -> 200 + JSON', async () => {
         name: 'Bob'
     });
     const id = created.json.id;
-    const token = await request('POST', '/api/tokens', {
-        username: 'bob',
-        password: 'secret'
-    });
-    const cookie = token.headers.get('set-cookie').split(';')[0];
 
-    const res = await request('GET', `/api/users/${id}`, undefined, { Cookie: cookie });
+    const res = await request('GET', `/api/users/${id}`, undefined, { 'user-id': id });
 
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.json.id, id);
@@ -99,29 +94,25 @@ test('GET /api/users/:id for existing id -> 200 + JSON', async () => {
     assert.strictEqual(res.json.passwordHash, undefined);
 });
 
-test('GET /api/users/:id for an id owned by another token -> 403', async () => {
+test('GET /api/users/:id unknown id with user id header -> 404', async () => {
     const created = await request('POST', '/api/users', {
         username: 'unknown-checker',
         password: 'secret',
         name: 'Unknown Checker'
-    });
-    const token = await request('POST', '/api/tokens', {
-        username: 'unknown-checker',
-        password: 'secret'
     });
 
     const res = await request(
         'GET',
         '/api/users/does-not-exist',
         undefined,
-        { Authorization: `Bearer ${token.json.token}` }
+        { 'user-id': created.json.id }
     );
 
-    assert.strictEqual(res.status, 403);
+    assert.strictEqual(res.status, 404);
     assert.ok(created.json.id);
 });
 
-test('POST /api/tokens with valid credentials -> 201 + token', async () => {
+test('POST /api/tokens with valid credentials -> 200 + user id', async () => {
     const created = await request('POST', '/api/users', {
         username: 'carol',
         password: 'secret',
@@ -133,13 +124,12 @@ test('POST /api/tokens with valid credentials -> 201 + token', async () => {
         password: 'secret'
     });
 
-    assert.strictEqual(res.status, 201);
-    assert.ok(res.json.token);
+    assert.strictEqual(res.status, 200);
     assert.strictEqual(res.json.userId, created.json.id);
-    assert.match(res.headers.get('set-cookie'), /^token=/);
+    assert.strictEqual(res.json.token, undefined);
 });
 
-test('POST /api/tokens with invalid credentials -> 401', async () => {
+test('POST /api/tokens with invalid credentials -> 404', async () => {
     await request('POST', '/api/users', {
         username: 'dave',
         password: 'secret',
@@ -151,10 +141,10 @@ test('POST /api/tokens with invalid credentials -> 401', async () => {
         password: 'wrong'
     });
 
-    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.status, 404);
 });
 
-test('GET /api/users/:id without token -> 401', async () => {
+test('GET /api/users/:id without user id header -> 401', async () => {
     const created = await request('POST', '/api/users', {
         username: 'henry',
         password: 'secret',
@@ -166,33 +156,30 @@ test('GET /api/users/:id without token -> 401', async () => {
     assert.strictEqual(res.status, 401);
 });
 
-test('GET /api/users/:id with another user token -> 403', async () => {
+test('GET /api/users/:id with another user id header still returns requested user', async () => {
     const first = await request('POST', '/api/users', {
         username: 'iris',
         password: 'secret',
         name: 'Iris'
     });
-    await request('POST', '/api/users', {
+    const second = await request('POST', '/api/users', {
         username: 'jane',
         password: 'secret',
         name: 'Jane'
-    });
-    const token = await request('POST', '/api/tokens', {
-        username: 'jane',
-        password: 'secret'
     });
 
     const res = await request(
         'GET',
         `/api/users/${first.json.id}`,
         undefined,
-        { Authorization: `Bearer ${token.json.token}` }
+        { 'user-id': second.json.id }
     );
 
-    assert.strictEqual(res.status, 403);
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.json.id, first.json.id);
 });
 
-test('GET /api/users/:id/recommendations with own cookie -> 200', async () => {
+test('GET /api/users/:id/recommendations with own user id header -> 200', async () => {
     tcpClient.getRecommendations = async () => 'product-2 product-3';
 
     const created = await request('POST', '/api/users', {
@@ -200,47 +187,43 @@ test('GET /api/users/:id/recommendations with own cookie -> 200', async () => {
         password: 'secret',
         name: 'Kate'
     });
-    const token = await request('POST', '/api/tokens', {
-        username: 'kate',
-        password: 'secret'
-    });
-    const cookie = token.headers.get('set-cookie').split(';')[0];
 
     const res = await request(
         'GET',
         `/api/users/${created.json.id}/recommendations?productId=product-1`,
         undefined,
-        { Cookie: cookie }
+        { 'user-id': created.json.id }
     );
 
     assert.strictEqual(res.status, 200);
     assert.deepStrictEqual(res.json, { recommendations: 'product-2 product-3' });
 });
 
-test('GET /api/users/:id/recommendations with another user token -> 403', async () => {
+test('GET /api/users/:id/recommendations uses the requested user id from the URL', async () => {
+    tcpClient.getRecommendations = async (userId, productId) => `${userId}:${productId}`;
+
     const first = await request('POST', '/api/users', {
         username: 'leo',
         password: 'secret',
         name: 'Leo'
     });
-    await request('POST', '/api/users', {
+    const second = await request('POST', '/api/users', {
         username: 'maya',
         password: 'secret',
         name: 'Maya'
-    });
-    const token = await request('POST', '/api/tokens', {
-        username: 'maya',
-        password: 'secret'
     });
 
     const res = await request(
         'GET',
         `/api/users/${first.json.id}/recommendations?productId=product-1`,
         undefined,
-        { Authorization: `Bearer ${token.json.token}` }
+        { 'user-id': second.json.id }
     );
 
-    assert.strictEqual(res.status, 403);
+    assert.strictEqual(res.status, 200);
+    assert.deepStrictEqual(res.json, {
+        recommendations: `${first.json.id}:product-1`
+    });
 });
 
 test('direct user view routes are not exposed', async () => {
@@ -253,6 +236,255 @@ test('direct user view routes are not exposed', async () => {
     const res = await request('POST', `/api/users/${created.json.id}/views`, { productId: 'p1' });
 
     assert.strictEqual(res.status, 404);
+});
+
+test('POST /api/users with duplicate username -> 409', async () => {
+    await request('POST', '/api/users', {
+        username: 'duplicate-user',
+        password: 'secret',
+        name: 'First Duplicate'
+    });
+
+    const res = await request('POST', '/api/users', {
+        username: 'duplicate-user',
+        password: 'secret',
+        name: 'Second Duplicate'
+    });
+
+    assert.strictEqual(res.status, 409);
+});
+
+test('GET /api/users/:id/recommendations without productId -> 400', async () => {
+    const created = await request('POST', '/api/users', {
+        username: 'missing-recommendation-product',
+        password: 'secret',
+        name: 'Missing Product'
+    });
+
+    const res = await request(
+        'GET',
+        `/api/users/${created.json.id}/recommendations`,
+        undefined,
+        { 'user-id': created.json.id }
+    );
+
+    assert.strictEqual(res.status, 400);
+});
+
+test('GET /api/restaurants initially returns an array', async () => {
+    const res = await request('GET', '/api/restaurants');
+
+    assert.strictEqual(res.status, 200);
+    assert.ok(Array.isArray(res.json));
+});
+
+test('POST /api/restaurants creates a restaurant with Location', async () => {
+    const created = await request('POST', '/api/restaurants', {
+        name: 'Restaurant Create Test'
+    });
+
+    assert.strictEqual(created.status, 201);
+    assert.match(created.headers.get('location'), /^\/api\/restaurants\/.+/);
+
+    const id = created.headers.get('location').split('/').pop();
+    const fetched = await request('GET', `/api/restaurants/${id}`);
+
+    assert.strictEqual(fetched.status, 200);
+    assert.strictEqual(fetched.json.id, id);
+    assert.strictEqual(fetched.json.name, 'Restaurant Create Test');
+});
+
+test('POST /api/restaurants with missing name -> 400', async () => {
+    const res = await request('POST', '/api/restaurants', {});
+
+    assert.strictEqual(res.status, 400);
+});
+
+test('GET /api/restaurants/:id unknown -> 404', async () => {
+    const res = await request('GET', '/api/restaurants/unknown-restaurant');
+
+    assert.strictEqual(res.status, 404);
+});
+
+test('PATCH /api/restaurants/:id updates a restaurant', async () => {
+    const created = await request('POST', '/api/restaurants', {
+        name: 'Restaurant Before Patch'
+    });
+    const id = created.headers.get('location').split('/').pop();
+
+    const patched = await request('PATCH', `/api/restaurants/${id}`, {
+        name: 'Restaurant After Patch'
+    });
+    const fetched = await request('GET', `/api/restaurants/${id}`);
+
+    assert.strictEqual(patched.status, 200);
+    assert.strictEqual(fetched.json.name, 'Restaurant After Patch');
+});
+
+test('PATCH /api/restaurants/:id missing or unknown -> 400/404', async () => {
+    const created = await request('POST', '/api/restaurants', {
+        name: 'Restaurant Patch Errors'
+    });
+    const id = created.headers.get('location').split('/').pop();
+
+    const missingName = await request('PATCH', `/api/restaurants/${id}`, {});
+    const unknown = await request('PATCH', '/api/restaurants/unknown-restaurant', {
+        name: 'Updated'
+    });
+
+    assert.strictEqual(missingName.status, 400);
+    assert.strictEqual(unknown.status, 404);
+});
+
+test('DELETE /api/restaurants/:id removes a restaurant', async () => {
+    const created = await request('POST', '/api/restaurants', {
+        name: 'Restaurant Delete Test'
+    });
+    const id = created.headers.get('location').split('/').pop();
+
+    const deleted = await request('DELETE', `/api/restaurants/${id}`);
+    const fetched = await request('GET', `/api/restaurants/${id}`);
+
+    assert.strictEqual(deleted.status, 204);
+    assert.strictEqual(fetched.status, 404);
+});
+
+test('DELETE /api/restaurants/:id unknown -> 404', async () => {
+    const res = await request('DELETE', '/api/restaurants/unknown-restaurant');
+
+    assert.strictEqual(res.status, 404);
+});
+
+test('GET /api/restaurants/:id/products returns products for the restaurant', async () => {
+    const restaurant = await request('POST', '/api/restaurants', {
+        name: 'Menu Restaurant'
+    });
+    const restaurantId = restaurant.headers.get('location').split('/').pop();
+
+    const emptyMenu = await request('GET', `/api/restaurants/${restaurantId}/products`);
+    const created = await request('POST', `/api/restaurants/${restaurantId}/products`, {
+        name: 'Falafel'
+    });
+    const productId = created.headers.get('location').split('/').pop();
+    const menu = await request('GET', `/api/restaurants/${restaurantId}/products`);
+
+    assert.strictEqual(emptyMenu.status, 200);
+    assert.deepStrictEqual(emptyMenu.json, []);
+    assert.strictEqual(created.status, 201);
+    assert.deepStrictEqual(menu.json, [
+        { id: productId, restaurantId, name: 'Falafel' }
+    ]);
+});
+
+test('POST /api/restaurants/:id/products missing name or restaurant -> 400/404', async () => {
+    const restaurant = await request('POST', '/api/restaurants', {
+        name: 'Product Error Restaurant'
+    });
+    const restaurantId = restaurant.headers.get('location').split('/').pop();
+
+    const missingName = await request('POST', `/api/restaurants/${restaurantId}/products`, {});
+    const unknownRestaurant = await request('POST', '/api/restaurants/unknown-restaurant/products', {
+        name: 'Falafel'
+    });
+
+    assert.strictEqual(missingName.status, 400);
+    assert.strictEqual(unknownRestaurant.status, 404);
+});
+
+test('GET /api/restaurants/:id/products/:pId returns product or 404', async () => {
+    const restaurant = await request('POST', '/api/restaurants', {
+        name: 'Product Read Restaurant'
+    });
+    const restaurantId = restaurant.headers.get('location').split('/').pop();
+    const created = await request('POST', `/api/restaurants/${restaurantId}/products`, {
+        name: 'Burger'
+    });
+    const productId = created.headers.get('location').split('/').pop();
+
+    const fetched = await request('GET', `/api/restaurants/${restaurantId}/products/${productId}`);
+    const unknownProduct = await request('GET', `/api/restaurants/${restaurantId}/products/unknown-product`);
+    const unknownRestaurant = await request('GET', `/api/restaurants/unknown-restaurant/products/${productId}`);
+
+    assert.strictEqual(fetched.status, 200);
+    assert.deepStrictEqual(fetched.json, { id: productId, restaurantId, name: 'Burger' });
+    assert.strictEqual(unknownProduct.status, 404);
+    assert.strictEqual(unknownRestaurant.status, 404);
+});
+
+test('PATCH /api/restaurants/:id/products/:pId updates a product', async () => {
+    const restaurant = await request('POST', '/api/restaurants', {
+        name: 'Product Patch Restaurant'
+    });
+    const restaurantId = restaurant.headers.get('location').split('/').pop();
+    const created = await request('POST', `/api/restaurants/${restaurantId}/products`, {
+        name: 'Old Name'
+    });
+    const productId = created.headers.get('location').split('/').pop();
+
+    const patched = await request('PATCH', `/api/restaurants/${restaurantId}/products/${productId}`, {
+        name: 'New Name'
+    });
+    const fetched = await request('GET', `/api/restaurants/${restaurantId}/products/${productId}`);
+
+    assert.strictEqual(patched.status, 204);
+    assert.strictEqual(fetched.json.name, 'New Name');
+});
+
+test('PATCH /api/restaurants/:id/products/:pId validates missing name and unknown ids', async () => {
+    const restaurant = await request('POST', '/api/restaurants', {
+        name: 'Product Patch Errors'
+    });
+    const restaurantId = restaurant.headers.get('location').split('/').pop();
+    const created = await request('POST', `/api/restaurants/${restaurantId}/products`, {
+        name: 'Patch Error Product'
+    });
+    const productId = created.headers.get('location').split('/').pop();
+
+    const missingName = await request('PATCH', `/api/restaurants/${restaurantId}/products/${productId}`, {});
+    const unknownProduct = await request('PATCH', `/api/restaurants/${restaurantId}/products/unknown-product`, {
+        name: 'Updated'
+    });
+    const unknownRestaurant = await request('PATCH', `/api/restaurants/unknown-restaurant/products/${productId}`, {
+        name: 'Updated'
+    });
+
+    assert.strictEqual(missingName.status, 400);
+    assert.strictEqual(unknownProduct.status, 404);
+    assert.strictEqual(unknownRestaurant.status, 404);
+});
+
+test('DELETE /api/restaurants/:id/products/:pId removes a product', async () => {
+    const restaurant = await request('POST', '/api/restaurants', {
+        name: 'Product Delete Restaurant'
+    });
+    const restaurantId = restaurant.headers.get('location').split('/').pop();
+    const created = await request('POST', `/api/restaurants/${restaurantId}/products`, {
+        name: 'Delete Me'
+    });
+    const productId = created.headers.get('location').split('/').pop();
+
+    const deleted = await request('DELETE', `/api/restaurants/${restaurantId}/products/${productId}`);
+    const fetched = await request('GET', `/api/restaurants/${restaurantId}/products/${productId}`);
+
+    assert.strictEqual(deleted.status, 204);
+    assert.strictEqual(fetched.status, 404);
+});
+
+test('DELETE /api/restaurants/:id/products/:pId unknown ids -> 404', async () => {
+    const restaurant = await request('POST', '/api/restaurants', {
+        name: 'Product Delete Errors'
+    });
+    const restaurantId = restaurant.headers.get('location').split('/').pop();
+    const created = await request('POST', `/api/restaurants/${restaurantId}/products`, {
+        name: 'Delete Error Product'
+    });
+    const productId = created.headers.get('location').split('/').pop();
+
+    const unknownProduct = await request('DELETE', `/api/restaurants/${restaurantId}/products/unknown-product`);
+    const unknownRestaurant = await request('DELETE', `/api/restaurants/unknown-restaurant/products/${productId}`);
+
+    assert.strictEqual(unknownProduct.status, 404);
+    assert.strictEqual(unknownRestaurant.status, 404);
 });
 
 test('model view updates do not expose password fields', async () => {
@@ -275,7 +507,7 @@ test('model view updates do not expose password fields', async () => {
     assert.strictEqual(afterRemove.passwordSalt, undefined);
 });
 
-test('first model view creates the recommendation user, later views patch it', async () => {
+test('first model view creates the recommendation user, later new views patch it', async () => {
     const calls = [];
     tcpClient.createUser = async (userId, productId) => {
         calls.push({ command: 'POST', userId, productId });
@@ -293,6 +525,7 @@ test('first model view creates the recommendation user, later views patch it', a
     });
 
     await User.addView(created.id, 'product-1');
+    await User.addView(created.id, 'product-2');
     await User.addView(created.id, 'product-2');
 
     assert.deepStrictEqual(calls, [
@@ -315,12 +548,6 @@ test('GET restaurant product tracks a view for authenticated users only', async 
             password: 'secret',
             name: 'Track Product User'
         });
-        const token = await request('POST', '/api/tokens', {
-            username: 'track-product-user',
-            password: 'secret'
-        });
-        const cookie = token.headers.get('set-cookie').split(';')[0];
-
         const restaurant = await request('POST', '/api/restaurants', {
             name: 'Tracking Restaurant'
         });
@@ -339,7 +566,7 @@ test('GET restaurant product tracks a view for authenticated users only', async 
             'GET',
             `/api/restaurants/${restaurantId}/products/${productId}`,
             undefined,
-            { Cookie: cookie }
+            { 'user-id': created.json.id }
         );
 
         assert.strictEqual(authedGet.status, 200);

@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 
-const tokens = {}
+const tokens = {};
 
 const createToken = (userId) => {
     const token = crypto.randomUUID();

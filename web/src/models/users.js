@@ -81,12 +81,14 @@ const verifyCredentials = (username, password) => {
 
 // --- Recommendation engine (backed by the C++ server over TCP) ---
 
-// Future product-view tracking hook.
-// The caller must authenticate the request first and verify that the token
-// belongs to this user id before calling this function.
+// Records a product view locally and mirrors new views to the C++ recommender.
 const addView = async (id, productId) => {
     const user = users[id]
     if (!user) return null
+
+    if (user.views.includes(productId)) {
+        return publicUser(user)
+    }
 
     if (user.views.length === 0) {
         // create user append to the c++ server when the first view is added, 
@@ -96,9 +98,7 @@ const addView = async (id, productId) => {
         await tcpClient.addView(id, productId);
     }
 
-    if (!user.views.includes(productId)) {
-        user.views.push(productId);
-    }
+    user.views.push(productId);
     return publicUser(user)
 };
 

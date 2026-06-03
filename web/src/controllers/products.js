@@ -47,7 +47,7 @@ const getProductById = async (req, res) => {
         return res.status(404).json({ error: 'Product not found' });
     }
 
-    // req.userId comes from the login token cookie/Bearer token, not from the URL.
+    // req.userId comes from the user-id HTTP header, not from the URL.
     if (req.userId) {
         try {
             await User.addView(req.userId, product.id);

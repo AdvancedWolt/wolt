@@ -1,39 +1,49 @@
-import net from 'net';
-import tcpConfig from '../config/tcpConfig.js';
+const net = require('net');
+const tcpConfig = require('../config/tcpConfig');
 
 const config = new tcpConfig();
 
 const HOST = config.getHost();
 const PORT = config.getPort();
 
-export function send(command) {
+function send(command) {
     return new Promise((resolve, reject) => {
 
         const client = new net.Socket();
-        let response = '';
+        let settled = false;
 
         client.connect(PORT, HOST, () => {
             client.write(command + '\n');
         });
 
         client.on('data', (data) => {
-            response += data.toString();
+            if (settled) return;
+            settled = true;
+            resolve(data.toString().trim());
+            client.end();
         });
 
         client.on('close', () => {
-            resolve(response.trim());
+            if (!settled) {
+                settled = true;
+                resolve('');
+            }
         });
 
-        client.on('error', reject);
+        client.on('error', (err) => {
+            if (!settled) {
+                settled = true;
+                reject(err);
+            }
+        });
     });
 }
 
 // exported API
-export const tcpClient = {
-
-    // when creating user, no watched products yet
-    createUser(userId) {
-        return send(`POST ${userId}`);
+const tcpClient = {
+    
+    createUser(userId, productId) {
+        return send(`POST ${userId} ${productId}`);
     },
 
     addView(userId, productId) {
@@ -57,6 +67,8 @@ export const tcpClient = {
     },
 
     getRecommendations(userId, productId) {
-        return send(`RECOMMEND ${userId} ${productId}`);
+        return send(`GET ${userId} ${productId}`);
     }
 };
+
+module.exports = { send, tcpClient };

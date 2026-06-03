@@ -1,5 +1,6 @@
 const Product = require('../models/products');
 const Restaurant = require('../models/restaurants'); // Used to verify the restaurant exists
+const User = require('../models/users');
 
 const getAllProducts = (req, res) => {
     const restaurantId = req.params.id;
@@ -33,7 +34,7 @@ const createProduct = (req, res) => {
     res.status(201).location(`/api/restaurants/${restaurantId}/products/${newProduct.id}`).end();
 };
 
-const getProductById = (req, res) => {
+const getProductById = async (req, res) => {
     const { id: restaurantId, pId: productId } = req.params;
 
     if (!Restaurant.getRestaurantById(restaurantId)) {
@@ -44,6 +45,15 @@ const getProductById = (req, res) => {
     
     if (!product) {
         return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // req.userId comes from the user-id HTTP header, not from the URL.
+    if (req.userId) {
+        try {
+            await User.addView(req.userId, product.id);
+        } catch (_) {
+            return res.status(502).json({ error: 'Recommendation service unavailable' });
+        }
     }
 
     res.status(200).json(product);

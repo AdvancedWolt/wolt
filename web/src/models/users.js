@@ -113,6 +113,30 @@ const removeView = async (id, productId) => {
     return publicUser(user)
 };
 
+const addViews = async (id, productIds) => {
+    const user = users[id];
+    if (!user || !productIds || productIds.length === 0) return null;
+
+    // Filter out products already viewed
+    const newProducts = productIds.filter(pid => !user.views.includes(pid));
+    if (newProducts.length === 0) return publicUser(user);
+
+    let startIdx = 0;
+    if (user.views.length === 0) {
+        // Register the user first with the first new product
+        await tcpClient.createUser(id, newProducts[0]);
+        user.views.push(newProducts[0]);
+        startIdx = 1;
+    }
+
+    if (newProducts.length > startIdx) {
+        const remaining = newProducts.slice(startIdx);
+        await tcpClient.addViews(id, remaining);
+        user.views.push(...remaining);
+    }
+
+    return publicUser(user);
+};
 
 const getRecommendations = async (id, productId) => {
     const user = users[id]
@@ -130,6 +154,8 @@ module.exports = {
     getUserById,
     verifyCredentials,
     addView,
+    addViews,
     removeView,
     getRecommendations
 };
+

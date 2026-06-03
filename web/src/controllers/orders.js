@@ -1,13 +1,14 @@
 const Order = require('../models/orders');
 const Restaurant = require('../models/restaurants');
 const Product = require('../models/products');
+const User = require('../models/users');
 
 const getOrdersByCurrUser = (req, res) => {
     const orders = Order.getOrdersByUserId(req.userId);
     res.status(200).json(orders);
 };
 
-const createOrder = (req, res) => {
+const createOrder = async (req, res) => {
     const { restaurantId, items } = req.body;
 
     if (!restaurantId) {
@@ -31,6 +32,10 @@ const createOrder = (req, res) => {
 
     const newOrder = Order.createOrder(req.userId, restaurantId, items);
 
+    if (items && items.length > 0) {
+        await User.addViews(req.userId, items);
+    }
+
     res.status(201).location(`/api/orders/${newOrder.id}`).end();
 };
 
@@ -39,6 +44,10 @@ const getOrderById = (req, res) => {
 
     if (!order) {
         return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (order.userId !== req.userId) {
+        return res.status(403).json({ error: 'Forbidden' });
     }
 
     res.status(200).json(order);
@@ -52,7 +61,18 @@ const updateOrder = (req, res) => {
         return res.status(404).json({ error: 'Order not found' });
     }
 
+    if (order.userId !== req.userId) {
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    if (status !== undefined && !Order.VALID_STATUSES.includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' });
+    }
+
     if (items !== undefined) {
+        if (order.status !== 'pending') {
+            return res.status(400).json({ error: 'Cannot update items for a non-pending order' });
+        }
         if (!Array.isArray(items)) {
             return res.status(400).json({ error: 'items must be an array' });
         }
@@ -69,11 +89,21 @@ const updateOrder = (req, res) => {
 };
 
 const deleteOrder = (req, res) => {
-    const isDeleted = Order.deleteOrder(req.params.id);
+    const order = Order.getOrderById(req.params.id);
 
-    if (!isDeleted) {
+    if (!order) {
         return res.status(404).json({ error: 'Order not found' });
     }
+
+    if (order.userId !== req.userId) {
+        return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    if (order.status !== 'pending') {
+        return res.status(400).json({ error: 'Cannot delete a non-pending order' });
+    }
+
+    Order.deleteOrder(req.params.id);
 
     res.status(204).end();
 };

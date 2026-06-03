@@ -3,6 +3,8 @@ const assert = require('node:assert');
 const express = require('express');
 const usersRoutes = require('../src/routes/users');
 const tokensRoutes = require('../src/routes/tokens');
+const restaurantsRoutes = require('../src/routes/restaurants');
+const productsRoutes = require('../src/routes/products');
 const User = require('../src/models/users');
 const { tcpClient } = require('../src/services/tcpClient');
 
@@ -14,6 +16,8 @@ before(async () => {
     app.use(express.json());
     app.use('/api/users', usersRoutes);
     app.use('/api/tokens', tokensRoutes);
+    app.use('/api/restaurants', restaurantsRoutes);
+    app.use('/api/restaurants/:id/products', productsRoutes);
     await new Promise((resolve) => {
         server = app.listen(0, resolve);
     });
@@ -295,4 +299,54 @@ test('first model view creates the recommendation user, later views patch it', a
         { command: 'POST', userId: created.id, productId: 'product-1' },
         { command: 'PATCH', userId: created.id, productId: 'product-2' }
     ]);
+});
+
+test('GET restaurant product tracks a view for authenticated users only', async () => {
+    const trackedViews = [];
+    const originalAddView = User.addView;
+    User.addView = async (userId, productId) => {
+        trackedViews.push({ userId, productId });
+        return { id: userId, views: [productId] };
+    };
+
+    try {
+        const created = await request('POST', '/api/users', {
+            username: 'track-product-user',
+            password: 'secret',
+            name: 'Track Product User'
+        });
+        const token = await request('POST', '/api/tokens', {
+            username: 'track-product-user',
+            password: 'secret'
+        });
+        const cookie = token.headers.get('set-cookie').split(';')[0];
+
+        const restaurant = await request('POST', '/api/restaurants', {
+            name: 'Tracking Restaurant'
+        });
+        const restaurantId = restaurant.headers.get('location').split('/').pop();
+
+        const product = await request('POST', `/api/restaurants/${restaurantId}/products`, {
+            name: 'Pizza'
+        });
+        const productId = product.headers.get('location').split('/').pop();
+
+        const anonymousGet = await request('GET', `/api/restaurants/${restaurantId}/products/${productId}`);
+        assert.strictEqual(anonymousGet.status, 200);
+        assert.deepStrictEqual(trackedViews, []);
+
+        const authedGet = await request(
+            'GET',
+            `/api/restaurants/${restaurantId}/products/${productId}`,
+            undefined,
+            { Cookie: cookie }
+        );
+
+        assert.strictEqual(authedGet.status, 200);
+        assert.deepStrictEqual(trackedViews, [
+            { userId: created.json.id, productId }
+        ]);
+    } finally {
+        User.addView = originalAddView;
+    }
 });

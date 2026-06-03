@@ -13,3 +13,5 @@ app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/restaurants/:id/products', productRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/users', usersRoutes);
+
+app.listen(process.env.PORT || 3000, () => console.log('web listening'))

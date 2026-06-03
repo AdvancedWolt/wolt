@@ -30,7 +30,7 @@ function send(command) {
 
 // exported API
 const tcpClient = {
-
+    
     createUser(userId, productId) {
         return send(`POST ${userId} ${productId}`);
     },

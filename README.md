@@ -139,6 +139,48 @@ The system consists of a **C++ Server** handling the logic and a **Python Client
 
 # Setup and Execution
 
+## Run the full system with Docker Compose
+This is the recommended way to run the project. It starts both services:
+
+* `cpp-service`: the C++ recommendation server on port `8080`.
+* `web`: the Express REST API on port `3000`.
+
+From the repository root:
+
+```bash
+docker compose up --build
+```
+
+After startup, the web API is available at:
+
+```text
+http://localhost:3000
+```
+
+Example user flow:
+
+```bash
+curl -i -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"alice","password":"secret","name":"Alice","address":"1 Main St"}'
+```
+
+Then log in and receive a token cookie:
+
+```bash
+curl -i -X POST http://localhost:3000/api/tokens \
+  -H "Content-Type: application/json" \
+  -d '{"username":"alice","password":"secret"}'
+```
+
+Use the returned `token` cookie, or the JSON token as a Bearer token, when
+requesting protected user routes:
+
+```bash
+curl -i http://localhost:3000/api/users/<user-id> \
+  -H "Authorization: Bearer <token>"
+```
+
 ## Build using Docker
 To build the server environment:
 ```bash
@@ -161,9 +203,42 @@ Usage: python3 src/client.py [IP] [PORT]
 python3 src/client.py 127.0.0.1 8080
 ```
 
+## Running the Web Server Locally
+If you want to run the Node web service without Docker, first make sure the C++
+recommendation server is running and reachable.
+
+In one terminal, run the C++ service on port `8080`:
+
+```bash
+docker build -t wolt-app .
+docker run -it -p 8080:8080 wolt-app 8080
+```
+
+In another terminal, run the web service:
+
+```bash
+cd web
+npm install
+CPP_SERVICE_HOST=127.0.0.1 CPP_SERVICE_PORT=8080 PORT=3000 npm start
+```
+
+The web API will be available at:
+
+```text
+http://localhost:3000
+```
+
 ## Running Tests
 To run the unit tests inside the Docker container:
 
 ```bash
 docker run -it --entrypoint ./build/tests/unit_tests wolt-app
+```
+
+To run the web tests:
+
+```bash
+cd web
+npm install
+npm test
 ```

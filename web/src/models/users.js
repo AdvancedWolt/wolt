@@ -89,6 +89,8 @@ const addView = async (id, productId) => {
     if (!user) return null
 
     if (user.views.length === 0) {
+        // create user append to the c++ server when the first view is added, 
+        // so that the user is visible in the recommendation engine immediately
         await tcpClient.createUser(id, productId);
     } else {
         await tcpClient.addView(id, productId);

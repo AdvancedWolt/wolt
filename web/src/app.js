@@ -8,6 +8,7 @@ const productRoutes = require('./routes/products');
 const searchRoutes = require('./routes/search');
 const usersRoutes = require('./routes/users');
 const tokensRoutes = require('./routes/tokens');
+const ordersRoutes = require('./routes/orders')
 const { errorHandler } = require('./middleware/errorHandler');
 
 
@@ -16,6 +17,7 @@ app.use('/api/restaurants/:id/products', productRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/tokens', tokensRoutes);
+app.use('/api/orders', ordersRoutes);
 app.use(errorHandler);
 
 if (require.main === module) {

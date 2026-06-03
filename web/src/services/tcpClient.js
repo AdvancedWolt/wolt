@@ -10,21 +10,32 @@ function send(command) {
     return new Promise((resolve, reject) => {
 
         const client = new net.Socket();
-        let response = '';
+        let settled = false;
 
         client.connect(PORT, HOST, () => {
             client.write(command + '\n');
         });
 
         client.on('data', (data) => {
-            response += data.toString();
+            if (settled) return;
+            settled = true;
+            resolve(data.toString().trim());
+            client.end();
         });
 
         client.on('close', () => {
-            resolve(response.trim());
+            if (!settled) {
+                settled = true;
+                resolve('');
+            }
         });
 
-        client.on('error', reject);
+        client.on('error', (err) => {
+            if (!settled) {
+                settled = true;
+                reject(err);
+            }
+        });
     });
 }
 
@@ -56,7 +67,7 @@ const tcpClient = {
     },
 
     getRecommendations(userId, productId) {
-        return send(`RECOMMEND ${userId} ${productId}`);
+        return send(`GET ${userId} ${productId}`);
     }
 };
 

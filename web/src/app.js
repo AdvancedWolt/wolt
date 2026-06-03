@@ -16,4 +16,11 @@ app.use('/api/search', searchRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/tokens', tokensRoutes);
 
+if (require.main === module) {
+    const port = process.env.PORT || 3000;
+    app.listen(port, () => {
+        console.log(`Web server listening on port ${port}`);
+    });
+}
+
 module.exports = app;

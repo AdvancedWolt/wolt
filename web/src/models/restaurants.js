@@ -1,45 +1,52 @@
 const crypto = require('crypto');
 
-const restaurants = {}
+// SINGLE SOURCE OF TRUTH
+const restaurants = {};
+
+// Return formatted restaurant, hides the empty products object
+const formatRestaurant = (restaurant) => {
+    if (!restaurant) return null;
+    return { id: restaurant.id, name: restaurant.name };
+};
 
 const createRestaurant = (name) => {
     const id = crypto.randomUUID();
-    const newRestaurant = { id: id, name: name };
+    // Embed products inside the restaurant
+    const newRestaurant = { id: id, name: name, products: {} }; 
     
-    // Save the new restaurant using the new id
     restaurants[id] = newRestaurant;
     
-    return newRestaurant;
+    return formatRestaurant(newRestaurant); 
 };
 
-
 const updateRestaurant = (id, name) => {
-    const restaurant = restaurants[id]
-    if (!restaurant) return null
+    const restaurant = restaurants[id];
+    if (!restaurant) return null;
 
-    // Update properties
     restaurant.name = name;
-    return restaurant
-}
-
+    return formatRestaurant(restaurant);
+};
 
 const deleteRestaurant = (id) => {
     if (restaurants[id]) {
-        delete restaurants[id];
+        delete restaurants[id]; // Deletes products too
         return true;
     }
     return false;
 };
 
 // Getters
-const getAllRestaurants = () => Object.values(restaurants);
-const getRestaurantById = (id) => restaurants[id];
+const getAllRestaurants = () => Object.values(restaurants).map(formatRestaurant);
+const getRestaurantById = (id) => formatRestaurant(restaurants[id]);
 
+// Expose raw restaurant to the Product model 
+const getRawRestaurantById = (id) => restaurants[id];
 
 module.exports = {
     createRestaurant,
     updateRestaurant,
     deleteRestaurant,
     getAllRestaurants,
-    getRestaurantById
+    getRestaurantById,
+    getRawRestaurantById // Exported just for models/products.js
 };

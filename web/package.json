@@ -2,9 +2,9 @@
   "name": "web",
   "version": "1.0.0",
   "description": "Node + Express REST/JSON web server for AdvancedWolt ex3.",
-  "main": "src/server.js",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node src/app.js",
     "test": "node --test"
   },
   "keywords": [],

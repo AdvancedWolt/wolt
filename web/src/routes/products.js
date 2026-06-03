@@ -1,4 +1,16 @@
-const express = require('express')
-var router = express.Router()
+const express = require('express');
+// mergeParams is needed for nested routes
+const router = express.Router({ mergeParams: true }); 
 
-module.exports = router
+const products = require('../controllers/products');
+
+router.route('/')
+    .get(products.getAllProducts)
+    .post(products.createProduct); 
+
+router.route('/:pId')
+    .get(products.getProductById)
+    .patch(products.updateProduct)
+    .delete(products.deleteProduct);
+
+module.exports = router;

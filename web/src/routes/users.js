@@ -13,5 +13,4 @@ router.route('/:id')
 router.route('/:id/recommendations')
     .get(requireAuth, requireMatchingUser, user.getRecommendations)
 
-
 module.exports = router

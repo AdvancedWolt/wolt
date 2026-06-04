@@ -46,10 +46,6 @@ const getOrderById = (req, res) => {
         return res.status(404).json({ error: 'Order not found' });
     }
 
-    if (order.userId !== req.userId) {
-        return res.status(403).json({ error: 'Forbidden' });
-    }
-
     res.status(200).json(order);
 };
 
@@ -59,10 +55,6 @@ const updateOrder = (req, res) => {
     const order = Order.getOrderById(req.params.id);
     if (!order) {
         return res.status(404).json({ error: 'Order not found' });
-    }
-
-    if (order.userId !== req.userId) {
-        return res.status(403).json({ error: 'Forbidden' });
     }
 
     if (status !== undefined && !Order.VALID_STATUSES.includes(status)) {
@@ -93,10 +85,6 @@ const deleteOrder = (req, res) => {
 
     if (!order) {
         return res.status(404).json({ error: 'Order not found' });
-    }
-
-    if (order.userId !== req.userId) {
-        return res.status(403).json({ error: 'Forbidden' });
     }
 
     if (order.status !== 'pending') {

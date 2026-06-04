@@ -229,7 +229,7 @@ http://localhost:3000
 ```
 
 ## Running Tests
-To run the C++ unit tests inside the Docker container:
+To run the C++ tests from ex2 inside the Docker container:
 
 ```bash
 docker run -it --entrypoint ./build/tests/unit_tests wolt-app

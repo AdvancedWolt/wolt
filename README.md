@@ -229,16 +229,23 @@ http://localhost:3000
 ```
 
 ## Running Tests
-To run the unit tests inside the Docker container:
+To run the C++ tests from ex2 inside the Docker container:
 
 ```bash
 docker run -it --entrypoint ./build/tests/unit_tests wolt-app
 ```
 
-To run the web tests:
+To run the web REST API integration tests:
 
 ```bash
 cd web
 npm install
 npm test
 ```
+
+*Note: The web tests run using Node's built-in test runner (`node --test`), which requires Node.js v18 or newer. If you have multiple Node versions or Node is not in your global path (e.g. on Windows with VS/Playwright), you can execute them directly pointing to your Node executable:*
+
+```powershell
+& "path\to\node.exe" --test tests/users.test.js tests/orders.test.js
+```
+

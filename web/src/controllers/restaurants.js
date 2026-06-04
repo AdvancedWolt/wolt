@@ -1,4 +1,6 @@
 const Restaurant = require('../models/restaurants');
+const Product = require('../models/products');
+const Order = require('../models/orders');
 
 const createRestaurant = (req, res) => {
     const { name } = req.body;
@@ -36,6 +38,9 @@ const deleteRestaurant = (req, res) => {
     if (!deletedRestaurant) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
+
+    Product.deleteProductsByRestaurant(id);
+    Order.cancelOrdersByRestaurant(id);
 
     res.status(204).json(deletedRestaurant);
 };

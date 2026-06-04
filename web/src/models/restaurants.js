@@ -42,11 +42,17 @@ const getRestaurantById = (id) => formatRestaurant(restaurants[id]);
 // Expose raw restaurant to the Product model 
 const getRawRestaurantById = (id) => restaurants[id];
 
+// helper for GET /api/search/:query endpoint
+const searchRestaurants = (query) => {
+    return Object.values(restaurants).filter(r => r.name.includes(query)).map(formatRestaurant);
+};
+
 module.exports = {
     createRestaurant,
     updateRestaurant,
     deleteRestaurant,
     getAllRestaurants,
     getRestaurantById,
-    getRawRestaurantById // Exported just for models/products.js
+    getRawRestaurantById, // Exported just for models/products.js
+    searchRestaurants
 };

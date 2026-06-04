@@ -1,61 +1,53 @@
-# AdvancedWolt — Food‑Delivery Web Service (Exercise 3)
+# AdvancedWolt – Exercise 3: Food Delivery Web Server
 
-A RESTful, JSON web server in the spirit of a food‑delivery app (Wolt‑style).
-It is built with **Node.js + Express** in a clean **MVC** architecture and serves
-the server‑side functionality behind three screens: **sign‑up**, **login**, and
-the **main screen** (browse restaurants, view a menu, place orders, search).
+This is **Exercise 3**: a small food‑delivery web server (Wolt style), written in
+**Node.js + Express** with an **MVC** structure. It serves the API behind three
+screens: sign‑up, login, and the main screen (restaurants, menus, orders, and
+search).
 
-The web server is the application core. For the *recommendation / "viewed
-products"* functionality it talks, as a TCP **client**, to the **C++
-recommendation server from Exercise 2** — exactly as the assignment requires.
+When a request needs the recommendation / "viewed products" feature, the web
+server connects to the **Exercise 2** C++ server over TCP and reuses it instead
+of redoing that work.
 
-> All `/api/*` endpoints speak **JSON** (never HTML). Data is kept **in
-> memory**, so restarting the server clears everything.
+> **This README is for Exercise 3.** The Exercise 2 write‑up (its SOLID answers)
+> is in the [appendix](#appendix--exercise-2) at the bottom, and the Exercise 2
+> code is frozen on the `ex2` branch.
 
----
-
-## 📌 For the checker — branches & what belongs to which exercise
-
-This repository carries the work of more than one exercise, kept strictly apart
-so that earlier submissions stay frozen and graders can find each one:
-
-| Branch | Exercise | Contents |
-| :--- | :--- | :--- |
-| **`ex2`** | **Exercise 2** (locked) | The C++ TCP client/server recommendation system. **Frozen** — not touched after submission, so it can still be graded and the grace‑days are not affected. |
-| **`main`** | **Exercise 3** (this submission) | The Node + Express **MVC web server** (`web/`) **plus** the Exercise‑2 C++ server (`src/`), which the web server reuses over TCP. |
-
-* **Exercise 2 is locked on the `ex2` branch** (`git checkout ex2`). Work on
-  Exercise 3 continued on `main` so the two never mix.
-* **The Exercise‑2 SOLID reflection answers are preserved in this README**, in
-  the [Appendix — Exercise 2: SOLID reflection](#appendix--exercise-2-solid-reflection-answers)
-  section at the bottom, *and* on the `ex2` branch. They are unchanged; this
-  document only adds the Exercise‑3 material on top.
-
-The C++ server still lives in `src/` on `main` because Exercise 3 **runs it as a
-dependency** (the web server opens a socket to it). It is the same code that is
-frozen on `ex2`.
+Every `/api/*` route returns JSON, and all data is kept in memory, so restarting
+the server clears it.
 
 ---
 
-## What the server does
+## Branches (for the checker)
 
-The web server backs the screens of the app without implementing the screens
-themselves:
+| Branch | What's there |
+| :--- | :--- |
+| **`main`** | **Exercise 3** – this submission: the `web/` server plus the `src/` C++ server it talks to. |
+| **`ex2`** | **Exercise 2** – frozen. To grade Exercise 2, check out this branch (`git checkout ex2`). |
 
-* **Sign‑up screen** → `POST /api/users` (name, phone, address, username,
-  password …).
-* **Login screen** → `POST /api/tokens` (returns the user id on success).
-* **Main screen** → browse restaurants, open a restaurant's menu, place and
-  manage orders, and search restaurants/products.
-
-Some actions are open to anyone (browsing restaurants); others conceptually
-require a logged‑in user (placing an order). As the assignment specifies for
-this stage, a logged‑in user is identified by sending their user id in the
-**`user-id` HTTP header**.
+Exercise 2 is locked on `ex2` and hasn't been touched since we submitted it, so
+it stays gradable and our grace days are safe. We kept working on `main` for
+Exercise 3. The C++ code still lives in `src/` on `main` because the web server
+runs it as a dependency – it's the same code that's frozen on `ex2`.
 
 ---
 
-## Architecture (MVC + the Exercise‑2 bridge)
+## What it does
+
+We only built the server side, not the actual screens. The API backs:
+
+* **Sign‑up** – `POST /api/users` with username, password, name, phone, address.
+* **Login** – `POST /api/tokens`, returns the user id if the credentials match.
+* **Main screen** – list restaurants, open a menu, place and manage orders, and
+  search.
+
+Browsing is open to everyone. Actions that belong to a user (like placing an
+order) need you to be "logged in", which in this exercise just means sending your
+user id in a `user-id` header.
+
+---
+
+## How it's built (MVC)
 
 ```
 HTTP / JSON client  (curl, Postman, or the app's screens)
@@ -65,50 +57,41 @@ HTTP / JSON client  (curl, Postman, or the app's screens)
 │  Express web server   ·   web/   ·   Exercise 3   ·   MVC             │
 │                                                                      │
 │   Routes ──▶ Middleware (auth) ──▶ Controllers ──▶ Models            │
-│   /api/*       user-id header        HTTP logic       in‑memory      │
-│   url → fn     401 if required       status codes     state + rules  │
+│   url → fn     user-id header        HTTP logic       in‑memory data  │
 └──────────────────────────────────────────────────────────────────────┘
         │   only for "viewed product" / recommendations
-        ▼   raw TCP socket, newline‑delimited text protocol
+        ▼   TCP socket, newline‑delimited text
 ┌──────────────────────────────────────────────────────────────────────┐
 │  C++ recommendation server   ·   src/   ·   Exercise 2               │
-│  speaks POST / PATCH / DELETE / GET over its own TCP protocol         │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-**Request flow (`web/src`):**
+The code follows MVC and lives in `web/src`:
 
-* **Routes** (`routes/`) map a URL + HTTP verb to a controller function and wire
-  in middleware. Adding an endpoint is a line in a router — nothing else changes.
+* **Routes** (`routes/`) match a URL and HTTP verb to a controller function.
 * **Middleware** (`middleware/auth.js`) reads the `user-id` header. `requireAuth`
-  returns **401** when it is missing; `attachUserId` makes it optional (used by
-  *GET product*, where being logged in only adds a side effect).
-* **Controllers** (`controllers/`) own the HTTP layer: validate input, pick the
-  right status code, shape the JSON. They contain no storage details.
-* **Models** (`models/`) are the single source of truth: in‑memory stores plus
-  the domain rules (a product belongs to a restaurant, an order can only be
-  edited while `pending`, passwords are stored only as a salted PBKDF2 hash,
-  etc.).
-* **Service** (`services/tcpClient.js`) is the only place that knows the
-  Exercise‑2 server exists. It opens a socket and speaks that server's text
-  protocol; its host/port come from `config/tcpConfig.js` (env‑driven).
+  blocks with **401** if it's missing; `attachUserId` makes it optional.
+* **Controllers** (`controllers/`) are the HTTP layer: check the input, pick the
+  status code, return JSON. No storage logic here.
+* **Models** (`models/`) hold the in‑memory data and the rules (a product belongs
+  to a restaurant, an order can only change while it's `pending`, passwords are
+  saved only as a salted hash, and so on).
+* **TCP client** (`services/tcpClient.js`) is the one file that knows about the
+  Exercise 2 server. It opens a socket and speaks its text protocol; the address
+  comes from `config/tcpConfig.js`.
 
-**Where Exercise 2 is actually used.** Per the assignment, operations that need
-the Exercise‑2 server call it instead of re‑implementing it. Concretely:
-`GET /api/restaurants/:id/products/:pId` by a logged‑in user records that the
-user **viewed** the product on the C++ server, and order creation mirrors the
-ordered items as views. Recommendations are read back from the same server.
-
-This keeps the design **loosely coupled** and faithful to **SOLID**: transport
-(socket/HTTP), request handling (controllers), and state (models) are separable,
-and the dependency on Exercise 2 sits behind one small service module.
+**Talking to Exercise 2.** A few actions reuse the old server instead of redoing
+it. When a logged‑in user opens a product (`GET .../products/:pId`), that view is
+sent to the C++ server; creating an order does the same for the ordered items;
+and recommendations are read back from there. Everything about Exercise 2 sits
+behind that one small file, which keeps things loosely coupled.
 
 ---
 
 ## API reference
 
-Base URL: `http://localhost:3000`. All bodies and responses are JSON.
-"Auth" means the request must carry a `user-id: <id>` header.
+Base URL: `http://localhost:3000`. Bodies and responses are JSON. "Auth" means
+the request must include a `user-id: <id>` header.
 
 ### Users & authentication
 | Method | Path | Auth | Success | Errors |
@@ -131,7 +114,7 @@ Base URL: `http://localhost:3000`. All bodies and responses are JSON.
 | :--- | :--- | :---: | :--- | :--- |
 | `GET`    | `/api/restaurants/:id/products` | – | `200 OK` (array) | `404` restaurant not found |
 | `POST`   | `/api/restaurants/:id/products` | – | `201 Created` + `Location` | `400`/`404` |
-| `GET`    | `/api/restaurants/:id/products/:pId` | optional | `200 OK` (and records a **view** if `user-id` is sent) | `404` |
+| `GET`    | `/api/restaurants/:id/products/:pId` | optional | `200 OK` (records a **view** if `user-id` is sent) | `404` |
 | `PATCH`  | `/api/restaurants/:id/products/:pId` | – | `204 No Content` | `400`/`404` |
 | `DELETE` | `/api/restaurants/:id/products/:pId` | – | `204 No Content` | `404` |
 
@@ -147,33 +130,31 @@ Base URL: `http://localhost:3000`. All bodies and responses are JSON.
 ### Search
 | Method | Path | Auth | Success |
 | :--- | :--- | :---: | :--- |
-| `GET` | `/api/search/:query` | – | `200 OK` — `{ restaurants, products }` whose name/description contains `:query` |
+| `GET` | `/api/search/:query` | – | `200 OK` – `{ restaurants, products }` whose name or description contains `:query` |
 
-**HTTP statuses used:** `200` ok · `201` created (+`Location`) · `204` no
-content · `400` bad request · `401` authentication required · `404` not found ·
-`409` conflict.
+**Statuses used:** `200` ok, `201` created (+`Location`), `204` no content,
+`400` bad request, `401` auth required, `404` not found, `409` conflict.
 
 ---
 
-## Running the system
+## Running it
 
-Two services run **separately** (as the assignment requires): the Express web
-server and the Exercise‑2 C++ recommendation server. Docker Compose wires them
-together on a private network.
+Both servers run as separate containers, the way the exercise asks. The easiest
+way is Docker Compose.
 
-### Option A — Docker Compose (recommended)
+### Option A – Docker Compose (easiest)
 
-From the repository root:
+From the repo root:
 
 ```bash
 docker compose up --build
 ```
 
-This builds and starts both containers:
+This starts two containers:
 
-* **`cpp-service`** — the Exercise‑2 C++ server on port **8080**.
-* **`web`** — the Express API on port **3000** (it reaches the C++ server at
-  `cpp-service:8080` via the `CPP_SERVICE_HOST` / `CPP_SERVICE_PORT` env vars).
+* **`cpp-service`** – the Exercise 2 C++ server on port **8080**.
+* **`web`** – the Express API on port **3000**. It finds the C++ server through
+  the `CPP_SERVICE_HOST` / `CPP_SERVICE_PORT` env vars.
 
 <p align="center">
   <img src="docs/screenshots/00-startup.png" alt="docker compose up — both servers start" width="92%">
@@ -181,10 +162,10 @@ This builds and starts both containers:
 
 The API is now at `http://localhost:3000`.
 
-### Option B — the two containers by hand
+### Option B – run the two containers yourself
 
 ```bash
-# Exercise‑2 C++ server on 8080
+# Exercise 2 C++ server on 8080
 docker build -t wolt-cpp .
 docker run --rm -p 8080:8080 wolt-cpp 8080
 
@@ -195,34 +176,34 @@ docker run --rm -p 3000:3000 \
   wolt-web
 ```
 
-### Option C — web server locally (Node)
+### Option C – web server with Node
 
 ```bash
-# 1) start the C++ server (Docker as above, on 8080)
+# 1) start the C++ server (Docker, as above, on 8080)
 # 2) then:
 cd web
 npm install
 CPP_SERVICE_HOST=127.0.0.1 CPP_SERVICE_PORT=8080 PORT=3000 npm start
 ```
 
-Endpoints that never touch the recommender (restaurants, search, sign‑up …) work
-even if the C++ server is down; only the view/recommendation path needs it.
+Most endpoints (restaurants, search, sign‑up) work even when the C++ server is
+down. Only the view and recommendation paths need it.
 
 ---
 
-## Walkthrough — the API in action
+## Demo
 
-Every screenshot below is a **real terminal session** against the running stack
-(`docker compose up`), captured with `curl -i` so the status line and headers
-are visible. Ids shown in the output are the real UUIDs the server generated;
-the commands reuse them through shell variables (`$RID`, `$PID`, `$UID`, `$OID`).
+The screenshots below are real terminal sessions against the running stack,
+captured with `curl -i` so you can see the status line and headers. The ids in
+the output are the real UUIDs the server generated; the commands reuse them with
+shell variables (`$RID`, `$PID`, `$UID`, `$OID`).
 
-### Browse restaurants & a menu
+### Restaurants and menu
 
-The first block is the exact flow from the assignment's appendix: an empty list,
-create a restaurant (`201` + `Location`), list again. Then: fetch one restaurant,
-validation errors, add a product to the menu, and — the Exercise‑2 bridge — a
-logged‑in user viewing a product, which is recorded on the C++ server.
+First, the exact flow from the assignment's appendix: an empty list, create a
+restaurant (`201` + `Location`), then list again. After that: one restaurant, a
+couple of error cases, adding a product, and the Exercise 2 bridge – a logged‑in
+user opening a product, which gets recorded on the C++ server.
 
 <table>
   <tr>
@@ -235,15 +216,15 @@ logged‑in user viewing a product, which is recorded on the C++ server.
   </tr>
 </table>
 
-> The bottom‑right shot proves the cross‑server integration: after the logged‑in
-> `GET` of a product, the view appears in the C++ server's store
-> (`data/views.txt`): `<userId> <productId>`.
+> The bottom‑right shot shows the cross‑server part working: after the logged‑in
+> `GET`, the view appears in the C++ server's file (`data/views.txt`) as
+> `<userId> <productId>`.
 
-### Sign up, log in, order & search
+### Sign up, log in, order and search
 
-Register a user, log in (and a rejected login), create and manage an order as
-the authenticated user (including a `401` when the `user-id` header is missing),
-and a search that matches both a restaurant and a product.
+Register a user, log in (plus a failed login), create and update an order while
+logged in (with a `401` when the `user-id` header is missing), and a search that
+matches both a restaurant and a product.
 
 <table>
   <tr>
@@ -261,14 +242,14 @@ and a search that matches both a restaurant and a product.
 ## Tests
 
 ```bash
-# Web (Node's built-in test runner; needs Node 18+)
+# Web tests (Node's built-in test runner, needs Node 18+)
 cd web
 npm install
 npm test
 ```
 
 ```bash
-# Exercise‑2 C++ unit tests, inside the image
+# Exercise 2 C++ unit tests, inside the image
 docker build -t wolt-cpp .
 docker run --rm --entrypoint ./build/tests/unit_tests wolt-cpp
 ```
@@ -277,17 +258,16 @@ docker run --rm --entrypoint ./build/tests/unit_tests wolt-cpp
 
 ## Security note
 
-This is a teaching exercise: **do not** store or send real passwords, credit
-cards, API keys, or any sensitive data. Passwords here are only ever kept as a
-salted PBKDF2 hash and are never returned by the API.
+This is a course exercise, so don't store or send real passwords, credit cards,
+API keys, or anything sensitive. Passwords here are only ever kept as a salted
+PBKDF2 hash, and the API never returns them.
 
 ---
 
-# Appendix — Exercise 2: SOLID reflection (answers)
+# Appendix – Exercise 2
 
-*The questions below belong to **Exercise 2**. The answers are preserved here
-unchanged (and also live on the locked `ex2` branch) so the grader can find
-them.*
+These questions are from **Exercise 2**. The answers are kept here as they were
+(and also live on the `ex2` branch) so they're easy to find.
 
 ### 1. Command names changed (add → POST, recommend → GET)
 **Did it require touching closed code?**

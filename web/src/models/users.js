@@ -20,7 +20,7 @@ const hashPassword = (password, salt) => {
         .toString('hex');
 };
 
-const createUser = ({ username, password, name, address }) => {
+const createUser = ({ username, password, name, phone, address }) => {
     if (usersByUsername[username]) {
         return null;
     }
@@ -31,6 +31,7 @@ const createUser = ({ username, password, name, address }) => {
         id,
         username,
         name,
+        phone,
         address,
         passwordSalt,
         passwordHash: hashPassword(password, passwordSalt),

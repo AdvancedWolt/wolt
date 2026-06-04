@@ -317,7 +317,7 @@ test('PATCH /api/restaurants/:id updates a restaurant', async () => {
     });
     const fetched = await request('GET', `/api/restaurants/${id}`);
 
-    assert.strictEqual(patched.status, 200);
+    assert.strictEqual(patched.status, 204);
     assert.strictEqual(fetched.json.name, 'Restaurant After Patch');
 });
 

@@ -20,15 +20,18 @@ the server clears it.
 
 ## Branches (for the checker)
 
+Each exercise has its own branch, so older submissions stay frozen and gradable:
+
 | Branch | What's there |
 | :--- | :--- |
-| **`main`** | **Exercise 3** – this submission: the `web/` server plus the `src/` C++ server it talks to. |
-| **`ex2`** | **Exercise 2** – frozen. To grade Exercise 2, check out this branch (`git checkout ex2`). |
+| **`ex1`** | **Exercise 1** – frozen. |
+| **`ex2`** | **Exercise 2** – the C++ TCP server, frozen. |
+| **`ex3`** | **Exercise 3** – this submission: the `web/` server plus the `src/` C++ server it talks to. The Exercise 2 SOLID answers are in this branch's README, in the [appendix](#appendix--exercise-2). |
 
-Exercise 2 is locked on `ex2` and hasn't been touched since we submitted it, so
-it stays gradable and our grace days are safe. We kept working on `main` for
-Exercise 3. The C++ code still lives in `src/` on `main` because the web server
-runs it as a dependency – it's the same code that's frozen on `ex2`.
+To grade an earlier exercise, check out its branch (`git checkout ex1` /
+`git checkout ex2`). We kept working on `ex3` for this submission. The C++ code
+still lives in `src/` on `ex3` because the web server runs it as a dependency –
+it's the same code that's frozen on `ex2`.
 
 ---
 
@@ -106,7 +109,7 @@ the request must include a `user-id: <id>` header.
 | `GET`    | `/api/restaurants` | – | `200 OK` (array) | – |
 | `POST`   | `/api/restaurants` | – | `201 Created` + `Location` | `400` name required |
 | `GET`    | `/api/restaurants/:id` | – | `200 OK` | `404` not found |
-| `PATCH`  | `/api/restaurants/:id` | – | `200 OK` (updated) | `400` name required, `404` not found |
+| `PATCH`  | `/api/restaurants/:id` | – | `204 No Content` | `400` name required, `404` not found |
 | `DELETE` | `/api/restaurants/:id` | – | `204 No Content` | `404` not found |
 
 ### Products (a restaurant's menu)

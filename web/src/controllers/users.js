@@ -1,7 +1,7 @@
 const User = require('../models/users');
 
 const createUser = (req, res) => {
-    const { username, password, name, address } = req.body;
+    const { username, password, name, phone, address } = req.body;
     if (!username) {
         return res.status(400).json({ error: 'Username is required' });
     }
@@ -9,7 +9,7 @@ const createUser = (req, res) => {
         return res.status(400).json({ error: 'Password is required' });
     }
 
-    const newUser = User.createUser({ username, password, name, address });
+    const newUser = User.createUser({ username, password, name, phone, address });
     if (!newUser) {
         return res.status(409).json({ error: 'Username already exists' });
     }

@@ -1,5 +1,19 @@
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'wolt-secret-key';
+
 const getRequestUserId = (req) => {
-    return req.get('user-id') || req.get('x-user-id') || null;
+    const authHeader = req.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return null;
+    }
+
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        return decoded.userId;
+    } catch (err) {
+        return null; // missing, tampered or expired tokens
+    }
 };
 
 const requireAuth = (req, res, next) => {

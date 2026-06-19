@@ -1,4 +1,7 @@
 const User = require('../models/users');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'wolt-secret-key';
 
 const login = (req, res) => {
     const { username, password } = req.body;
@@ -14,11 +17,14 @@ const login = (req, res) => {
         return res.status(404).json({ error: 'Invalid username or password' });
     }
 
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
+
     res.status(200).json({
-        userId: user.id
+        token
     });
 };
 
 module.exports = {
-    login
+    login,
+    JWT_SECRET
 };

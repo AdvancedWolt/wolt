@@ -9,6 +9,10 @@ const createUser = (req, res) => {
         return res.status(400).json({ error: 'Password is required' });
     }
 
+    if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long and contain both letters and digits' });
+    }
+
     const newUser = User.createUser({ username, password, name, phone, address });
     if (!newUser) {
         return res.status(409).json({ error: 'Username already exists' });

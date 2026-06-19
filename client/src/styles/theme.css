@@ -1,0 +1,83 @@
+/* Design tokens. Every component styles with these variables, so flipping
+   data-theme on <html> (see ThemeContext) recolors the whole app at once. */
+:root {
+    --bg: #ffffff;
+    --surface: #f5f7fa;
+    --text: #1f2733;
+    --muted: #5b6573;
+    --border: #e4e9f0;
+    --accent: #009de0;
+    --accent-text: #ffffff;
+}
+
+[data-theme="dark"] {
+    --bg: #14181f;
+    --surface: #1d242e;
+    --text: #e7ecf2;
+    --muted: #9aa6b4;
+    --border: #2b333f;
+    --accent: #00b8e6;
+    --accent-text: #08121a;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+.page {
+    padding: 24px;
+}
+
+.navbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.navbar-links {
+    display: flex;
+    gap: 14px;
+}
+
+.navbar-links a {
+    color: var(--text);
+    text-decoration: none;
+}
+
+.navbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.navbar-user {
+    color: var(--muted);
+}
+
+.btn {
+    border: 1px solid var(--border);
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    font: inherit;
+}

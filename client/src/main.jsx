@@ -7,9 +7,8 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import './styles/theme.css';
 
-// The app is mounted once here. BrowserRouter gives client-side routing (no
-// page refresh between screens); the two providers wrap everything so any
-// component can read the logged-in user and the current theme.
+// BrowserRouter must wrap the app so the routing hooks work; the providers
+// expose auth and theme to every page.
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
         <BrowserRouter>

@@ -1,8 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-// Dark/light theme for the whole app. Components never hold their own colors;
-// they use the CSS variables in theme.css, which this provider flips by setting
-// data-theme on the <html> element.
 const ThemeContext = createContext(null);
 
 const THEME_KEY = 'aw_theme';
@@ -12,8 +9,8 @@ export const ThemeProvider = ({ children }) => {
 
     const toggleTheme = () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
 
-    // Apply the theme to the document so every CSS variable updates at once,
-    // and remember the choice across reloads.
+    // Setting data-theme on <html> swaps the CSS variables in theme.css, which
+    // recolors the whole app at once.
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem(THEME_KEY, theme);

@@ -2,8 +2,7 @@ import { Outlet } from 'react-router-dom';
 
 import Navbar from './Navbar.jsx';
 
-// Shared frame for the main app: the navbar on top, the active page below.
-// <Outlet /> is where the matched child route renders.
+// App frame shared by the main pages: navbar on top, active page below.
 const Layout = () => (
     <>
         <Navbar />

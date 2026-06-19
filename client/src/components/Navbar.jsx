@@ -3,9 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 
-// Minimal app shell so the skeleton is usable end to end. P2 (EX4-4) replaces
-// this with the full Wolt-style top bar; the context wiring below (useAuth,
-// useTheme, the logout flow) is the part worth keeping.
 const Navbar = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();

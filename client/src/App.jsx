@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 
 import Layout from './components/Layout.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
@@ -10,12 +10,9 @@ import RestaurantDetail from './pages/RestaurantDetail.jsx';
 import Search from './pages/Search.jsx';
 import Orders from './pages/Orders.jsx';
 import Manage from './pages/Manage.jsx';
+import NotFound from './pages/NotFound.jsx';
 
-// All routes live here, so nobody else edits this file once it is set.
-// - /login and /register stand alone (no navbar).
-// - The rest share <Layout> (navbar + page).
-// - Browsing is public; ordering and managing sit behind <ProtectedRoute>,
-//   which sends logged-out users to /login.
+// Browsing is public; ordering and managing sit behind ProtectedRoute.
 const App = () => (
     <Routes>
         <Route path="/login" element={<Login />} />
@@ -30,9 +27,9 @@ const App = () => (
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/manage" element={<Manage />} />
             </Route>
-        </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
+        </Route>
     </Routes>
 );
 

@@ -1,13 +1,10 @@
-// Single entry point for talking to the Exercise 3 server.
-// Why: every request must attach the JWT and report errors the same way, so
-// components never build URLs, set headers, or parse error bodies by hand.
-
 const TOKEN_KEY = 'aw_token';
 
+// All HTTP goes through here so the auth token is attached and failures are
+// reported the same way for every call in the app.
 const request = async (method, path, body) => {
     const headers = { 'Content-Type': 'application/json' };
 
-    // Attach the token (a JWT once EX4-2 lands) to every request automatically.
     const token = localStorage.getItem(TOKEN_KEY);
     if (token) {
         headers['Authorization'] = `Bearer ${token}`;
@@ -19,13 +16,11 @@ const request = async (method, path, body) => {
         body: body === undefined ? undefined : JSON.stringify(body),
     });
 
-    // 204 No Content (PATCH/DELETE) has no body to parse.
+    // 204 responses (e.g. PATCH/DELETE) carry no body to parse.
     const data = res.status === 204 ? null : await res.json().catch(() => null);
 
     if (!res.ok) {
-        // Normalize every failure into one Error the UI can show directly.
-        const message = (data && data.error) || `Request failed (${res.status})`;
-        throw new Error(message);
+        throw new Error((data && data.error) || `Request failed (${res.status})`);
     }
 
     return data;

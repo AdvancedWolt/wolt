@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext.jsx';
-import '../styles/auth.css';
+import '../styles/login-register.css';
 
 const validators = {
     username: (v) => {

@@ -1,24 +1,34 @@
 const User = require('../models/users');
 
-const createUser = (req, res) => {
-    const { username, password, name, phone, address } = req.body;
+const createUser = async (req, res) => {
+    const { username, password, name, phone, location, displayName, image } = req.body;
     if (!username) {
         return res.status(400).json({ error: 'Username is required' });
     }
     if (!password) {
         return res.status(400).json({ error: 'Password is required' });
     }
+    if (!displayName && !name) {
+        return res.status(400).json({ error: 'Display name is required' });
+    }
 
     if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
         return res.status(400).json({ error: 'Password must be at least 8 characters long and contain both letters and digits' });
     }
 
-    const newUser = User.createUser({ username, password, name, phone, address });
-    if (!newUser) {
-        return res.status(409).json({ error: 'Username already exists' });
+    if (!location || typeof location.x !== 'number' || typeof location.y !== 'number') {
+        return res.status(400).json({ error: 'Location coordinates (x, y) must be numbers' });
     }
 
-    res.status(201).location(`/api/users/${newUser.id}`).json(newUser);
+    try {
+        const newUser = await User.createUser({ username, password, name, phone, location, displayName, image });
+        if (!newUser) {
+            return res.status(409).json({ error: 'Username already exists' });
+        }
+        res.status(201).location(`/api/users/${newUser.id}`).json(newUser);
+    } catch (err) {
+        res.status(500).json({ error: 'Internal server error during registration' });
+    }
 };
 
 const getUserById = (req, res) => {

@@ -12,7 +12,8 @@ const getRequestUserId = (req) => {
         const decoded = jwt.verify(token, JWT_SECRET);
         return decoded.userId;
     } catch (err) {
-        return null; // missing, tampered or expired tokens
+        console.error('JWT Verification Error:', err.message);
+        return null;
     }
 };
 

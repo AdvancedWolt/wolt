@@ -17,9 +17,13 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (username, password) => {
         const data = await loginRequest(username, password);
-        // Accept either a JWT or a plain user id, depending on the response shape.
-        setToken(data.token ?? data.userId);
-        setUser({ username, ...data });
+        setToken(data.token);
+        setUser({
+            id: data.userId,
+            username: data.username,
+            displayName: data.displayName,
+            image: data.image,
+        });
         return data;
     };
 

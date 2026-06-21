@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 
 import { search, getRestaurants } from '../api/endpoints.js';
 import RestaurantCard from '../components/RestaurantCard.jsx';
+import { formatPrice } from '../utils/format.js';
 import '../styles/search.css';
 
 const Search = () => {
@@ -165,7 +166,7 @@ const DishResultCard = ({ product, restaurantName }) => {
             <div className="search-dish-body">
                 <header className="search-dish-header">
                     <h3>{product.name}</h3>
-                    <span className="search-dish-price">₪{Number(product.price ?? 0).toFixed(2)}</span>
+                    <span className="search-dish-price">{formatPrice(product.price)}</span>
                 </header>
                 <p className="search-dish-desc">{product.description || 'No description provided'}</p>
                 {restaurantName && (

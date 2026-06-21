@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { formatPrice } from '../utils/format.js';
+
 const MenuItem = ({ product, quantity, onAdd }) => {
     const [imageFailed, setImageFailed] = useState(false);
 
@@ -13,7 +15,7 @@ const MenuItem = ({ product, quantity, onAdd }) => {
             <div className="menu-item-copy">
                 <h3>{product.name}</h3>
                 <p>{product.description || 'No description provided'}</p>
-                <strong className="menu-item-price">₪{Number(product.price ?? 0).toFixed(2)}</strong>
+                <strong className="menu-item-price">{formatPrice(product.price)}</strong>
             </div>
             <div className="menu-item-action">
                 {quantity > 0 && <span className="menu-item-quantity" aria-label={`${quantity} selected`}>{quantity}</span>}

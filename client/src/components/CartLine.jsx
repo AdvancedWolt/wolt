@@ -1,3 +1,5 @@
+import { formatPrice } from '../utils/format.js';
+
 const CartLine = ({ line, onIncrement, onDecrement, onRemove }) => {
     const { product, quantity } = line;
     const price = Number(product.price ?? 0);
@@ -12,7 +14,7 @@ const CartLine = ({ line, onIncrement, onDecrement, onRemove }) => {
 
             <div className="cart-line-info">
                 <h3>{product.name}</h3>
-                <span className="cart-line-price">₪{price.toFixed(2)}</span>
+                <span className="cart-line-price">{formatPrice(price)}</span>
             </div>
 
             <div className="cart-line-stepper">
@@ -21,7 +23,7 @@ const CartLine = ({ line, onIncrement, onDecrement, onRemove }) => {
                 <button type="button" onClick={() => onIncrement(product)} aria-label={`Add one ${product.name}`}>+</button>
             </div>
 
-            <strong className="cart-line-subtotal">₪{(price * quantity).toFixed(2)}</strong>
+            <strong className="cart-line-subtotal">{formatPrice(price * quantity)}</strong>
 
             <button className="cart-line-remove" type="button" onClick={() => onRemove(product.id)} aria-label={`Remove ${product.name}`}>
                 ✕

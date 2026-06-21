@@ -5,6 +5,7 @@ import { createOrder, getProducts, getRecommendations } from '../api/endpoints.j
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import CartLine from '../components/CartLine.jsx';
+import { formatPrice } from '../utils/format.js';
 import '../styles/cart.css';
 
 const Cart = () => {
@@ -116,7 +117,7 @@ const Cart = () => {
                                     {product.image ? <img src={product.image} alt="" /> : product.name.slice(0, 1).toUpperCase()}
                                 </span>
                                 <span className="cart-recommendation-name">{product.name}</span>
-                                <span className="cart-recommendation-price">₪{Number(product.price ?? 0).toFixed(2)}</span>
+                                <span className="cart-recommendation-price">{formatPrice(product.price)}</span>
                                 <button className="cart-recommendation-add" type="button" onClick={() => addItem(product, restaurant)}>
                                     + Add
                                 </button>
@@ -129,7 +130,7 @@ const Cart = () => {
             <footer className="cart-summary">
                 <div className="cart-summary-row">
                     <span>{count} {count === 1 ? 'item' : 'items'}</span>
-                    <strong>₪{total.toFixed(2)}</strong>
+                    <strong>{formatPrice(total)}</strong>
                 </div>
                 <div className="cart-summary-actions">
                     <button className="btn btn-secondary" type="button" onClick={clearCart} disabled={placing}>

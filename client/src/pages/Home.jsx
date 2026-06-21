@@ -4,25 +4,8 @@ import { Link } from 'react-router-dom';
 import { getRestaurants } from '../api/endpoints.js';
 import RestaurantRow from '../components/RestaurantRow.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { distanceInKm } from '../utils/geo.js';
 import '../styles/home.css';
-
-const toRadians = (degrees) => degrees * (Math.PI / 180);
-
-const distanceInKm = (from, to) => {
-    if (!from || !to) return null;
-
-    const earthRadiusKm = 6371;
-    const latitudeDelta = toRadians(to.x - from.x);
-    const longitudeDelta = toRadians(to.y - from.y);
-    const fromLatitude = toRadians(from.x);
-    const toLatitude = toRadians(to.x);
-    const haversine = (
-        Math.sin(latitudeDelta / 2) ** 2
-        + Math.cos(fromLatitude) * Math.cos(toLatitude) * Math.sin(longitudeDelta / 2) ** 2
-    );
-
-    return earthRadiusKm * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
-};
 
 const Home = () => {
     const { user } = useAuth();

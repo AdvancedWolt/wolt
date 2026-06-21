@@ -12,6 +12,7 @@ const usersRoutes = require('./routes/users');
 const tokensRoutes = require('./routes/tokens');
 const ordersRoutes = require('./routes/orders')
 const { errorHandler } = require('./middleware/errorHandler');
+const { seedDatabase } = require('./seed');
 
 
 app.use('/api/restaurants', restaurantRoutes);
@@ -42,8 +43,14 @@ app.use(errorHandler);
 
 if (require.main === module) {
     const port = process.env.PORT || 3000;
-    app.listen(port, () => {
+    app.listen(port, async () => {
         console.log(`Web server listening on port ${port}`);
+        try {
+            await seedDatabase();
+            console.log('Initial restaurants, menus and orders seeded');
+        } catch (err) {
+            console.error('Seeding failed:', err.message);
+        }
     });
 }
 

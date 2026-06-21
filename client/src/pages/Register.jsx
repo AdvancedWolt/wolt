@@ -164,6 +164,7 @@ const Register = () => {
 
     return (
         <div className="auth-page">
+            <Link to="/" className="auth-back-home btn btn-secondary">← Keep browsing</Link>
             <ThemeToggle className="auth-theme-toggle btn btn-secondary" />
             <form className="auth-card auth-card--wide" onSubmit={handleSubmit} noValidate>
                 <Link to="/" className="auth-brand">AdvancedWolt</Link>

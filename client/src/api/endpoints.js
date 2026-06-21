@@ -25,6 +25,10 @@ export const search = (query) => apiGet(`/api/search/${encodeURIComponent(query)
 
 export const updateUser = (id, updates) => apiPatch(`/api/users/${id}`, updates);
 
+export const getRecommendations = (userId, productId) => (
+    apiGet(`/api/users/${userId}/recommendations?productId=${encodeURIComponent(productId)}`)
+);
+
 export const getOrders = () => apiGet('/api/orders');
 export const createOrder = (restaurantId, items) => apiPost('/api/orders', { restaurantId, items });
 export const updateOrder = (id, updates) => apiPatch(`/api/orders/${id}`, updates);

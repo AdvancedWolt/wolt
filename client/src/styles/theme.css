@@ -60,6 +60,16 @@ body {
     text-decoration: none;
 }
 
+.navbar-cart-count {
+    margin-left: 4px;
+    background: var(--accent);
+    color: var(--accent-text);
+    border-radius: 999px;
+    padding: 0 7px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
 .navbar-actions {
     margin-left: auto;
     display: flex;

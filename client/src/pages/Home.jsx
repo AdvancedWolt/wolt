@@ -57,7 +57,7 @@ const Home = () => {
     const nearby = useMemo(() => restaurantsWithDistance
         .filter((restaurant) => Number.isFinite(restaurant.distanceKm))
         .sort((left, right) => left.distanceKm - right.distanceKm)
-        .slice(0, 8), [restaurantsWithDistance]);
+        .slice(0, 5), [restaurantsWithDistance]);
 
     const promoted = useMemo(() => {
         const explicitlyPromoted = restaurantsWithDistance.filter((restaurant) => restaurant.promoted);

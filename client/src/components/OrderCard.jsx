@@ -1,7 +1,7 @@
+// Orders are placed and listed straight away; the only other state is a
+// cancellation (by the customer, or when a restaurant is removed).
 const STATUS_LABELS = {
-    pending: 'Pending',
-    'in-progress': 'In progress',
-    delivered: 'Delivered',
+    pending: 'Placed',
     cancelled: 'Cancelled',
 };
 

@@ -65,18 +65,8 @@
 }
 
 .order-status-pending {
-    background: rgba(0, 157, 224, 0.16);
-    color: var(--accent);
-}
-
-.order-status-in-progress {
-    background: rgba(245, 170, 0, 0.18);
-    color: #b07a00;
-}
-
-.order-status-delivered {
     background: rgba(40, 170, 90, 0.18);
-    color: #1f8a4c;
+    color: #2e9c5a;
 }
 
 .order-status-cancelled {

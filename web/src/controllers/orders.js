@@ -48,7 +48,7 @@ const createOrder = async (req, res) => {
 const getOrderById = (req, res) => {
     const order = Order.getOrderById(req.params.id);
 
-    if (!order) {
+    if (!order || order.userId !== req.userId) {
         return res.status(404).json({ error: 'Order not found' });
     }
 
@@ -59,7 +59,7 @@ const updateOrder = (req, res) => {
     const { items, status } = req.body;
 
     const order = Order.getOrderById(req.params.id);
-    if (!order) {
+    if (!order || order.userId !== req.userId) {
         return res.status(404).json({ error: 'Order not found' });
     }
 
@@ -89,7 +89,7 @@ const updateOrder = (req, res) => {
 const deleteOrder = (req, res) => {
     const order = Order.getOrderById(req.params.id);
 
-    if (!order) {
+    if (!order || order.userId !== req.userId) {
         return res.status(404).json({ error: 'Order not found' });
     }
 

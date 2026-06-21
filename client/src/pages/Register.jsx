@@ -91,12 +91,19 @@ const Register = () => {
         fileInputRef.current.click();
     };
 
+    const handleRemoveImage = (e) => {
+        e.stopPropagation();
+        setImageData(null);
+        setErrors((prev) => ({ ...prev, image: '' }));
+        fileInputRef.current.value = '';
+    };
+
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        if (file.size > 2 * 1024 * 1024) {
-            setErrors((prev) => ({ ...prev, image: 'Image size must be less than 2MB' }));
+        if (file.size > 5 * 1024 * 1024) {
+            setErrors((prev) => ({ ...prev, image: 'Image size must be less than 5MB' }));
             setTouched((prev) => ({ ...prev, displayName: true }));
             return;
         }
@@ -117,7 +124,7 @@ const Register = () => {
         for (const key of Object.keys(validators)) {
             fieldErrors[key] = validators[key](form[key], form);
         }
-        if (!imageData) fieldErrors.image = 'Profile picture is required';
+
         setErrors(fieldErrors);
 
         const allTouched = Object.keys(form).reduce((acc, key) => {
@@ -157,7 +164,7 @@ const Register = () => {
 
     const hasErrors = Object.values(errors).some(Boolean);
     const missingRequired =
-        form.username === '' || form.password === '' || form.confirmPassword === '' || form.displayName === '' || form.locationX === '' || form.locationY === '' || !imageData;
+        form.username === '' || form.password === '' || form.confirmPassword === '' || form.displayName === '' || form.locationX === '' || form.locationY === '';
     const submitDisabled = submitting || hasErrors || missingRequired;
 
     return (
@@ -190,6 +197,18 @@ const Register = () => {
                         onChange={handleImageChange}
                         className="auth-file-input"
                     />
+                </div>
+                <div className="auth-image-meta">
+                    {imageData && (
+                        <button
+                            type="button"
+                            className="auth-remove-image"
+                            onClick={handleRemoveImage}
+                        >
+                            ✕ Remove photo
+                        </button>
+                    )}
+                    <span className="auth-image-hint">Optional · Max 5MB</span>
                 </div>
                 {errors.image && touched.displayName && (
                     <span className="auth-field-error auth-image-error">{errors.image}</span>

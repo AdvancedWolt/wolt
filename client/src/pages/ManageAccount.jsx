@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { updateUser } from '../api/endpoints.js';
+import { getUser, updateUser } from '../api/endpoints.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useImagePicker } from '../hooks/useImagePicker.js';
 import { validateUsername, validateDisplayName, validateCoordinate } from '../utils/validators.js';
@@ -44,6 +44,26 @@ const ManageAccount = () => {
             image.setImageData(user.image || null);
         }
     }, [user]);
+
+    // Refresh from the server (the source of truth) when the page opens, falling
+    // back to the cached profile already shown if the request fails.
+    useEffect(() => {
+        if (!user?.id) return undefined;
+        let active = true;
+        getUser(user.id)
+            .then((profile) => {
+                if (!active || !profile) return;
+                setForm({
+                    username: profile.username || '',
+                    displayName: profile.displayName || '',
+                    locationX: profile.location?.x !== undefined ? String(profile.location.x) : '',
+                    locationY: profile.location?.y !== undefined ? String(profile.location.y) : '',
+                });
+                image.setImageData(profile.image || null);
+            })
+            .catch(() => {});
+        return () => { active = false; };
+    }, [user?.id]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;

@@ -1,9 +1,9 @@
-import { useRef, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { updateUser } from '../api/endpoints.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { readImageFile } from '../utils/image.js';
+import { useImagePicker } from '../hooks/useImagePicker.js';
 import { validateUsername, validateDisplayName, validateCoordinate } from '../utils/validators.js';
 import '../styles/manage-account.css';
 
@@ -24,16 +24,14 @@ const ManageAccount = () => {
         locationX: user?.location?.x !== undefined ? String(user.location.x) : '',
         locationY: user?.location?.y !== undefined ? String(user.location.y) : '',
     });
-    const [imageData, setImageData] = useState(user?.image || null);
+    const image = useImagePicker(user?.image || null);
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
     const [successMessage, setSuccessMessage] = useState('');
     const [serverError, setServerError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
-    const fileInputRef = useRef(null);
-
-    // Sync form with user state when it changes
+    // Keep the form in step with the signed-in user.
     useEffect(() => {
         if (user) {
             setForm({
@@ -42,7 +40,7 @@ const ManageAccount = () => {
                 locationX: user.location?.x !== undefined ? String(user.location.x) : '',
                 locationY: user.location?.y !== undefined ? String(user.location.y) : '',
             });
-            setImageData(user.image || null);
+            image.setImageData(user.image || null);
         }
     }, [user]);
 
@@ -66,29 +64,6 @@ const ManageAccount = () => {
         const validator = validators[name];
         if (validator) {
             setErrors((prev) => ({ ...prev, [name]: validator(value) }));
-        }
-    };
-
-    const handleImageClick = () => {
-        fileInputRef.current.click();
-    };
-
-    const handleRemoveImage = (e) => {
-        e.stopPropagation();
-        setImageData(null);
-        fileInputRef.current.value = '';
-    };
-
-    const handleImageChange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        try {
-            const base64 = await readImageFile(file);
-            setErrors((prev) => ({ ...prev, image: '' }));
-            setImageData(base64);
-        } catch (err) {
-            setErrors((prev) => ({ ...prev, image: err.message }));
         }
     };
 
@@ -121,7 +96,7 @@ const ManageAccount = () => {
                     x: Number(form.locationX),
                     y: Number(form.locationY),
                 },
-                image: imageData,
+                image: image.imageData,
             };
 
             await updateUser(user.id, updates);
@@ -165,19 +140,19 @@ const ManageAccount = () => {
                         <input
                             type="file"
                             accept="image/*"
-                            ref={fileInputRef}
-                            onChange={handleImageChange}
+                            ref={image.inputRef}
+                            onChange={image.onChange}
                             style={{ display: 'none' }}
                         />
                         <div
                             className="avatar-container"
-                            onClick={handleImageClick}
+                            onClick={image.open}
                             role="button"
                             tabIndex={0}
                             title="Click to upload profile picture"
                         >
-                            {imageData ? (
-                                <img src={imageData} alt="Profile" className="avatar-image" />
+                            {image.imageData ? (
+                                <img src={image.imageData} alt="Profile" className="avatar-image" />
                             ) : (
                                 <span className="avatar-fallback" aria-hidden="true">
                                     {user?.username?.slice(0, 1).toUpperCase()}
@@ -188,11 +163,11 @@ const ManageAccount = () => {
                                 <span>Change Photo</span>
                             </div>
                         </div>
-                        {imageData && (
+                        {image.imageData && (
                             <button
                                 type="button"
                                 className="remove-avatar-btn"
-                                onClick={handleRemoveImage}
+                                onClick={image.remove}
                                 title="Remove photo"
                                 aria-label="Remove profile photo"
                             >
@@ -200,6 +175,9 @@ const ManageAccount = () => {
                             </button>
                         )}
                     </div>
+                    {image.error && (
+                        <span className="settings-error-message" role="alert">{image.error}</span>
+                    )}
 
                     <div className="profile-names">
                         <h2>{user?.displayName || user?.username}</h2>

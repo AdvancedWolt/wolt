@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext.jsx';
-import { readImageFile } from '../utils/image.js';
+import { useImagePicker } from '../hooks/useImagePicker.js';
 import {
     validateUsername,
     validatePassword,
@@ -35,13 +35,11 @@ const Register = () => {
         locationY: '',
         role: 'customer',
     });
-    const [imageData, setImageData] = useState(null);
+    const image = useImagePicker();
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
     const [serverError, setServerError] = useState('');
     const [submitting, setSubmitting] = useState(false);
-
-    const fileInputRef = useRef(null);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -73,28 +71,9 @@ const Register = () => {
         }
     };
 
-    const handleImageClick = () => {
-        fileInputRef.current.click();
-    };
-
     const handleRemoveImage = (e) => {
         e.stopPropagation();
-        setImageData(null);
-        setErrors((prev) => ({ ...prev, image: '' }));
-        fileInputRef.current.value = '';
-    };
-
-    const handleImageChange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        try {
-            const base64 = await readImageFile(file);
-            setErrors((prev) => ({ ...prev, image: '' }));
-            setImageData(base64);
-        } catch (err) {
-            setErrors((prev) => ({ ...prev, image: err.message }));
-        }
+        image.remove();
     };
 
     const allFieldsValid = () => {
@@ -126,7 +105,7 @@ const Register = () => {
                 username: form.username,
                 password: form.password,
                 displayName: form.displayName,
-                image: imageData,
+                image: image.imageData,
                 role: form.role,
                 location: {
                     x: parseFloat(form.locationX),
@@ -144,7 +123,7 @@ const Register = () => {
     const hasErrors = Object.values(errors).some(Boolean);
     const missingRequired =
         form.username === '' || form.password === '' || form.confirmPassword === '' || form.displayName === '' || form.locationX === '' || form.locationY === '';
-    const submitDisabled = submitting || hasErrors || missingRequired;
+    const submitDisabled = submitting || hasErrors || missingRequired || Boolean(image.error);
 
     return (
         <div className="auth-page">
@@ -190,10 +169,10 @@ const Register = () => {
                 </fieldset>
 
                 {/* --- Image picker --- */}
-                <div className="auth-image-picker" onClick={handleImageClick}>
-                    {imageData ? (
+                <div className="auth-image-picker" onClick={image.open}>
+                    {image.imageData ? (
                         <img
-                            src={imageData}
+                            src={image.imageData}
                             alt="Profile preview"
                             className="auth-image-preview"
                         />
@@ -204,15 +183,15 @@ const Register = () => {
                         </div>
                     )}
                     <input
-                        ref={fileInputRef}
+                        ref={image.inputRef}
                         type="file"
                         accept="image/*"
-                        onChange={handleImageChange}
+                        onChange={image.onChange}
                         className="auth-file-input"
                     />
                 </div>
                 <div className="auth-image-meta">
-                    {imageData && (
+                    {image.imageData && (
                         <button
                             type="button"
                             className="auth-remove-image"
@@ -223,8 +202,8 @@ const Register = () => {
                     )}
                     <span className="auth-image-hint">Optional · Max 5MB</span>
                 </div>
-                {errors.image && (
-                    <span className="auth-field-error auth-image-error">{errors.image}</span>
+                {image.error && (
+                    <span className="auth-field-error auth-image-error">{image.error}</span>
                 )}
 
                 <div className="auth-row">

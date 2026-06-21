@@ -162,6 +162,69 @@
     opacity: 0.7;
 }
 
+/* ---------- Account role ---------- */
+.auth-role-picker {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 0 0 22px;
+    padding: 0;
+    border: 0;
+}
+
+.auth-role-picker legend {
+    grid-column: 1 / -1;
+    margin-bottom: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.auth-role-option {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 76px;
+    padding: 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 11px;
+    background: var(--bg);
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-role-option--active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0, 157, 224, 0.12);
+}
+
+.auth-role-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.auth-role-icon {
+    font-size: 21px;
+}
+
+.auth-role-option strong,
+.auth-role-option small {
+    display: block;
+}
+
+.auth-role-option strong {
+    color: var(--text);
+    font-size: 12px;
+}
+
+.auth-role-option small {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.25;
+}
+
 /* ---------- Fields ---------- */
 .auth-field {
     margin-bottom: 18px;

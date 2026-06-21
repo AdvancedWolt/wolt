@@ -1,7 +1,8 @@
 const express = require('express');
+const path = require('path');
 const app = express()
 
-app.use(express.json())
+app.use(express.json({ limit: '6mb' }))
 
 const restaurantRoutes = require('./routes/restaurants');
 const productRoutes = require('./routes/products');
@@ -18,6 +19,24 @@ app.use('/api/search', searchRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/tokens', tokensRoutes);
 app.use('/api/orders', ordersRoutes);
+
+// Keep API failures as JSON and never let the SPA hide a missing API route.
+app.use('/api', (_req, res) => {
+    res.status(404).json({ error: 'API endpoint not found' });
+});
+
+// Exercise 4 is built into /public by the web Dockerfile. Express serves the
+// assets and returns index.html for client-side React Router routes.
+const publicDirectory = path.join(__dirname, '..', 'public');
+app.use(express.static(publicDirectory));
+app.use((req, res, next) => {
+    if (req.method !== 'GET' || !req.accepts('html')) return next();
+
+    return res.sendFile(path.join(publicDirectory, 'index.html'), (error) => {
+        if (error) next(error);
+    });
+});
+
 app.use(errorHandler);
 
 if (require.main === module) {

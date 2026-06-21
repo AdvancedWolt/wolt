@@ -23,6 +23,8 @@ export const AuthProvider = ({ children }) => {
             username: data.username,
             displayName: data.displayName,
             image: data.image,
+            role: data.role,
+            location: data.location,
         });
         return data;
     };

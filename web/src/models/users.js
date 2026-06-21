@@ -20,7 +20,7 @@ const hashPassword = (password, salt) => {
     });
 };
 
-const createUser = async ({ username, password, name, phone, location, displayName, image }) => {
+const createUser = async ({ username, password, name, phone, location, displayName, image, role }) => {
     if (usersByUsername[username]) {
         return null;
     }
@@ -36,6 +36,7 @@ const createUser = async ({ username, password, name, phone, location, displayNa
         image: image || null,
         phone,
         location,
+        role: role || 'customer',
         passwordSalt,
         passwordHash,
         views: []
@@ -162,4 +163,3 @@ module.exports = {
     removeView,
     getRecommendations
 };
-

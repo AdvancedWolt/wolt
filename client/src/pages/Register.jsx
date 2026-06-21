@@ -47,6 +47,7 @@ const Register = () => {
         displayName: '',
         locationX: '',
         locationY: '',
+        role: 'customer',
     });
     const [imageData, setImageData] = useState(null);
     const [errors, setErrors] = useState({});
@@ -149,6 +150,7 @@ const Register = () => {
                 password: form.password,
                 displayName: form.displayName,
                 image: imageData,
+                role: form.role,
                 location: {
                     x: parseFloat(form.locationX),
                     y: parseFloat(form.locationY)
@@ -174,6 +176,38 @@ const Register = () => {
                 <p className="auth-subtitle">Join AdvancedWolt today</p>
 
                 {serverError && <div className="auth-server-error">{serverError}</div>}
+
+                <fieldset className="auth-role-picker">
+                    <legend>Account type</legend>
+                    <label className={form.role === 'customer' ? 'auth-role-option auth-role-option--active' : 'auth-role-option'}>
+                        <input
+                            type="radio"
+                            name="role"
+                            value="customer"
+                            checked={form.role === 'customer'}
+                            onChange={handleChange}
+                        />
+                        <span className="auth-role-icon" aria-hidden="true">🛍️</span>
+                        <span>
+                            <strong>Customer</strong>
+                            <small>Browse and order food</small>
+                        </span>
+                    </label>
+                    <label className={form.role === 'restaurant_owner' ? 'auth-role-option auth-role-option--active' : 'auth-role-option'}>
+                        <input
+                            type="radio"
+                            name="role"
+                            value="restaurant_owner"
+                            checked={form.role === 'restaurant_owner'}
+                            onChange={handleChange}
+                        />
+                        <span className="auth-role-icon" aria-hidden="true">🍽️</span>
+                        <span>
+                            <strong>Restaurant owner</strong>
+                            <small>Create and manage restaurants</small>
+                        </span>
+                    </label>
+                </fieldset>
 
                 {/* --- Image picker --- */}
                 <div className="auth-image-picker" onClick={handleImageClick}>

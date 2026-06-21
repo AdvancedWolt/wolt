@@ -1,5 +1,5 @@
 const Product = require('../models/products');
-const Restaurant = require('../models/restaurants'); // Used to verify the restaurant exists
+const Restaurant = require('../models/restaurants');
 const User = require('../models/users');
 
 const rejectNonOwner = (restaurantId, userId, res) => {
@@ -29,15 +29,11 @@ const validateProductFields = ({ name, description, price, image }, partial = fa
 const getAllProducts = (req, res) => {
     const restaurantId = req.params.id;
 
-    // Check if the restaurant exists
     if (!Restaurant.getRestaurantById(restaurantId)) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
 
-    // Get data and return
-    const products = Product.getAllProducts(restaurantId);
-
-    res.status(200).json(products);
+    res.status(200).json(Product.getAllProducts(restaurantId));
 };
 
 const createProduct = (req, res) => {
@@ -59,7 +55,6 @@ const createProduct = (req, res) => {
         image: image || null
     });
 
-    // 201 Created. Location header tells the client where to find the new resource.
     res.status(201).location(`/api/restaurants/${restaurantId}/products/${newProduct.id}`).end();
 };
 
@@ -76,12 +71,12 @@ const getProductById = async (req, res) => {
         return res.status(404).json({ error: 'Product not found' });
     }
 
-    // req.userId comes from the user-id HTTP header, not from the URL.
+    // Recording a view is best-effort; a recommender outage must not fail the read.
     if (req.userId) {
         try {
             await User.addView(req.userId, product.id);
-        } catch (_) {
-            return res.status(502).json({ error: 'Recommendation service unavailable' });
+        } catch (err) {
+            console.error('Failed to record product view:', err.message);
         }
     }
 

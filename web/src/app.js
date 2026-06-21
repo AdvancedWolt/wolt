@@ -2,7 +2,8 @@ const express = require('express');
 const path = require('path');
 const app = express()
 
-app.use(express.json({ limit: '6mb' }))
+// Headroom for base64-encoded image uploads (a 5MB image is ~7MB once encoded).
+app.use(express.json({ limit: '10mb' }))
 
 const restaurantRoutes = require('./routes/restaurants');
 const productRoutes = require('./routes/products');

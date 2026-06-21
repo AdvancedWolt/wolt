@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import { getProducts, getRestaurant } from '../api/endpoints.js';
+import { getProduct, getProducts, getRestaurant } from '../api/endpoints.js';
 import MenuItem from '../components/MenuItem.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { useCart } from '../context/CartContext.jsx';
@@ -45,7 +45,11 @@ const RestaurantDetail = () => {
 
     const cartCount = cartRestaurant?.id === id ? count : 0;
 
-    const addToCart = (product) => addItem(product, { id: restaurant.id, name: restaurant.name });
+    const addToCart = (product) => {
+        addItem(product, { id: restaurant.id, name: restaurant.name });
+        // Record interest so the recommender can suggest similar dishes in the cart.
+        getProduct(restaurant.id, product.id).catch(() => {});
+    };
 
     const handleAdd = (product) => {
         if (cartRestaurant && cartRestaurant.id !== id && count > 0) {

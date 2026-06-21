@@ -11,6 +11,11 @@ export const createRestaurant = (restaurant) => apiPost('/api/restaurants', rest
 export const updateRestaurant = (id, updates) => apiPatch(`/api/restaurants/${id}`, updates);
 export const deleteRestaurant = (id) => apiDelete(`/api/restaurants/${id}`);
 export const getProducts = (restaurantId) => apiGet(`/api/restaurants/${restaurantId}/products`);
+// Fetching a single product records a view for the logged-in user, which feeds
+// the recommender (so the cart can suggest similar dishes).
+export const getProduct = (restaurantId, productId) => (
+    apiGet(`/api/restaurants/${restaurantId}/products/${productId}`)
+);
 export const createProduct = (restaurantId, product) => (
     apiPost(`/api/restaurants/${restaurantId}/products`, product)
 );

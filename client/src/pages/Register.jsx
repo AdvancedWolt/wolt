@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext.jsx';
 import { readImageFile } from '../utils/image.js';
+import ThemeToggle from '../components/ThemeToggle.jsx';
 import '../styles/login-register.css';
 
 const validators = {
@@ -163,9 +164,11 @@ const Register = () => {
 
     return (
         <div className="auth-page">
+            <ThemeToggle className="auth-theme-toggle btn btn-secondary" />
             <form className="auth-card" onSubmit={handleSubmit} noValidate>
-                <h1 className="auth-title">Create account</h1>
-                <p className="auth-subtitle">Join AdvancedWolt today</p>
+                <Link to="/" className="auth-brand">AdvancedWolt</Link>
+                <h1 className="auth-title">Create your account</h1>
+                <p className="auth-subtitle">Set up your profile to start ordering.</p>
 
                 {serverError && <div className="auth-server-error">{serverError}</div>}
 

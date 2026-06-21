@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext.jsx';
+import ThemeToggle from '../components/ThemeToggle.jsx';
 import '../styles/login-register.css';
 
 const Login = () => {
@@ -69,9 +70,11 @@ const Login = () => {
 
     return (
         <div className="auth-page">
+            <ThemeToggle className="auth-theme-toggle btn btn-secondary" />
             <form className="auth-card" onSubmit={handleSubmit} noValidate>
+                <Link to="/" className="auth-brand">AdvancedWolt</Link>
                 <h1 className="auth-title">Welcome back</h1>
-                <p className="auth-subtitle">Log in to AdvancedWolt</p>
+                <p className="auth-subtitle">Log in to keep ordering from places you love.</p>
 
                 {serverError && <div className="auth-server-error">{serverError}</div>}
 

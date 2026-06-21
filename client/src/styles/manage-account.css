@@ -1,0 +1,354 @@
+/* Container */
+.manage-account-container {
+    width: min(960px, 100%);
+    margin: 40px auto;
+    padding: 0 24px 48px;
+    animation: account-fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes account-fade-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.account-header {
+    margin-bottom: 36px;
+}
+
+.account-header h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    margin: 0 0 6px;
+    color: var(--text);
+}
+
+.account-header p {
+    color: var(--muted);
+    font-size: 0.98rem;
+    margin: 0;
+}
+
+/* Alerts */
+.account-alert {
+    padding: 14px 18px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    font-size: 0.92rem;
+    font-weight: 500;
+    line-height: 1.5;
+    animation: alert-slide 0.2s ease-out;
+}
+
+@keyframes alert-slide {
+    from { transform: translateY(-8px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.account-alert-error {
+    background: color-mix(in srgb, #ff3b30 8%, var(--bg));
+    color: #ff3b30;
+    border: 1px solid color-mix(in srgb, #ff3b30 20%, var(--border));
+}
+
+.account-alert-success {
+    background: color-mix(in srgb, #34c759 8%, var(--bg));
+    color: #24b24b;
+    border: 1px solid color-mix(in srgb, #34c759 20%, var(--border));
+}
+
+/* Layout Split */
+.account-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 36px;
+    align-items: start;
+}
+
+@media (max-width: 768px) {
+    .account-layout {
+        grid-template-columns: 1fr;
+        gap: 28px;
+    }
+}
+
+/* Profile Summary Card (Left Column) */
+.profile-summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.avatar-upload-section {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.avatar-container {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid var(--bg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    background: color-mix(in srgb, var(--border) 40%, var(--surface));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s;
+}
+
+.avatar-container:hover {
+    transform: scale(1.02);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-fallback {
+    font-size: 4rem;
+    font-weight: 800;
+    color: var(--muted);
+    opacity: 0.4;
+    user-select: none;
+}
+
+.avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.avatar-container:hover .avatar-overlay {
+    opacity: 1;
+}
+
+.avatar-overlay-icon {
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+}
+
+.remove-avatar-btn {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: #ff3b30;
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255, 59, 48, 0.3);
+    transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.15s;
+    font-size: 1.25rem;
+    z-index: 10;
+}
+
+.remove-avatar-btn:hover {
+    transform: scale(1.1);
+    background: #e02d24;
+}
+
+.profile-names h2 {
+    margin: 0 0 6px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.2;
+}
+
+.profile-names p {
+    margin: 0 0 20px;
+    font-size: 0.88rem;
+    color: var(--muted);
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    user-select: none;
+}
+
+.role-badge.owner {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.role-badge.customer {
+    background: color-mix(in srgb, var(--muted) 12%, transparent);
+    color: var(--muted);
+    border: 1px solid color-mix(in srgb, var(--muted) 25%, transparent);
+}
+
+/* Settings Form Card (Right Column) */
+.settings-form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.settings-section-title {
+    font-size: 1.3rem;
+    font-weight: 750;
+    margin: 0 0 24px;
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 12px;
+}
+
+/* Form Groups */
+.settings-form-group {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-form-group label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+}
+
+.settings-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.settings-input-icon {
+    position: absolute;
+    left: 14px;
+    color: var(--muted);
+    font-size: 1rem;
+    pointer-events: none;
+    user-select: none;
+}
+
+.settings-input {
+    width: 100%;
+    height: 44px;
+    padding: 10px 14px 10px 42px; /* Extra padding on left for icon */
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.settings-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.settings-input:disabled {
+    background: color-mix(in srgb, var(--border) 25%, var(--surface));
+    cursor: not-allowed;
+    color: var(--muted);
+}
+
+.settings-input.input-error {
+    border-color: #ff3b30;
+}
+
+.settings-input.input-error:focus {
+    box-shadow: 0 0 0 3px color-mix(in srgb, #ff3b30 15%, transparent);
+}
+
+.settings-error-message {
+    color: #ff3b30;
+    font-size: 0.8rem;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+/* Coordinates Layout */
+.coordinates-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 576px) {
+    .coordinates-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
+
+/* Submit Actions styling */
+.settings-actions {
+    margin-top: 32px;
+    display: flex;
+    gap: 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+}
+
+.settings-actions .btn {
+    flex: 1;
+    height: 46px;
+    font-weight: 650;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    border-radius: 10px;
+    transition: background-color 0.15s, transform 0.1s;
+}
+
+.settings-actions .btn:active {
+    transform: scale(0.98);
+}
+
+.settings-actions .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.settings-actions .btn-secondary:hover {
+    background: var(--border);
+}

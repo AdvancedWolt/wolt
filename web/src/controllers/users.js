@@ -69,8 +69,45 @@ const getRecommendations = async (req, res) => {
     }
 };
 
+const updateUser = async (req, res) => {
+    const { displayName, location, image } = req.body;
+
+    if (displayName === undefined && location === undefined && image === undefined) {
+        return res.status(400).json({ error: 'At least one profile field is required to update' });
+    }
+
+    if (displayName !== undefined && (typeof displayName !== 'string' || !displayName.trim())) {
+        return res.status(400).json({ error: 'Display name must be a non-empty string' });
+    }
+
+    if (location !== undefined && (!location || typeof location.x !== 'number' || typeof location.y !== 'number')) {
+        return res.status(400).json({ error: 'Location coordinates (x, y) must be numbers' });
+    }
+
+    if (image !== undefined && image !== null && typeof image !== 'string') {
+        return res.status(400).json({ error: 'Image must be a string or null' });
+    }
+
+    try {
+        const updated = User.updateUser(req.params.id, {
+            displayName: displayName ? displayName.trim() : undefined,
+            location,
+            image
+        });
+
+        if (!updated) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.status(200).json(updated);
+    } catch (err) {
+        res.status(500).json({ error: 'Internal server error during profile update' });
+    }
+};
+
 module.exports = {
     createUser,
     getUserById,
-    getRecommendations
+    getRecommendations,
+    updateUser
 };

@@ -38,7 +38,10 @@ const attachUserId = (req, _res, next) => {
     next();
 };
 
-const requireMatchingUser = (_req, _res, next) => {
+const requireMatchingUser = (req, res, next) => {
+    if (req.userId !== req.params.id) {
+        return res.status(403).json({ error: 'You are not authorized to access this user\'s resource' });
+    }
     next();
 };
 

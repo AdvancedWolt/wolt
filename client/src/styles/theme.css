@@ -67,8 +67,24 @@ body {
     gap: 10px;
 }
 
+.navbar-user-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 4px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.navbar-user-profile:hover .navbar-user {
+    color: var(--accent);
+}
+
 .navbar-user {
     color: var(--muted);
+    font-weight: 500;
+    font-size: 0.92rem;
+    transition: color 0.15s ease;
 }
 
 .navbar-avatar {
@@ -88,6 +104,17 @@ body {
     cursor: pointer;
     text-decoration: none;
     font: inherit;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+.btn-secondary:hover {
+    background: var(--border);
 }
 
 .notfound {

@@ -49,14 +49,22 @@ const createUser = async ({ username, password, name, phone, location, displayNa
 };
 
 
-const updateUser = (id, name) => {
-    const user = users[id]
-    if (!user) return null
+const updateUser = (id, updates) => {
+    const user = users[id];
+    if (!user) return null;
 
-    // Update properties
-    user.name = name;
-    return publicUser(user)
-}
+    if (updates.displayName !== undefined) {
+        user.displayName = updates.displayName;
+        user.name = updates.displayName;
+    }
+    if (updates.location !== undefined) {
+        user.location = updates.location;
+    }
+    if (updates.image !== undefined) {
+        user.image = updates.image;
+    }
+    return publicUser(user);
+};
 
 
 const deleteUser = (id) => {

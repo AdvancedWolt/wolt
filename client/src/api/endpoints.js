@@ -23,6 +23,8 @@ export const deleteProduct = (restaurantId, productId) => (
 
 export const search = (query) => apiGet(`/api/search/${encodeURIComponent(query)}`);
 
+export const updateUser = (id, updates) => apiPatch(`/api/users/${id}`, updates);
+
 export const getOrders = () => apiGet('/api/orders');
 export const createOrder = (restaurantId, items) => apiPost('/api/orders', { restaurantId, items });
 export const updateOrder = (id, updates) => apiPatch(`/api/orders/${id}`, updates);

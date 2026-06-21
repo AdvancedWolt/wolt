@@ -66,16 +66,6 @@ const updateUser = (id, updates) => {
     return publicUser(user);
 };
 
-
-const deleteUser = (id) => {
-    if (users[id]) {
-        delete usersByUsername[users[id].username];
-        delete users[id];
-        return true;
-    }
-    return false;
-};
-
 // Getters
 const getAllUsers = () => Object.values(users).map(publicUser);
 const getUserById = (id) => publicUser(users[id]);
@@ -104,8 +94,7 @@ const addView = async (id, productId) => {
     }
 
     if (user.views.length === 0) {
-        // create user append to the c++ server when the first view is added, 
-        // so that the user is visible in the recommendation engine immediately
+        // First view registers the user with the recommender; later views are appended.
         await tcpClient.createUser(id, productId);
     } else {
         await tcpClient.addView(id, productId);
@@ -130,7 +119,6 @@ const addViews = async (id, productIds) => {
     const user = users[id];
     if (!user || !productIds || productIds.length === 0) return null;
 
-    // Filter out products already viewed
     const newProducts = productIds.filter(pid => !user.views.includes(pid));
     if (newProducts.length === 0) return publicUser(user);
 
@@ -162,7 +150,6 @@ const getRecommendations = async (id, productId) => {
 module.exports = {
     createUser,
     updateUser,
-    deleteUser,
     getAllUsers,
     getUserById,
     verifyCredentials,

@@ -5,7 +5,6 @@ const products = {};
 
 const createProduct = (restaurantId, details) => {
     const id = crypto.randomUUID();
-    // Save the restaurantId so we know who it belongs to
     const newProduct = {
         id,
         restaurantId,
@@ -21,8 +20,6 @@ const createProduct = (restaurantId, details) => {
 
 const updateProduct = (restaurantId, productId, updates) => {
     const product = products[productId];
-    
-    // Ensure the product exists AND belongs to the correct restaurant
     if (!product || product.restaurantId !== restaurantId) return null;
 
     if (updates.name !== undefined) product.name = updates.name;
@@ -43,7 +40,6 @@ const deleteProduct = (restaurantId, productId) => {
 };
 
 const getAllProducts = (restaurantId) => {
-    // Filter the global products list for this specific restaurant
     return Object.values(products).filter(p => p.restaurantId === restaurantId);
 };
 
@@ -56,9 +52,7 @@ const getProductById = (restaurantId, productId) => {
     return null;
 };
 
-// --- HELPER FUNCTIONS ---
-
-// Used from controllers/restaurants.js when a restaurant is deleted
+// Called from controllers/restaurants.js when a restaurant is deleted.
 const deleteProductsByRestaurant = (restaurantId) => {
     for (const key in products) {
         if (products[key].restaurantId === restaurantId) {

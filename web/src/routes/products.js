@@ -10,8 +10,7 @@ router.route('/')
     .post(requireRestaurantOwner, products.createProduct);
 
 router.route('/:pId')
-    // Express calls attachUserId first; the controller then reads req.userId.
-    // Keeping this here avoids calling middleware manually inside the controller.
+    // attachUserId runs first so the controller can record a view for logged-in users.
     .get(attachUserId, products.getProductById)
     .patch(requireRestaurantOwner, products.updateProduct)
     .delete(requireRestaurantOwner, products.deleteProduct);

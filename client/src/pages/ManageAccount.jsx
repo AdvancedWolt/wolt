@@ -5,6 +5,7 @@ import { updateUser } from '../api/endpoints.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useImagePicker } from '../hooks/useImagePicker.js';
 import { validateUsername, validateDisplayName, validateCoordinate } from '../utils/validators.js';
+import { ROLES } from '../constants.js';
 import '../styles/manage-account.css';
 
 const validators = {
@@ -111,8 +112,8 @@ const ManageAccount = () => {
         }
     };
 
-    const roleName = user?.role === 'restaurant_owner' ? 'Restaurant Owner' : 'Customer';
-    const roleClass = user?.role === 'restaurant_owner' ? 'owner' : 'customer';
+    const roleName = user?.role === ROLES.OWNER ? 'Restaurant Owner' : 'Customer';
+    const roleClass = user?.role === ROLES.OWNER ? 'owner' : 'customer';
 
     return (
         <div className="manage-account-container">

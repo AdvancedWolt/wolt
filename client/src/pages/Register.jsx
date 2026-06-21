@@ -10,6 +10,7 @@ import {
     validateDisplayName,
     validateCoordinate,
 } from '../utils/validators.js';
+import { ROLES } from '../constants.js';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import '../styles/login-register.css';
 
@@ -33,7 +34,7 @@ const Register = () => {
         displayName: '',
         locationX: '',
         locationY: '',
-        role: 'customer',
+        role: ROLES.CUSTOMER,
     });
     const image = useImagePicker();
     const [errors, setErrors] = useState({});
@@ -138,12 +139,12 @@ const Register = () => {
 
                 <fieldset className="auth-role-picker">
                     <legend>Account type</legend>
-                    <label className={form.role === 'customer' ? 'auth-role-option auth-role-option--active' : 'auth-role-option'}>
+                    <label className={form.role === ROLES.CUSTOMER ? 'auth-role-option auth-role-option--active' : 'auth-role-option'}>
                         <input
                             type="radio"
                             name="role"
-                            value="customer"
-                            checked={form.role === 'customer'}
+                            value={ROLES.CUSTOMER}
+                            checked={form.role === ROLES.CUSTOMER}
                             onChange={handleChange}
                         />
                         <span className="auth-role-icon" aria-hidden="true">🛍️</span>
@@ -152,12 +153,12 @@ const Register = () => {
                             <small>Browse and order food</small>
                         </span>
                     </label>
-                    <label className={form.role === 'restaurant_owner' ? 'auth-role-option auth-role-option--active' : 'auth-role-option'}>
+                    <label className={form.role === ROLES.OWNER ? 'auth-role-option auth-role-option--active' : 'auth-role-option'}>
                         <input
                             type="radio"
                             name="role"
-                            value="restaurant_owner"
-                            checked={form.role === 'restaurant_owner'}
+                            value={ROLES.OWNER}
+                            checked={form.role === ROLES.OWNER}
                             onChange={handleChange}
                         />
                         <span className="auth-role-icon" aria-hidden="true">🍽️</span>

@@ -5,6 +5,7 @@ import { getRestaurants } from '../api/endpoints.js';
 import RestaurantRow from '../components/RestaurantRow.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { distanceInKm } from '../utils/geo.js';
+import { ROLES } from '../constants.js';
 import '../styles/home.css';
 
 const Home = () => {
@@ -84,7 +85,7 @@ const Home = () => {
             <section className="feed-state">
                 <span className="feed-state-icon">⌁</span>
                 <h1>No restaurants yet</h1>
-                {user?.role === 'restaurant_owner' ? (
+                {user?.role === ROLES.OWNER ? (
                     <>
                         <p>Be the first to add a restaurant to the platform!</p>
                         <Link className="btn" to="/manage">Go to Manage to add your restaurant</Link>

@@ -14,7 +14,7 @@ import {
 import ManagedProduct from '../components/ManagedProduct.jsx';
 import RestaurantImageUpload from '../components/RestaurantImageUpload.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { CATEGORIES } from '../constants.js';
+import { CATEGORIES, ROLES } from '../constants.js';
 import '../styles/manage.css';
 
 const emptyRestaurant = {
@@ -85,7 +85,7 @@ const Manage = () => {
     }, []);
 
     useEffect(() => {
-        if (user?.role === 'restaurant_owner') loadRestaurants();
+        if (user?.role === ROLES.OWNER) loadRestaurants();
     }, [loadRestaurants, user?.role]);
 
     useEffect(() => {
@@ -246,7 +246,7 @@ const Manage = () => {
         setter((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }));
     };
 
-    if (user?.role !== 'restaurant_owner') {
+    if (user?.role !== ROLES.OWNER) {
         return (
             <section className="manage-gate">
                 <span aria-hidden="true">🔒</span>

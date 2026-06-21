@@ -165,7 +165,7 @@ const Register = () => {
     return (
         <div className="auth-page">
             <ThemeToggle className="auth-theme-toggle btn btn-secondary" />
-            <form className="auth-card" onSubmit={handleSubmit} noValidate>
+            <form className="auth-card auth-card--wide" onSubmit={handleSubmit} noValidate>
                 <Link to="/" className="auth-brand">AdvancedWolt</Link>
                 <h1 className="auth-title">Create your account</h1>
                 <p className="auth-subtitle">Set up your profile to start ordering.</p>
@@ -242,110 +242,111 @@ const Register = () => {
                     <span className="auth-field-error auth-image-error">{errors.image}</span>
                 )}
 
-                {/* --- Fields --- */}
-                <div className={`auth-field ${touched.username && errors.username ? 'auth-field--error' : ''}`}>
-                    <label htmlFor="reg-username">Username</label>
-                    <input
-                        id="reg-username"
-                        name="username"
-                        type="text"
-                        autoComplete="username"
-                        value={form.username}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="Choose a username"
-                    />
-                    {touched.username && errors.username && (
-                        <span className="auth-field-error">{errors.username}</span>
-                    )}
+                <div className="auth-row">
+                    <div className={`auth-field ${touched.username && errors.username ? 'auth-field--error' : ''}`}>
+                        <label htmlFor="reg-username">Username</label>
+                        <input
+                            id="reg-username"
+                            name="username"
+                            type="text"
+                            autoComplete="username"
+                            value={form.username}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="Choose a username"
+                        />
+                        {touched.username && errors.username && (
+                            <span className="auth-field-error">{errors.username}</span>
+                        )}
+                    </div>
+
+                    <div className={`auth-field ${touched.displayName && errors.displayName ? 'auth-field--error' : ''}`}>
+                        <label htmlFor="reg-displayName">Display name</label>
+                        <input
+                            id="reg-displayName"
+                            name="displayName"
+                            type="text"
+                            value={form.displayName}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="Shown to others"
+                        />
+                        {touched.displayName && errors.displayName && (
+                            <span className="auth-field-error">{errors.displayName}</span>
+                        )}
+                    </div>
                 </div>
 
-                <div className={`auth-field ${touched.displayName && errors.displayName ? 'auth-field--error' : ''}`}>
-                    <label htmlFor="reg-displayName">Display name</label>
-                    <input
-                        id="reg-displayName"
-                        name="displayName"
-                        type="text"
-                        value={form.displayName}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="How should we call you?"
-                    />
-                    {touched.displayName && errors.displayName && (
-                        <span className="auth-field-error">{errors.displayName}</span>
-                    )}
+                <div className="auth-row">
+                    <div className={`auth-field ${touched.locationX && errors.locationX ? 'auth-field--error' : ''}`}>
+                        <label htmlFor="reg-locationX">Latitude</label>
+                        <input
+                            id="reg-locationX"
+                            name="locationX"
+                            type="number"
+                            step="any"
+                            value={form.locationX}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="e.g. 32.0853"
+                        />
+                        {touched.locationX && errors.locationX && (
+                            <span className="auth-field-error">{errors.locationX}</span>
+                        )}
+                    </div>
+
+                    <div className={`auth-field ${touched.locationY && errors.locationY ? 'auth-field--error' : ''}`}>
+                        <label htmlFor="reg-locationY">Longitude</label>
+                        <input
+                            id="reg-locationY"
+                            name="locationY"
+                            type="number"
+                            step="any"
+                            value={form.locationY}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="e.g. 34.7818"
+                        />
+                        {touched.locationY && errors.locationY && (
+                            <span className="auth-field-error">{errors.locationY}</span>
+                        )}
+                    </div>
                 </div>
 
-                <div className={`auth-field ${touched.locationX && errors.locationX ? 'auth-field--error' : ''}`}>
-                    <label htmlFor="reg-locationX">Location X (Latitude)</label>
-                    <input
-                        id="reg-locationX"
-                        name="locationX"
-                        type="number"
-                        step="any"
-                        value={form.locationX}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="e.g. 32.0853"
-                    />
-                    {touched.locationX && errors.locationX && (
-                        <span className="auth-field-error">{errors.locationX}</span>
-                    )}
-                </div>
+                <div className="auth-row">
+                    <div className={`auth-field ${touched.password && errors.password ? 'auth-field--error' : ''}`}>
+                        <label htmlFor="reg-password">Password</label>
+                        <input
+                            id="reg-password"
+                            name="password"
+                            type="password"
+                            autoComplete="new-password"
+                            value={form.password}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="8+ chars, letters & digits"
+                        />
+                        {touched.password && errors.password && (
+                            <span className="auth-field-error">{errors.password}</span>
+                        )}
+                    </div>
 
-                <div className={`auth-field ${touched.locationY && errors.locationY ? 'auth-field--error' : ''}`}>
-                    <label htmlFor="reg-locationY">Location Y (Longitude)</label>
-                    <input
-                        id="reg-locationY"
-                        name="locationY"
-                        type="number"
-                        step="any"
-                        value={form.locationY}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="e.g. 34.7818"
-                    />
-                    {touched.locationY && errors.locationY && (
-                        <span className="auth-field-error">{errors.locationY}</span>
-                    )}
-                </div>
-
-                <div className={`auth-field ${touched.password && errors.password ? 'auth-field--error' : ''}`}>
-                    <label htmlFor="reg-password">Password</label>
-                    <input
-                        id="reg-password"
-                        name="password"
-                        type="password"
-                        autoComplete="new-password"
-                        value={form.password}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="Min 8 chars, letters & digits"
-                    />
-                    {touched.password && errors.password && (
-                        <span className="auth-field-error">{errors.password}</span>
-                    )}
-                </div>
-
-                <div
-                    className={`auth-field ${
-                        touched.confirmPassword && errors.confirmPassword ? 'auth-field--error' : ''
-                    }`}
-                >
-                    <label htmlFor="reg-confirmPassword">Confirm password</label>
-                    <input
-                        id="reg-confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        autoComplete="new-password"
-                        value={form.confirmPassword}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="Re-enter your password"
-                    />
-                    {touched.confirmPassword && errors.confirmPassword && (
-                        <span className="auth-field-error">{errors.confirmPassword}</span>
-                    )}
+                    <div className={`auth-field ${touched.confirmPassword && errors.confirmPassword ? 'auth-field--error' : ''}`}>
+                        <label htmlFor="reg-confirmPassword">Confirm password</label>
+                        <input
+                            id="reg-confirmPassword"
+                            name="confirmPassword"
+                            type="password"
+                            autoComplete="new-password"
+                            value={form.confirmPassword}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="Re-enter password"
+                        />
+                        {touched.confirmPassword && errors.confirmPassword && (
+                            <span className="auth-field-error">{errors.confirmPassword}</span>
+                        )}
+                    </div>
                 </div>
 
                 <button className="auth-submit" type="submit" disabled={submitDisabled}>

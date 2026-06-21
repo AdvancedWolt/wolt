@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import { getProducts, getRestaurant } from '../api/endpoints.js';
 import MenuItem from '../components/MenuItem.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import '../styles/restaurant-detail.css';
 
@@ -15,6 +16,7 @@ const RestaurantDetail = () => {
     const [status, setStatus] = useState('loading');
     const [error, setError] = useState('');
     const [imageFailed, setImageFailed] = useState(false);
+    const [pendingProduct, setPendingProduct] = useState(null);
 
     const loadMenu = useCallback(async () => {
         setStatus('loading');
@@ -43,14 +45,19 @@ const RestaurantDetail = () => {
 
     const cartCount = cartRestaurant?.id === id ? count : 0;
 
+    const addToCart = (product) => addItem(product, { id: restaurant.id, name: restaurant.name });
+
     const handleAdd = (product) => {
         if (cartRestaurant && cartRestaurant.id !== id && count > 0) {
-            const startNewCart = window.confirm(
-                `Your cart has items from ${cartRestaurant.name}. Start a new cart with ${restaurant.name}?`
-            );
-            if (!startNewCart) return;
+            setPendingProduct(product);
+            return;
         }
-        addItem(product, { id: restaurant.id, name: restaurant.name });
+        addToCart(product);
+    };
+
+    const confirmNewCart = () => {
+        addToCart(pendingProduct);
+        setPendingProduct(null);
     };
 
     if (status === 'loading') {
@@ -140,6 +147,16 @@ const RestaurantDetail = () => {
                     <Link className="btn selection-checkout" to="/cart">View cart</Link>
                 </aside>
             )}
+
+            <ConfirmDialog
+                open={Boolean(pendingProduct)}
+                title="Start a new cart?"
+                message={`Your cart has items from ${cartRestaurant?.name}. Adding a dish from ${restaurant.name} will clear it.`}
+                confirmLabel="Start new cart"
+                cancelLabel="Keep current"
+                onConfirm={confirmNewCart}
+                onCancel={() => setPendingProduct(null)}
+            />
         </div>
     );
 };

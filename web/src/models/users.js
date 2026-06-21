@@ -11,30 +11,33 @@ const publicUser = (user) => {
     return safeUser;
 };
 
-// Why: storing raw passwords would leak every user's password if storage is exposed.
-// How: save a PBKDF2 hash plus a random per-user salt; the salt makes identical
-// passwords produce different hashes, and the original password is never returned.
 const hashPassword = (password, salt) => {
-    return crypto
-        .pbkdf2Sync(password, salt, 100000, 64, 'sha512')
-        .toString('hex');
+    return new Promise((resolve, reject) => {
+        crypto.pbkdf2(password, salt, 100000, 64, 'sha512', (err, derivedKey) => {
+            if (err) reject(err);
+            else resolve(derivedKey.toString('hex'));
+        });
+    });
 };
 
-const createUser = ({ username, password, name, phone, address }) => {
+const createUser = async ({ username, password, name, phone, location, displayName, image }) => {
     if (usersByUsername[username]) {
         return null;
     }
 
     const id = crypto.randomUUID();
     const passwordSalt = crypto.randomBytes(16).toString('hex');
+    const passwordHash = await hashPassword(password, passwordSalt);
     const newUser = {
         id,
         username,
-        name,
+        name: name || displayName,
+        displayName: displayName || name,
+        image: image || null,
         phone,
-        address,
+        location,
         passwordSalt,
-        passwordHash: hashPassword(password, passwordSalt),
+        passwordHash,
         views: []
     };
 
@@ -68,12 +71,12 @@ const deleteUser = (id) => {
 const getAllUsers = () => Object.values(users).map(publicUser);
 const getUserById = (id) => publicUser(users[id]);
 
-const verifyCredentials = (username, password) => {
+const verifyCredentials = async (username, password) => {
     const id = usersByUsername[username];
     if (!id) return null;
 
     const user = users[id];
-    const passwordHash = hashPassword(password, user.passwordSalt);
+    const passwordHash = await hashPassword(password, user.passwordSalt);
     if (passwordHash !== user.passwordHash) return null;
 
     return publicUser(user);

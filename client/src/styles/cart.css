@@ -163,6 +163,24 @@
     font-size: 0.85rem;
 }
 
+.cart-recommendation-add {
+    margin-top: 4px;
+    border: 1px solid var(--border);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font: inherit;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.cart-recommendation-add:hover {
+    background: var(--accent);
+    color: var(--accent-text);
+}
+
 .cart-summary {
     position: sticky;
     bottom: 16px;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { createOrder, getRecommendations } from '../api/endpoints.js';
+import { createOrder, getProducts, getRecommendations } from '../api/endpoints.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import CartLine from '../components/CartLine.jsx';
@@ -12,24 +12,46 @@ const Cart = () => {
     const { user, isAuthenticated } = useAuth();
     const { restaurant, items, count, total, addItem, decrementItem, removeItem, clearCart } = useCart();
 
-    const [recommendations, setRecommendations] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
     const [placing, setPlacing] = useState(false);
     const [error, setError] = useState('');
 
-    // Suggestions come from the server's recommender, seeded with a dish already
-    // in the cart. Best-effort: hide the section if it is unavailable.
+    // "You might also like": other dishes from this restaurant (so they can be
+    // added to the same order), ordered by the recommender when signed in.
+    const restaurantId = restaurant?.id;
     const anchorId = items[0]?.product.id;
+    const inCartIds = items.map((line) => line.product.id).join(',');
     useEffect(() => {
-        if (!isAuthenticated || !anchorId) {
-            setRecommendations([]);
+        if (!restaurantId || !inCartIds) {
+            setSuggestions([]);
             return;
         }
         let active = true;
-        getRecommendations(user.id, anchorId)
-            .then((data) => { if (active) setRecommendations(data.recommendations || []); })
-            .catch(() => { if (active) setRecommendations([]); });
+        const inCart = new Set(inCartIds.split(','));
+
+        (async () => {
+            let menu = [];
+            try {
+                menu = await getProducts(restaurantId);
+            } catch {
+                menu = [];
+            }
+            const candidates = (Array.isArray(menu) ? menu : []).filter((p) => !inCart.has(p.id));
+
+            if (isAuthenticated && anchorId) {
+                try {
+                    const data = await getRecommendations(user.id, anchorId);
+                    const recommended = new Set((data.recommendations || []).map((p) => p.id));
+                    candidates.sort((a, b) => Number(recommended.has(b.id)) - Number(recommended.has(a.id)));
+                } catch {
+                    // ranking is best-effort
+                }
+            }
+            if (active) setSuggestions(candidates.slice(0, 6));
+        })();
+
         return () => { active = false; };
-    }, [isAuthenticated, user?.id, anchorId]);
+    }, [restaurantId, inCartIds, isAuthenticated, user?.id, anchorId]);
 
     const placeOrder = async () => {
         if (!isAuthenticated) {
@@ -84,18 +106,21 @@ const Cart = () => {
                 ))}
             </ul>
 
-            {recommendations.length > 0 && (
+            {suggestions.length > 0 && (
                 <section className="cart-recommendations" aria-labelledby="cart-recs">
                     <h2 id="cart-recs">You might also like</h2>
                     <div className="cart-recommendation-list">
-                        {recommendations.map((product) => (
-                            <Link key={product.id} className="cart-recommendation" to={`/restaurant/${product.restaurantId}`}>
+                        {suggestions.map((product) => (
+                            <div key={product.id} className="cart-recommendation">
                                 <span className="cart-recommendation-media" aria-hidden="true">
                                     {product.image ? <img src={product.image} alt="" /> : product.name.slice(0, 1).toUpperCase()}
                                 </span>
                                 <span className="cart-recommendation-name">{product.name}</span>
                                 <span className="cart-recommendation-price">₪{Number(product.price ?? 0).toFixed(2)}</span>
-                            </Link>
+                                <button className="cart-recommendation-add" type="button" onClick={() => addItem(product, restaurant)}>
+                                    + Add
+                                </button>
+                            </div>
                         ))}
                     </div>
                 </section>

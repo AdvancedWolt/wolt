@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { getProduct, getProducts, getRestaurant } from '../api/endpoints.js';
 import MenuItem from '../components/MenuItem.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import Thumbnail from '../components/Thumbnail.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import '../styles/restaurant-detail.css';
 
@@ -15,7 +16,6 @@ const RestaurantDetail = () => {
     const [products, setProducts] = useState([]);
     const [status, setStatus] = useState('loading');
     const [error, setError] = useState('');
-    const [imageFailed, setImageFailed] = useState(false);
     const [pendingProduct, setPendingProduct] = useState(null);
 
     const loadMenu = useCallback(async () => {
@@ -39,7 +39,6 @@ const RestaurantDetail = () => {
     }, [id]);
 
     useEffect(() => {
-        setImageFailed(false);
         loadMenu();
     }, [loadMenu]);
 
@@ -94,15 +93,7 @@ const RestaurantDetail = () => {
 
             <header className="detail-hero">
                 <div className="detail-hero-media">
-                    {restaurant.image && !imageFailed ? (
-                        <img
-                            src={restaurant.image}
-                            alt=""
-                            onError={() => setImageFailed(true)}
-                        />
-                    ) : (
-                        <span aria-hidden="true">{restaurant.name.slice(0, 1).toUpperCase()}</span>
-                    )}
+                    <Thumbnail src={restaurant.image} name={restaurant.name} />
                 </div>
                 <div className="detail-hero-copy">
                     <p>{restaurant.category || 'Other'}</p>

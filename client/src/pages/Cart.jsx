@@ -5,6 +5,7 @@ import { createOrder, getProducts, getRecommendations } from '../api/endpoints.j
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import CartLine from '../components/CartLine.jsx';
+import Thumbnail from '../components/Thumbnail.jsx';
 import { formatPrice } from '../utils/format.js';
 import '../styles/cart.css';
 
@@ -114,7 +115,7 @@ const Cart = () => {
                         {suggestions.map((product) => (
                             <div key={product.id} className="cart-recommendation">
                                 <span className="cart-recommendation-media" aria-hidden="true">
-                                    {product.image ? <img src={product.image} alt="" /> : product.name.slice(0, 1).toUpperCase()}
+                                    <Thumbnail src={product.image} name={product.name} />
                                 </span>
                                 <span className="cart-recommendation-name">{product.name}</span>
                                 <span className="cart-recommendation-price">{formatPrice(product.price)}</span>

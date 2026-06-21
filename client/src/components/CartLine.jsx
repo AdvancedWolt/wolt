@@ -1,3 +1,4 @@
+import Thumbnail from './Thumbnail.jsx';
 import { formatPrice } from '../utils/format.js';
 
 const CartLine = ({ line, onIncrement, onDecrement, onRemove }) => {
@@ -7,9 +8,7 @@ const CartLine = ({ line, onIncrement, onDecrement, onRemove }) => {
     return (
         <li className="cart-line">
             <div className="cart-line-media" aria-hidden="true">
-                {product.image
-                    ? <img src={product.image} alt="" />
-                    : <span>{product.name.slice(0, 1).toUpperCase()}</span>}
+                <Thumbnail src={product.image} name={product.name} />
             </div>
 
             <div className="cart-line-info">

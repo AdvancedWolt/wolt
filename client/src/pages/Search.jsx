@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import { search, getRestaurants } from '../api/endpoints.js';
 import RestaurantCard from '../components/RestaurantCard.jsx';
-import { formatPrice } from '../utils/format.js';
+import DishResultCard from '../components/DishResultCard.jsx';
 import '../styles/search.css';
 
 const Search = () => {
@@ -141,46 +141,6 @@ const Search = () => {
                 </div>
             )}
         </div>
-    );
-};
-
-const DishResultCard = ({ product, restaurantName }) => {
-    const [imageFailed, setImageFailed] = useState(false);
-
-    return (
-        <article className="search-dish-card">
-            <div className="search-dish-media" aria-hidden="true">
-                {product.image && !imageFailed ? (
-                    <img
-                        src={product.image}
-                        alt=""
-                        loading="lazy"
-                        onError={() => setImageFailed(true)}
-                    />
-                ) : (
-                    <span className="search-dish-fallback">
-                        {product.name.slice(0, 1).toUpperCase()}
-                    </span>
-                )}
-            </div>
-            <div className="search-dish-body">
-                <header className="search-dish-header">
-                    <h3>{product.name}</h3>
-                    <span className="search-dish-price">{formatPrice(product.price)}</span>
-                </header>
-                <p className="search-dish-desc">{product.description || 'No description provided'}</p>
-                {restaurantName && (
-                    <footer className="search-dish-footer">
-                        <Link
-                            to={`/restaurant/${product.restaurantId}`}
-                            className="search-dish-restaurant-link"
-                        >
-                            Order from <strong>{restaurantName}</strong> &rarr;
-                        </Link>
-                    </footer>
-                )}
-            </div>
-        </article>
     );
 };
 

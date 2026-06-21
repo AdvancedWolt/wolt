@@ -1,11 +1,32 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 const CartContext = createContext(null);
 
+const CART_KEY = 'aw_cart';
+const EMPTY_CART = { restaurant: null, lines: {} };
+
+const loadCart = () => {
+    const raw = localStorage.getItem(CART_KEY);
+    if (!raw) return EMPTY_CART;
+    try {
+        const parsed = JSON.parse(raw);
+        return parsed?.lines ? parsed : EMPTY_CART;
+    } catch {
+        localStorage.removeItem(CART_KEY);
+        return EMPTY_CART;
+    }
+};
+
 // An order belongs to a single restaurant, so the cart tracks one restaurant at
-// a time; adding a dish from a different restaurant starts a fresh cart.
+// a time; adding a dish from a different restaurant starts a fresh cart. The cart
+// is mirrored to localStorage so it survives a page refresh.
 export const CartProvider = ({ children }) => {
-    const [cart, setCart] = useState({ restaurant: null, lines: {} });
+    const [cart, setCart] = useState(loadCart);
+
+    useEffect(() => {
+        if (Object.keys(cart.lines).length) localStorage.setItem(CART_KEY, JSON.stringify(cart));
+        else localStorage.removeItem(CART_KEY);
+    }, [cart]);
 
     const addItem = (product, restaurant) => {
         setCart((current) => {
@@ -36,7 +57,7 @@ export const CartProvider = ({ children }) => {
         });
     };
 
-    const clearCart = () => setCart({ restaurant: null, lines: {} });
+    const clearCart = () => setCart(EMPTY_CART);
 
     const items = useMemo(() => Object.values(cart.lines), [cart.lines]);
     const count = useMemo(() => items.reduce((sum, line) => sum + line.quantity, 0), [items]);

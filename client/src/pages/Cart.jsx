@@ -63,6 +63,8 @@ const Cart = () => {
 
     return (
         <div className="cart-page">
+            <Link className="cart-back" to={`/restaurant/${restaurant?.id}`}>← Back to menu</Link>
+
             <header className="cart-header">
                 <p className="cart-eyebrow">Your order from</p>
                 <h1>{restaurant?.name}</h1>

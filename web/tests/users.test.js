@@ -1,10 +1,8 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const jwt = require('jsonwebtoken');
-const OWNER_AUTH = `Bearer ${jwt.sign(
-    { userId: 'test-owner', role: 'restaurant_owner' },
-    process.env.JWT_SECRET || 'wolt-secret-key'
-)}`;
+const JWT_SECRET = process.env.JWT_SECRET || 'wolt-secret-key';
+const OWNER_AUTH = `Bearer ${jwt.sign({ userId: 'test-owner', role: 'restaurant_owner' }, JWT_SECRET)}`;
 
 const express = require('express');
 const usersRoutes = require('../src/routes/users');
@@ -13,6 +11,17 @@ const restaurantsRoutes = require('../src/routes/restaurants');
 const productsRoutes = require('../src/routes/products');
 const User = require('../src/models/users');
 const { tcpClient } = require('../src/services/tcpClient');
+
+// Valid registration defaults: the API enforces a strong password and a location.
+const PASSWORD = 'Password123';
+const LOCATION = { x: 32.08, y: 34.78 };
+const newUser = (username, name = username, extra = {}) => ({
+    username,
+    password: PASSWORD,
+    name,
+    location: LOCATION,
+    ...extra
+});
 
 let server;
 let base;
@@ -44,6 +53,15 @@ const request = async (method, path, body, headers = {}) => {
     ) {
         opts.headers.Authorization = OWNER_AUTH;
     }
+    // Tests authenticate with a convenient `user-id` header; translate it into the
+    // Bearer JWT the API actually expects.
+    if (opts.headers['user-id']) {
+        opts.headers.Authorization = `Bearer ${jwt.sign(
+            { userId: opts.headers['user-id'], role: 'customer' },
+            JWT_SECRET
+        )}`;
+        delete opts.headers['user-id'];
+    }
     if (body !== undefined) {
         opts.body = JSON.stringify(body);
     }
@@ -59,12 +77,7 @@ const request = async (method, path, body, headers = {}) => {
 
 // Story: As a new user, I want to create an account.
 test('POST /api/users with username and password -> 201 + Location /api/users/:id', async () => {
-    const res = await request('POST', '/api/users', {
-        username: 'alice',
-        password: 'secret',
-        name: 'Alice',
-        address: '1 Main St'
-    });
+    const res = await request('POST', '/api/users', newUser('alice', 'Alice'));
 
     assert.strictEqual(res.status, 201);
     const location = res.headers.get('location');
@@ -72,30 +85,37 @@ test('POST /api/users with username and password -> 201 + Location /api/users/:i
     assert.ok(res.json.id, 'response should include the new id');
     assert.strictEqual(res.json.username, 'alice');
     assert.strictEqual(res.json.name, 'Alice');
-    assert.strictEqual(res.json.address, '1 Main St');
     assert.strictEqual(res.json.password, undefined);
     assert.strictEqual(res.json.passwordHash, undefined);
 });
 
 test('POST /api/users with missing username -> 400', async () => {
-    const res = await request('POST', '/api/users', { password: 'secret' });
+    const res = await request('POST', '/api/users', { password: PASSWORD, location: LOCATION });
 
     assert.strictEqual(res.status, 400);
 });
 
 test('POST /api/users with missing password -> 400', async () => {
-    const res = await request('POST', '/api/users', { username: 'no-password' });
+    const res = await request('POST', '/api/users', { username: 'no-password', location: LOCATION });
+
+    assert.strictEqual(res.status, 400);
+});
+
+test('POST /api/users with a weak password -> 400', async () => {
+    const res = await request('POST', '/api/users', newUser('weak-password', 'Weak', { password: 'secret' }));
+
+    assert.strictEqual(res.status, 400);
+});
+
+test('POST /api/users without a location -> 400', async () => {
+    const res = await request('POST', '/api/users', { username: 'no-location', password: PASSWORD, name: 'No Location' });
 
     assert.strictEqual(res.status, 400);
 });
 
 // Story: As a user, I want to fetch my profile to see my details.
 test('GET /api/users/:id for existing id -> 200 + JSON', async () => {
-    const created = await request('POST', '/api/users', {
-        username: 'bob',
-        password: 'secret',
-        name: 'Bob'
-    });
+    const created = await request('POST', '/api/users', newUser('bob', 'Bob'));
     const id = created.json.id;
 
     const res = await request('GET', `/api/users/${id}`, undefined, { 'user-id': id });
@@ -108,12 +128,8 @@ test('GET /api/users/:id for existing id -> 200 + JSON', async () => {
     assert.strictEqual(res.json.passwordHash, undefined);
 });
 
-test('GET /api/users/:id unknown id with user id header -> 404', async () => {
-    const created = await request('POST', '/api/users', {
-        username: 'unknown-checker',
-        password: 'secret',
-        name: 'Unknown Checker'
-    });
+test('GET /api/users/:id for an id that is not your own -> 403', async () => {
+    const created = await request('POST', '/api/users', newUser('unknown-checker', 'Unknown Checker'));
 
     const res = await request(
         'GET',
@@ -122,65 +138,45 @@ test('GET /api/users/:id unknown id with user id header -> 404', async () => {
         { 'user-id': created.json.id }
     );
 
-    assert.strictEqual(res.status, 404);
-    assert.ok(created.json.id);
+    assert.strictEqual(res.status, 403);
 });
 
-test('POST /api/tokens with valid credentials -> 200 + user id', async () => {
-    const created = await request('POST', '/api/users', {
-        username: 'carol',
-        password: 'secret',
-        name: 'Carol'
-    });
+test('POST /api/tokens with valid credentials -> 200 + token + user id', async () => {
+    const created = await request('POST', '/api/users', newUser('carol', 'Carol'));
 
     const res = await request('POST', '/api/tokens', {
         username: 'carol',
-        password: 'secret'
+        password: PASSWORD
     });
 
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.json.userId, created.json.id);
-    assert.strictEqual(res.json.token, undefined);
+    assert.strictEqual(typeof res.json.token, 'string');
+    assert.ok(res.json.token.length > 0);
 });
 
 test('POST /api/tokens with invalid credentials -> 404', async () => {
-    await request('POST', '/api/users', {
-        username: 'dave',
-        password: 'secret',
-        name: 'Dave'
-    });
+    await request('POST', '/api/users', newUser('dave', 'Dave'));
 
     const res = await request('POST', '/api/tokens', {
         username: 'dave',
-        password: 'wrong'
+        password: 'WrongPass123'
     });
 
     assert.strictEqual(res.status, 404);
 });
 
-test('GET /api/users/:id without user id header -> 401', async () => {
-    const created = await request('POST', '/api/users', {
-        username: 'henry',
-        password: 'secret',
-        name: 'Henry'
-    });
+test('GET /api/users/:id without auth -> 401', async () => {
+    const created = await request('POST', '/api/users', newUser('henry', 'Henry'));
 
     const res = await request('GET', `/api/users/${created.json.id}`);
 
     assert.strictEqual(res.status, 401);
 });
 
-test('GET /api/users/:id with another user id header still returns requested user', async () => {
-    const first = await request('POST', '/api/users', {
-        username: 'iris',
-        password: 'secret',
-        name: 'Iris'
-    });
-    const second = await request('POST', '/api/users', {
-        username: 'jane',
-        password: 'secret',
-        name: 'Jane'
-    });
+test('GET /api/users/:id cannot read another user -> 403', async () => {
+    const first = await request('POST', '/api/users', newUser('iris', 'Iris'));
+    const second = await request('POST', '/api/users', newUser('jane', 'Jane'));
 
     const res = await request(
         'GET',
@@ -189,18 +185,13 @@ test('GET /api/users/:id with another user id header still returns requested use
         { 'user-id': second.json.id }
     );
 
-    assert.strictEqual(res.status, 200);
-    assert.strictEqual(res.json.id, first.json.id);
+    assert.strictEqual(res.status, 403);
 });
 
-test('GET /api/users/:id/recommendations with own user id header -> 200', async () => {
+test('GET /api/users/:id/recommendations with own auth -> 200', async () => {
     tcpClient.getRecommendations = async () => 'product-2 product-3';
 
-    const created = await request('POST', '/api/users', {
-        username: 'kate',
-        password: 'secret',
-        name: 'Kate'
-    });
+    const created = await request('POST', '/api/users', newUser('kate', 'Kate'));
 
     const res = await request(
         'GET',
@@ -213,19 +204,9 @@ test('GET /api/users/:id/recommendations with own user id header -> 200', async 
     assert.deepStrictEqual(res.json, { recommendations: 'product-2 product-3' });
 });
 
-test('GET /api/users/:id/recommendations uses the requested user id from the URL', async () => {
-    tcpClient.getRecommendations = async (userId, productId) => `${userId}:${productId}`;
-
-    const first = await request('POST', '/api/users', {
-        username: 'leo',
-        password: 'secret',
-        name: 'Leo'
-    });
-    const second = await request('POST', '/api/users', {
-        username: 'maya',
-        password: 'secret',
-        name: 'Maya'
-    });
+test('GET /api/users/:id/recommendations cannot read another user -> 403', async () => {
+    const first = await request('POST', '/api/users', newUser('leo', 'Leo'));
+    const second = await request('POST', '/api/users', newUser('maya', 'Maya'));
 
     const res = await request(
         'GET',
@@ -234,18 +215,11 @@ test('GET /api/users/:id/recommendations uses the requested user id from the URL
         { 'user-id': second.json.id }
     );
 
-    assert.strictEqual(res.status, 200);
-    assert.deepStrictEqual(res.json, {
-        recommendations: `${first.json.id}:product-1`
-    });
+    assert.strictEqual(res.status, 403);
 });
 
 test('direct user view routes are not exposed', async () => {
-    const created = await request('POST', '/api/users', {
-        username: 'erin',
-        password: 'secret',
-        name: 'Erin'
-    });
+    const created = await request('POST', '/api/users', newUser('erin', 'Erin'));
 
     const res = await request('POST', `/api/users/${created.json.id}/views`, { productId: 'p1' });
 
@@ -253,27 +227,15 @@ test('direct user view routes are not exposed', async () => {
 });
 
 test('POST /api/users with duplicate username -> 409', async () => {
-    await request('POST', '/api/users', {
-        username: 'duplicate-user',
-        password: 'secret',
-        name: 'First Duplicate'
-    });
+    await request('POST', '/api/users', newUser('duplicate-user', 'First Duplicate'));
 
-    const res = await request('POST', '/api/users', {
-        username: 'duplicate-user',
-        password: 'secret',
-        name: 'Second Duplicate'
-    });
+    const res = await request('POST', '/api/users', newUser('duplicate-user', 'Second Duplicate'));
 
     assert.strictEqual(res.status, 409);
 });
 
 test('GET /api/users/:id/recommendations without productId -> 400', async () => {
-    const created = await request('POST', '/api/users', {
-        username: 'missing-recommendation-product',
-        password: 'secret',
-        name: 'Missing Product'
-    });
+    const created = await request('POST', '/api/users', newUser('missing-recommendation-product', 'Missing Product'));
 
     const res = await request(
         'GET',
@@ -325,7 +287,7 @@ test('POST /api/restaurants requires a restaurant owner', async () => {
     );
     const customerToken = jwt.sign(
         { userId: 'test-customer', role: 'customer' },
-        process.env.JWT_SECRET || 'wolt-secret-key'
+        JWT_SECRET
     );
     const customerRequest = await request(
         'POST',
@@ -372,7 +334,7 @@ test('restaurant owner cannot manage another owner restaurant or menu', async ()
     const restaurantId = created.headers.get('location').split('/').pop();
     const otherOwnerToken = jwt.sign(
         { userId: 'different-owner', role: 'restaurant_owner' },
-        process.env.JWT_SECRET || 'wolt-secret-key'
+        JWT_SECRET
     );
     const headers = { Authorization: `Bearer ${otherOwnerToken}` };
 
@@ -674,9 +636,9 @@ test('model view updates do not expose password fields', async () => {
     tcpClient.addView = async () => '204 No Content';
     tcpClient.removeView = async () => '204 No Content';
 
-    const created = User.createUser({
+    const created = await User.createUser({
         username: 'frank',
-        password: 'secret',
+        password: PASSWORD,
         name: 'Frank'
     });
 
@@ -700,9 +662,9 @@ test('first model view creates the recommendation user, later new views patch it
         return '204 No Content';
     };
 
-    const created = User.createUser({
+    const created = await User.createUser({
         username: 'gina',
-        password: 'secret',
+        password: PASSWORD,
         name: 'Gina'
     });
 
@@ -725,11 +687,7 @@ test('GET restaurant product tracks a view for authenticated users only', async 
     };
 
     try {
-        const created = await request('POST', '/api/users', {
-            username: 'track-product-user',
-            password: 'secret',
-            name: 'Track Product User'
-        });
+        const created = await request('POST', '/api/users', newUser('track-product-user', 'Track Product User'));
         const restaurant = await request('POST', '/api/restaurants', {
             name: 'Tracking Restaurant'
         });

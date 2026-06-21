@@ -68,7 +68,7 @@ const updateOrder = async (req, res) => {
     }
 
     if (items !== undefined) {
-        if (order.status !== 'pending') {
+        if (order.status !== Order.STATUS.PENDING) {
             return res.status(400).json({ error: 'Cannot update items for a non-pending order' });
         }
         if (!Array.isArray(items)) {
@@ -81,7 +81,7 @@ const updateOrder = async (req, res) => {
         }
     }
 
-    const cancelledItems = status === 'cancelled' ? [...order.items] : [];
+    const cancelledItems = status === Order.STATUS.CANCELLED ? [...order.items] : [];
     Order.updateOrder(req.params.id, { items, status });
 
     // Cancelling an order withdraws its items from the recommender (best-effort).
@@ -105,7 +105,7 @@ const deleteOrder = async (req, res) => {
 
     // A customer can remove a pending or already-cancelled order from their
     // history, but not one the restaurant is preparing or delivering.
-    if (order.status === 'in-progress' || order.status === 'delivered') {
+    if (order.status === Order.STATUS.IN_PROGRESS || order.status === Order.STATUS.DELIVERED) {
         return res.status(400).json({ error: 'Cannot remove an order while it is in progress' });
     }
 

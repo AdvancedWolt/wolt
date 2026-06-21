@@ -1,5 +1,5 @@
 const express = require('express')
-var router = express.Router()
+const router = express.Router()
 
 const user = require('../controllers/users')
 const { requireAuth, requireMatchingUser } = require('../middleware/auth')

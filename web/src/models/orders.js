@@ -3,12 +3,18 @@ const crypto = require('crypto');
 // Structure: { orderId: { id, userId, restaurantId, items, status } }
 const orders = {};
 
-const VALID_STATUSES = ['pending', 'in-progress', 'delivered', 'cancelled'];
+const STATUS = {
+    PENDING: 'pending',
+    IN_PROGRESS: 'in-progress',
+    DELIVERED: 'delivered',
+    CANCELLED: 'cancelled',
+};
+const VALID_STATUSES = Object.values(STATUS);
 
 
 const createOrder = (userId, restaurantId, items) => {
     const id = crypto.randomUUID();
-    const newOrder = { id, userId, restaurantId, items: items || [], status: 'pending' };
+    const newOrder = { id, userId, restaurantId, items: items || [], status: STATUS.PENDING };
 
     orders[id] = newOrder;
     return newOrder;
@@ -44,12 +50,13 @@ const deleteOrder = (orderId) => {
 const cancelOrdersByRestaurant = (restaurantId) => {
     for (const key in orders) {
         if (orders[key].restaurantId === restaurantId) {
-            orders[key].status = 'cancelled';
+            orders[key].status = STATUS.CANCELLED;
         }
     }
 };
 
 module.exports = {
+    STATUS,
     VALID_STATUSES,
     createOrder,
     getOrderById,

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { cancelOrder, getOrders, getRestaurants } from '../api/endpoints.js';
+import { getOrders, getRestaurants } from '../api/endpoints.js';
 import OrderCard from '../components/OrderCard.jsx';
 import '../styles/orders.css';
 
@@ -30,16 +30,6 @@ const Orders = () => {
 
     useEffect(() => { load(); }, [load]);
 
-    const handleCancel = async (orderId) => {
-        setError('');
-        try {
-            await cancelOrder(orderId);
-            load();
-        } catch (err) {
-            setError(err.message || 'Could not cancel the order');
-        }
-    };
-
     if (status === 'loading') {
         return (
             <section className="orders-state" role="status">
@@ -63,10 +53,8 @@ const Orders = () => {
         <div className="orders-page">
             <header className="orders-header">
                 <h1>Your orders</h1>
-                <p>Track current orders and revisit past ones.</p>
+                <p>Tap an order to see its dishes, cancel it or remove it.</p>
             </header>
-
-            {error && <div className="orders-error" role="alert">{error}</div>}
 
             {orders.length ? (
                 <ul className="orders-list">
@@ -75,7 +63,6 @@ const Orders = () => {
                             key={order.id}
                             order={order}
                             restaurant={restaurantsById[order.restaurantId]}
-                            onCancel={handleCancel}
                         />
                     ))}
                 </ul>

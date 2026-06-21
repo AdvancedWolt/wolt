@@ -28,6 +28,7 @@ export const deleteProduct = (restaurantId, productId) => (
 
 export const search = (query) => apiGet(`/api/search/${encodeURIComponent(query)}`);
 
+export const getUser = (id) => apiGet(`/api/users/${id}`);
 export const updateUser = (id, updates) => apiPatch(`/api/users/${id}`, updates);
 
 export const getRecommendations = (userId, productId) => (
@@ -35,6 +36,7 @@ export const getRecommendations = (userId, productId) => (
 );
 
 export const getOrders = () => apiGet('/api/orders');
+export const getOrder = (id) => apiGet(`/api/orders/${id}`);
 export const createOrder = (restaurantId, items) => apiPost('/api/orders', { restaurantId, items });
 export const updateOrder = (id, updates) => apiPatch(`/api/orders/${id}`, updates);
-export const cancelOrder = (id) => apiDelete(`/api/orders/${id}`);
+export const deleteOrder = (id) => apiDelete(`/api/orders/${id}`);

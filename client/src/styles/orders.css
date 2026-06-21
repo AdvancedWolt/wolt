@@ -42,6 +42,20 @@
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 16px 18px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s ease, transform 0.1s ease;
+}
+
+.order-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.order-card-arrow {
+    color: var(--muted);
+    font-size: 1.4rem;
+    line-height: 1;
 }
 
 .order-card-main {
@@ -74,10 +88,6 @@
     color: var(--muted);
 }
 
-.order-cancel {
-    white-space: nowrap;
-}
-
 .orders-empty {
     text-align: center;
     padding: 64px 24px;
@@ -89,4 +99,105 @@
 
 .orders-empty span {
     font-size: 48px;
+}
+
+/* --- Order detail page --- */
+.order-detail-page {
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.order-detail-back {
+    display: inline-block;
+    margin-bottom: 16px;
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.order-detail-back:hover {
+    color: var(--accent);
+}
+
+.order-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.order-detail-header h1 {
+    margin: 0;
+}
+
+.order-detail-eyebrow {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.order-detail-lines {
+    list-style: none;
+    margin: 0 0 20px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.order-detail-line {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: var(--surface);
+}
+
+.order-detail-line + .order-detail-line {
+    border-top: 1px solid var(--border);
+}
+
+.order-detail-qty {
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 32px;
+}
+
+.order-detail-name {
+    flex: 1;
+}
+
+.order-detail-price {
+    font-weight: 600;
+}
+
+.order-detail-empty {
+    color: var(--muted);
+    margin-bottom: 20px;
+}
+
+.order-detail-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 18px;
+}
+
+.order-detail-total {
+    display: flex;
+    flex-direction: column;
+}
+
+.order-detail-total span {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.order-detail-total strong {
+    font-size: 1.4rem;
 }

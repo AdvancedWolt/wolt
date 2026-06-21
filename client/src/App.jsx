@@ -10,6 +10,7 @@ import RestaurantDetail from './pages/RestaurantDetail.jsx';
 import Search from './pages/Search.jsx';
 import Cart from './pages/Cart.jsx';
 import Orders from './pages/Orders.jsx';
+import OrderDetail from './pages/OrderDetail.jsx';
 import Manage from './pages/Manage.jsx';
 import ManageAccount from './pages/ManageAccount.jsx';
 import NotFound from './pages/NotFound.jsx';
@@ -28,6 +29,7 @@ const App = () => (
 
             <Route element={<ProtectedRoute />}>
                 <Route path="/orders" element={<Orders />} />
+                <Route path="/orders/:id" element={<OrderDetail />} />
                 <Route path="/manage" element={<Manage />} />
                 <Route path="/manage-account" element={<ManageAccount />} />
             </Route>

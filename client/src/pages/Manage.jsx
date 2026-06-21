@@ -13,6 +13,7 @@ import {
 } from '../api/endpoints.js';
 import ManagedProduct from '../components/ManagedProduct.jsx';
 import RestaurantImageUpload from '../components/RestaurantImageUpload.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { CATEGORIES, ROLES } from '../constants.js';
 import '../styles/manage.css';
@@ -45,6 +46,7 @@ const Manage = () => {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
+    const [confirm, setConfirm] = useState(null);
 
     const selectedRestaurant = useMemo(
         () => restaurants.find((restaurant) => restaurant.id === selectedId) || null,
@@ -171,7 +173,7 @@ const Manage = () => {
     };
 
     const handleDeleteRestaurant = async () => {
-        if (!window.confirm(`Delete ${selectedRestaurant.name} and its entire menu?`)) return;
+        setConfirm(null);
         clearMessages();
         setBusy(true);
         try {
@@ -184,6 +186,13 @@ const Manage = () => {
             setBusy(false);
         }
     };
+
+    const requestDeleteRestaurant = () => setConfirm({
+        title: 'Delete restaurant?',
+        message: `Delete ${selectedRestaurant.name} and its entire menu? This cannot be undone.`,
+        confirmLabel: 'Delete restaurant',
+        onConfirm: handleDeleteRestaurant,
+    });
 
     const handleCreateProduct = async (event) => {
         event.preventDefault();
@@ -227,7 +236,7 @@ const Manage = () => {
     };
 
     const handleDeleteProduct = async (product) => {
-        if (!window.confirm(`Remove ${product.name} from the menu?`)) return;
+        setConfirm(null);
         clearMessages();
         setBusy(true);
         try {
@@ -240,6 +249,13 @@ const Manage = () => {
             setBusy(false);
         }
     };
+
+    const requestDeleteProduct = (product) => setConfirm({
+        title: 'Remove dish?',
+        message: `Remove ${product.name} from the menu?`,
+        confirmLabel: 'Remove dish',
+        onConfirm: () => handleDeleteProduct(product),
+    });
 
     const updateField = (setter) => (event) => {
         const { name, type, checked, value } = event.target;
@@ -319,7 +335,7 @@ const Manage = () => {
                     {selectedRestaurant ? (
                         <>
                             <section className="manage-panel">
-                                <div className="manage-panel-title"><div><p>Storefront</p><h2>Edit restaurant</h2></div><button className="manage-delete-link" type="button" disabled={busy} onClick={handleDeleteRestaurant}>Delete restaurant</button></div>
+                                <div className="manage-panel-title"><div><p>Storefront</p><h2>Edit restaurant</h2></div><button className="manage-delete-link" type="button" disabled={busy} onClick={requestDeleteRestaurant}>Delete restaurant</button></div>
                                 <form className="manage-form" onSubmit={handleSaveRestaurant}>
                                     <label>Name<input name="name" value={restaurantForm.name} onChange={updateField(setRestaurantForm)} required /></label>
                                     <label>Category
@@ -353,7 +369,7 @@ const Manage = () => {
                                 </form>
                                 {products.length ? (
                                     <ul className="managed-products">
-                                        {products.map((product) => <ManagedProduct key={product.id} product={product} busy={busy} onSave={handleUpdateProduct} onDelete={handleDeleteProduct} />)}
+                                        {products.map((product) => <ManagedProduct key={product.id} product={product} busy={busy} onSave={handleUpdateProduct} onDelete={requestDeleteProduct} />)}
                                     </ul>
                                 ) : <p className="manage-empty-copy">This menu is empty. Add the first dish above.</p>}
                             </section>
@@ -363,6 +379,15 @@ const Manage = () => {
                     )}
                 </main>
             </div>
+
+            <ConfirmDialog
+                open={Boolean(confirm)}
+                title={confirm?.title}
+                message={confirm?.message}
+                confirmLabel={confirm?.confirmLabel}
+                onConfirm={confirm?.onConfirm}
+                onCancel={() => setConfirm(null)}
+            />
         </div>
     );
 };

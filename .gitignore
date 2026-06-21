@@ -2,6 +2,8 @@
 build*/
 bin/
 obj/
+dist/
+web/public/
 *.o
 *.obj
 *.exe

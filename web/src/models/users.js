@@ -78,7 +78,6 @@ const usernameTaken = (username, exceptId) => {
 };
 
 // Getters
-const getAllUsers = () => Object.values(users).map(publicUser);
 const getUserById = (id) => publicUser(users[id]);
 
 const verifyCredentials = async (username, password) => {
@@ -162,7 +161,6 @@ module.exports = {
     createUser,
     updateUser,
     usernameTaken,
-    getAllUsers,
     getUserById,
     verifyCredentials,
     addView,

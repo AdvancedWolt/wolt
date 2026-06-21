@@ -1,33 +1,23 @@
 import { useId, useState } from 'react';
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+import { readImageFile } from '../utils/image.js';
 
 const RestaurantImageUpload = ({ value, onChange, disabled = false, label = 'Restaurant image' }) => {
     const inputId = useId();
     const [error, setError] = useState('');
 
-    const handleFile = (event) => {
+    const handleFile = async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        if (!file.type.startsWith('image/')) {
-            setError('Please choose an image file');
-            event.target.value = '';
-            return;
-        }
-        if (file.size > MAX_IMAGE_SIZE) {
-            setError('Image must be smaller than 5MB');
-            event.target.value = '';
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = () => {
+        try {
+            const dataUrl = await readImageFile(file);
             setError('');
-            onChange(reader.result);
-        };
-        reader.onerror = () => setError('Could not read this image');
-        reader.readAsDataURL(file);
+            onChange(dataUrl);
+        } catch (err) {
+            setError(err.message);
+            event.target.value = '';
+        }
     };
 
     return (

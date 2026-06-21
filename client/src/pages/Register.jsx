@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext.jsx';
+import { readImageFile } from '../utils/image.js';
 import '../styles/login-register.css';
 
 const validators = {
@@ -56,7 +57,6 @@ const Register = () => {
     const [submitting, setSubmitting] = useState(false);
 
     const fileInputRef = useRef(null);
-    const imagePreviewRef = useRef(null);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -99,25 +99,17 @@ const Register = () => {
         fileInputRef.current.value = '';
     };
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        if (file.size > 5 * 1024 * 1024) {
-            setErrors((prev) => ({ ...prev, image: 'Image size must be less than 5MB' }));
-            setTouched((prev) => ({ ...prev, displayName: true }));
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = () => {
-            const base64 = reader.result;
+        try {
+            const base64 = await readImageFile(file);
+            setErrors((prev) => ({ ...prev, image: '' }));
             setImageData(base64);
-            if (imagePreviewRef.current) {
-                imagePreviewRef.current.src = base64;
-            }
-        };
-        reader.readAsDataURL(file);
+        } catch (err) {
+            setErrors((prev) => ({ ...prev, image: err.message }));
+        }
     };
 
     const allFieldsValid = () => {
@@ -213,7 +205,6 @@ const Register = () => {
                 <div className="auth-image-picker" onClick={handleImageClick}>
                     {imageData ? (
                         <img
-                            ref={imagePreviewRef}
                             src={imageData}
                             alt="Profile preview"
                             className="auth-image-preview"
@@ -244,7 +235,7 @@ const Register = () => {
                     )}
                     <span className="auth-image-hint">Optional · Max 5MB</span>
                 </div>
-                {errors.image && touched.displayName && (
+                {errors.image && (
                     <span className="auth-field-error auth-image-error">{errors.image}</span>
                 )}
 

@@ -1,7 +1,6 @@
 const User = require('../models/users');
 const jwt = require('jsonwebtoken');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'wolt-secret-key';
+const { JWT_SECRET } = require('../config/jwt');
 
 const login = async (req, res) => {
     const { username, password } = req.body;
@@ -39,6 +38,5 @@ const login = async (req, res) => {
 };
 
 module.exports = {
-    login,
-    JWT_SECRET
+    login
 };

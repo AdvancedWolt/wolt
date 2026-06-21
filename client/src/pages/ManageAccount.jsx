@@ -4,7 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { updateUser } from '../api/endpoints.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { readImageFile } from '../utils/image.js';
+import { validateUsername, validateDisplayName, validateCoordinate } from '../utils/validators.js';
 import '../styles/manage-account.css';
+
+const validators = {
+    username: validateUsername,
+    displayName: validateDisplayName,
+    locationX: (value) => validateCoordinate(value, 'Latitude'),
+    locationY: (value) => validateCoordinate(value, 'Longitude'),
+};
 
 const ManageAccount = () => {
     const { user, updateAuthUser } = useAuth();
@@ -37,27 +45,6 @@ const ManageAccount = () => {
             setImageData(user.image || null);
         }
     }, [user]);
-
-    const validators = {
-        username: (val) => {
-            if (!val || !val.trim()) return 'Username is required';
-            if (val.trim().length < 3) return 'Username must be at least 3 characters';
-            return '';
-        },
-        displayName: (val) => (!val || !val.trim() ? 'Display name is required' : ''),
-        locationX: (val) => {
-            const num = Number(val);
-            if (!val || val.trim() === '') return 'Latitude is required';
-            if (Number.isNaN(num)) return 'Coordinate must be a number';
-            return '';
-        },
-        locationY: (val) => {
-            const num = Number(val);
-            if (!val || val.trim() === '') return 'Longitude is required';
-            if (Number.isNaN(num)) return 'Coordinate must be a number';
-            return '';
-        },
-    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;

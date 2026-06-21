@@ -3,39 +3,23 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext.jsx';
 import { readImageFile } from '../utils/image.js';
+import {
+    validateUsername,
+    validatePassword,
+    validateConfirmPassword,
+    validateDisplayName,
+    validateCoordinate,
+} from '../utils/validators.js';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import '../styles/login-register.css';
 
 const validators = {
-    username: (v) => {
-        if (!v) return 'Username is required';
-        if (v.length < 3) return 'Username must be at least 3 characters';
-        return '';
-    },
-    password: (v) => {
-        if (!v) return 'Password is required';
-        if (v.length < 8) return 'Password must be at least 8 characters';
-        if (!/[a-zA-Z]/.test(v)) return 'Password must contain at least one letter';
-        if (!/\d/.test(v)) return 'Password must contain at least one digit';
-        return '';
-    },
-    confirmPassword: (v, form) => {
-        if (!v) return 'Please confirm your password';
-        if (v !== form.password) return 'Passwords do not match';
-        return '';
-    },
-    displayName: (v) => {
-        if (!v) return 'Display name is required';
-        return '';
-    },
-    locationX: (v) => {
-        if (v === '' || v === undefined || isNaN(v)) return 'Valid X coordinate is required';
-        return '';
-    },
-    locationY: (v) => {
-        if (v === '' || v === undefined || isNaN(v)) return 'Valid Y coordinate is required';
-        return '';
-    },
+    username: validateUsername,
+    password: validatePassword,
+    confirmPassword: validateConfirmPassword,
+    displayName: validateDisplayName,
+    locationX: (value) => validateCoordinate(value, 'Latitude'),
+    locationY: (value) => validateCoordinate(value, 'Longitude'),
 };
 
 const Register = () => {
@@ -124,7 +108,7 @@ const Register = () => {
         const allTouched = Object.keys(form).reduce((acc, key) => {
             acc[key] = true;
             return acc;
-        }, { displayName: true });
+        }, {});
         setTouched(allTouched);
 
         return Object.values(fieldErrors).every((msg) => !msg);

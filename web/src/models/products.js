@@ -13,7 +13,7 @@ const createProduct = (restaurantId, details) => {
         price: details.price ?? 0,
         image: details.image || null
     };
-    
+
     products[id] = newProduct;
     return newProduct;
 };
@@ -31,7 +31,7 @@ const updateProduct = (restaurantId, productId, updates) => {
 
 const deleteProduct = (restaurantId, productId) => {
     const product = products[productId];
-    
+
     if (product && product.restaurantId === restaurantId) {
         delete products[productId];
         return true;

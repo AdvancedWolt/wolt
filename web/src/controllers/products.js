@@ -61,7 +61,7 @@ const getProductById = async (req, res) => {
     }
 
     const product = Product.getProductById(restaurantId, productId);
-    
+
     if (!product) {
         return res.status(404).json({ error: 'Product not found' });
     }
@@ -104,7 +104,7 @@ const updateProduct = (req, res) => {
         return res.status(404).json({ error: 'Product not found' });
     }
 
-    res.status(204).end(); 
+    res.status(204).end();
 };
 
 const deleteProduct = (req, res) => {

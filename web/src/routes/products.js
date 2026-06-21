@@ -1,6 +1,6 @@
 const express = require('express');
 // mergeParams is needed for nested routes
-const router = express.Router({ mergeParams: true }); 
+const router = express.Router({ mergeParams: true });
 
 const products = require('../controllers/products');
 const { attachUserId, requireRestaurantOwner } = require('../middleware/auth');

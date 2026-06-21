@@ -12,7 +12,7 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { login } = useAuth();
-    
+
     const from = location.state?.from || '/';
 
     const [form, setForm] = useState({ username: '', password: '' });

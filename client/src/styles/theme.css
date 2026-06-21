@@ -2,22 +2,33 @@
    data-theme on <html> (see ThemeContext) recolors the whole app at once. */
 :root {
     --bg: #ffffff;
-    --surface: #f5f7fa;
-    --text: #1f2733;
-    --muted: #5b6573;
-    --border: #e4e9f0;
+    --surface: #f6f7f9;
+    --surface-2: #eef0f3;
+    --text: #18191b;
+    --muted: #6e7582;
+    --border: #e7e9ee;
     --accent: #009de0;
+    --accent-strong: #0086c4;
+    --accent-soft: rgba(0, 157, 224, 0.12);
     --accent-text: #ffffff;
+    --danger: #e23b3b;
+    --radius: 16px;
+    --shadow: 0 8px 24px rgba(20, 28, 40, 0.08);
 }
 
 [data-theme="dark"] {
-    --bg: #14181f;
-    --surface: #1d242e;
-    --text: #e7ecf2;
-    --muted: #9aa6b4;
-    --border: #2b333f;
-    --accent: #00b8e6;
-    --accent-text: #08121a;
+    --bg: #0f1319;
+    --surface: #181d25;
+    --surface-2: #20262f;
+    --text: #eaeef3;
+    --muted: #98a2b1;
+    --border: #262d37;
+    --accent: #18b4e8;
+    --accent-strong: #3bc4ef;
+    --accent-soft: rgba(24, 180, 232, 0.16);
+    --accent-text: #07131b;
+    --danger: #ff6b6b;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -26,42 +37,67 @@
 
 body {
     margin: 0;
-    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 .page {
-    padding: 24px;
+    padding: 28px 24px 56px;
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
 .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 12px 20px;
-    background: var(--surface);
+    padding: 12px 24px;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: saturate(140%) blur(8px);
     border-bottom: 1px solid var(--border);
 }
 
 .navbar-brand {
-    font-weight: 700;
+    font-weight: 800;
+    font-size: 1.2rem;
+    letter-spacing: -0.02em;
     color: var(--accent);
     text-decoration: none;
 }
 
 .navbar-links {
     display: flex;
-    gap: 14px;
+    gap: 6px;
 }
 
 .navbar-links a {
     color: var(--text);
     text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 6px 10px;
+    border-radius: 10px;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.navbar-links a:hover {
+    background: var(--surface-2);
+    color: var(--accent);
 }
 
 .navbar-cart-count {
-    margin-left: 4px;
+    margin-left: 6px;
     background: var(--accent);
     color: var(--accent-text);
     border-radius: 999px;
@@ -106,25 +142,38 @@ body {
 }
 
 .btn {
-    border: 1px solid var(--border);
+    border: 1px solid transparent;
     background: var(--accent);
     color: var(--accent-text);
-    padding: 6px 12px;
-    border-radius: 8px;
+    padding: 9px 16px;
+    border-radius: 12px;
+    font: inherit;
+    font-weight: 600;
     cursor: pointer;
     text-decoration: none;
-    font: inherit;
-    transition: background-color 0.15s, border-color 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background-color 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.btn:hover {
+    background: var(--accent-strong);
+}
+
+.btn:active {
+    transform: translateY(1px);
 }
 
 .btn-secondary {
     background: transparent;
-    border: 1px solid var(--border);
+    border-color: var(--border);
     color: var(--text);
 }
 
 .btn-secondary:hover {
-    background: var(--border);
+    background: var(--surface-2);
 }
 
 .notfound {
@@ -143,4 +192,13 @@ body {
 .notfound-text {
     color: var(--muted);
     margin-bottom: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        transition-duration: 0.001ms !important;
+    }
 }

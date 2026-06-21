@@ -233,6 +233,16 @@
     padding-bottom: 12px;
 }
 
+.settings-section-title-spaced {
+    margin-top: 36px;
+}
+
+.settings-field-hint {
+    margin: 8px 0 0;
+    font-size: 0.8rem;
+    color: var(--muted);
+}
+
 /* Form Groups */
 .settings-form-group {
     margin-bottom: 24px;

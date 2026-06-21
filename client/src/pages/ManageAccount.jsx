@@ -151,9 +151,9 @@ const ManageAccount = () => {
     return (
         <div className="manage-account-container">
             <header className="account-header">
-                <p className="search-subtitle">Account Management</p>
-                <h1>Profile Settings</h1>
-                <p>Manage your account settings, display preferences, and coordinates.</p>
+                <p className="search-subtitle">Account</p>
+                <h1>Profile settings</h1>
+                <p>Update your display name, photo and delivery location.</p>
             </header>
 
             {serverError && (
@@ -220,12 +220,12 @@ const ManageAccount = () => {
 
                 {/* Form Fields Main Body */}
                 <main className="settings-form-card">
-                    <h2 className="settings-section-title">Personal Details</h2>
+                    <h2 className="settings-section-title">Personal details</h2>
                     <form onSubmit={handleSubmit}>
                         <div className="settings-form-group">
-                            <label htmlFor="username">Username (Locked)</label>
+                            <label htmlFor="username">Username</label>
                             <div className="settings-input-wrapper">
-                                <span className="settings-input-icon" aria-hidden="true">🔒</span>
+                                <span className="settings-input-icon" aria-hidden="true">@</span>
                                 <input
                                     type="text"
                                     id="username"
@@ -234,10 +234,11 @@ const ManageAccount = () => {
                                     className="settings-input"
                                 />
                             </div>
+                            <p className="settings-field-hint">Your username is permanent and can&apos;t be changed.</p>
                         </div>
 
                         <div className="settings-form-group">
-                            <label htmlFor="displayName">Display Name</label>
+                            <label htmlFor="displayName">Display name</label>
                             <div className="settings-input-wrapper">
                                 <span className="settings-input-icon" aria-hidden="true">👤</span>
                                 <input
@@ -259,13 +260,13 @@ const ManageAccount = () => {
                             )}
                         </div>
 
-                        <h2 className="settings-section-title" style={{ marginTop: '36px' }}>
-                            Delivery Address Location
+                        <h2 className="settings-section-title settings-section-title-spaced">
+                            Delivery location
                         </h2>
 
                         <div className="coordinates-row">
                             <div className="settings-form-group">
-                                <label htmlFor="locationX">Latitude (X Coordinate)</label>
+                                <label htmlFor="locationX">Latitude (X)</label>
                                 <div className="settings-input-wrapper">
                                     <span className="settings-input-icon" aria-hidden="true">📍</span>
                                     <input
@@ -288,7 +289,7 @@ const ManageAccount = () => {
                             </div>
 
                             <div className="settings-form-group">
-                                <label htmlFor="locationY">Longitude (Y Coordinate)</label>
+                                <label htmlFor="locationY">Longitude (Y)</label>
                                 <div className="settings-input-wrapper">
                                     <span className="settings-input-icon" aria-hidden="true">📍</span>
                                     <input
@@ -317,7 +318,7 @@ const ManageAccount = () => {
                                 className="btn"
                                 disabled={submitting}
                             >
-                                {submitting ? 'Saving changes...' : 'Save Profile'}
+                                {submitting ? 'Saving changes…' : 'Save changes'}
                             </button>
                             <button
                                 type="button"

@@ -14,6 +14,7 @@ import {
 import ManagedProduct from '../components/ManagedProduct.jsx';
 import RestaurantImageUpload from '../components/RestaurantImageUpload.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { CATEGORIES } from '../constants.js';
 import '../styles/manage.css';
 
 const emptyRestaurant = {
@@ -279,7 +280,12 @@ const Manage = () => {
                 </div>
                 <form className="manage-form" onSubmit={handleCreateRestaurant}>
                     <label>Name<input name="name" value={newRestaurant.name} onChange={updateField(setNewRestaurant)} placeholder="Restaurant name" required /></label>
-                    <label>Category<input name="category" value={newRestaurant.category} onChange={updateField(setNewRestaurant)} placeholder="Italian, Burgers…" /></label>
+                    <label>Category
+                        <select name="category" value={newRestaurant.category} onChange={updateField(setNewRestaurant)}>
+                            <option value="">Choose a category</option>
+                            {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                        </select>
+                    </label>
                     <label>Location X<input name="locationX" type="number" step="any" value={newRestaurant.locationX} onChange={updateField(setNewRestaurant)} placeholder="32.0853" required /></label>
                     <label>Location Y<input name="locationY" type="number" step="any" value={newRestaurant.locationY} onChange={updateField(setNewRestaurant)} placeholder="34.7818" required /></label>
                     <div className="manage-wide">
@@ -316,7 +322,12 @@ const Manage = () => {
                                 <div className="manage-panel-title"><div><p>Storefront</p><h2>Edit restaurant</h2></div><button className="manage-delete-link" type="button" disabled={busy} onClick={handleDeleteRestaurant}>Delete restaurant</button></div>
                                 <form className="manage-form" onSubmit={handleSaveRestaurant}>
                                     <label>Name<input name="name" value={restaurantForm.name} onChange={updateField(setRestaurantForm)} required /></label>
-                                    <label>Category<input name="category" value={restaurantForm.category} onChange={updateField(setRestaurantForm)} /></label>
+                                    <label>Category
+                                        <select name="category" value={restaurantForm.category} onChange={updateField(setRestaurantForm)}>
+                                            <option value="">Choose a category</option>
+                                            {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                                        </select>
+                                    </label>
                                     <label>Location X<input name="locationX" type="number" step="any" value={restaurantForm.locationX} onChange={updateField(setRestaurantForm)} required /></label>
                                     <label>Location Y<input name="locationY" type="number" step="any" value={restaurantForm.locationY} onChange={updateField(setRestaurantForm)} required /></label>
                                     <div className="manage-wide">

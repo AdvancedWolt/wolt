@@ -12,8 +12,8 @@
 .manage-panel-title > span { display: grid; place-items: center; min-width: 30px; height: 30px; border-radius: 9px; color: var(--accent); background: var(--bg); font-weight: 800; }
 .manage-form { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: end; }
 .manage-form label { display: grid; gap: 6px; color: var(--text); font-size: .82rem; font-weight: 700; }
-.manage-form input:not([type="checkbox"]), .manage-product-create input, .managed-product input, .manage-product-create textarea, .managed-product textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; color: var(--text); background: var(--bg); font: inherit; outline: none; }
-.manage-form input:focus, .manage-product-create input:focus, .managed-product input:focus, .manage-product-create textarea:focus, .managed-product textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent); }
+.manage-form input:not([type="checkbox"]), .manage-form select, .manage-product-create input, .managed-product input, .manage-product-create textarea, .managed-product textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; color: var(--text); background: var(--bg); font: inherit; outline: none; }
+.manage-form input:focus, .manage-form select:focus, .manage-product-create input:focus, .managed-product input:focus, .manage-product-create textarea:focus, .managed-product textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent); }
 .manage-product-create textarea, .managed-product textarea { min-height: 78px; resize: vertical; }
 .manage-wide { grid-column: 1 / -1; }
 .manage-check { display: flex !important; grid-auto-flow: column; justify-content: start; align-items: center; }

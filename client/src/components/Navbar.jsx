@@ -31,7 +31,14 @@ const Navbar = () => {
 
                 {isAuthenticated ? (
                     <>
-                        <span className="navbar-user">{user?.name || user?.username}</span>
+                        {user?.image && (
+                            <img
+                                src={user.image}
+                                alt={user.displayName || user.username}
+                                className="navbar-avatar"
+                            />
+                        )}
+                        <span className="navbar-user">{user?.displayName || user?.username}</span>
                         <button className="btn" onClick={handleLogout}>Log out</button>
                     </>
                 ) : (

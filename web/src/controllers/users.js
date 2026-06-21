@@ -1,4 +1,5 @@
 const User = require('../models/users');
+const Product = require('../models/products');
 
 const createUser = async (req, res) => {
     const { username, password, name, phone, location, displayName, image, role = 'customer' } = req.body;
@@ -59,10 +60,17 @@ const getRecommendations = async (req, res) => {
     }
 
     try {
-        const recommendations = await User.getRecommendations(req.params.id, productId);
-        if (recommendations === null) {
+        const recommendedIds = await User.getRecommendations(req.params.id, productId);
+        if (recommendedIds === null) {
             return res.status(404).json({ error: 'User not found' });
         }
+        // The recommender returns space-separated product ids; resolve them to
+        // full products and drop any that no longer exist.
+        const recommendations = String(recommendedIds)
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((id) => Product.getById(id))
+            .filter(Boolean);
         res.json({ recommendations });
     } catch (err) {
         res.status(502).json({ error: 'Recommendation service unavailable' });

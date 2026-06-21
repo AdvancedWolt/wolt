@@ -32,8 +32,14 @@ const createOrder = async (req, res) => {
 
     const newOrder = Order.createOrder(req.userId, restaurantId, items);
 
+    // Ordered items feed the recommender, but that is best-effort: an outage
+    // must not fail an order that was already created.
     if (items && items.length > 0) {
-        await User.addViews(req.userId, items);
+        try {
+            await User.addViews(req.userId, items);
+        } catch (err) {
+            console.error('Failed to record order views:', err.message);
+        }
     }
 
     res.status(201).location(`/api/orders/${newOrder.id}`).end();

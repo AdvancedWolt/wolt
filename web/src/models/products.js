@@ -45,12 +45,15 @@ const getAllProducts = (restaurantId) => {
 
 const getProductById = (restaurantId, productId) => {
     const product = products[productId];
-    
+
     if (product && product.restaurantId === restaurantId) {
         return product;
     }
     return null;
 };
+
+// Global lookup by id, used to resolve recommended product ids into full products.
+const getById = (productId) => products[productId] || null;
 
 // Called from controllers/restaurants.js when a restaurant is deleted.
 const deleteProductsByRestaurant = (restaurantId) => {
@@ -76,6 +79,7 @@ module.exports = {
     deleteProduct,
     getAllProducts,
     getProductById,
+    getById,
     deleteProductsByRestaurant,
     searchProducts
 };

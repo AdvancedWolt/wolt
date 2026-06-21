@@ -188,8 +188,14 @@ test('GET /api/users/:id cannot read another user -> 403', async () => {
     assert.strictEqual(res.status, 403);
 });
 
-test('GET /api/users/:id/recommendations with own auth -> 200', async () => {
-    tcpClient.getRecommendations = async () => 'product-2 product-3';
+test('GET /api/users/:id/recommendations resolves recommended ids into products', async () => {
+    const restaurant = await request('POST', '/api/restaurants', { name: 'Recommendation Restaurant' });
+    const restaurantId = restaurant.headers.get('location').split('/').pop();
+    const dish = await request('POST', `/api/restaurants/${restaurantId}/products`, { name: 'Recommended Dish' });
+    const dishId = dish.headers.get('location').split('/').pop();
+
+    // The recommender returns one live product and one that no longer exists.
+    tcpClient.getRecommendations = async () => `${dishId} deleted-product`;
 
     const created = await request('POST', '/api/users', newUser('kate', 'Kate'));
 
@@ -201,7 +207,9 @@ test('GET /api/users/:id/recommendations with own auth -> 200', async () => {
     );
 
     assert.strictEqual(res.status, 200);
-    assert.deepStrictEqual(res.json, { recommendations: 'product-2 product-3' });
+    assert.strictEqual(res.json.recommendations.length, 1);
+    assert.strictEqual(res.json.recommendations[0].id, dishId);
+    assert.strictEqual(res.json.recommendations[0].name, 'Recommended Dish');
 });
 
 test('GET /api/users/:id/recommendations cannot read another user -> 403', async () => {

@@ -10,8 +10,8 @@ services:
 
   web:
     build:
-      context: ./web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: web/Dockerfile
     environment:
       PORT: 3000
       CPP_SERVICE_HOST: cpp-service
@@ -20,17 +20,6 @@ services:
       - "3000:3000"
     depends_on:
       - cpp-service
-
-  client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-    environment:
-      - VITE_API_URL=http://web:3000
-    ports:
-      - "5173:5173"
-    depends_on:
-      - web
 
 
 # usage:

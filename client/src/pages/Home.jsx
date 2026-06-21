@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 import { getRestaurants } from '../api/endpoints.js';
 import RestaurantRow from '../components/RestaurantRow.jsx';
@@ -100,7 +101,14 @@ const Home = () => {
             <section className="feed-state">
                 <span className="feed-state-icon">⌁</span>
                 <h1>No restaurants yet</h1>
-                <p>New places will appear here as soon as they are added.</p>
+                {user?.role === 'restaurant_owner' ? (
+                    <>
+                        <p>Be the first to add a restaurant to the platform!</p>
+                        <Link className="btn" to="/manage">Go to Manage to add your restaurant</Link>
+                    </>
+                ) : (
+                    <p>New places will appear here as soon as they are added.</p>
+                )}
             </section>
         );
     }

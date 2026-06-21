@@ -142,8 +142,9 @@ the request must include a `user-id: <id>` header.
 
 ## Running it
 
-Both servers run as separate containers, the way the exercise asks. The easiest
-way is Docker Compose.
+The C++ recommendation service and the Exercise 3 web server run as separate
+containers. React is compiled during the web image build and is served by the
+Express server, so the browser and API share one origin.
 
 ### Option A – Docker Compose (easiest)
 
@@ -156,14 +157,15 @@ docker compose up --build
 This starts two containers:
 
 * **`cpp-service`** – the Exercise 2 C++ server on port **8080**.
-* **`web`** – the Express API on port **3000**. It finds the C++ server through
-  the `CPP_SERVICE_HOST` / `CPP_SERVICE_PORT` env vars.
+* **`web`** – Express plus the compiled React application on port **3000**. It
+  finds the C++ service through the internal Compose hostname `cpp-service`.
 
 <p align="center">
   <img src="docs/screenshots/00-startup.png" alt="docker compose up — both servers start" width="92%">
 </p>
 
-The API is now at `http://localhost:3000`.
+Open the React application at `http://localhost:3000`. The API is available on
+the same server under `http://localhost:3000/api`.
 
 ### Option B – run the two containers yourself
 
@@ -172,8 +174,8 @@ The API is now at `http://localhost:3000`.
 docker build -t wolt-cpp .
 docker run --rm -p 8080:8080 wolt-cpp 8080
 
-# Express web server on 3000 (point it at the C++ server)
-docker build -t wolt-web ./web
+# Express + React web server on 3000 (point it at the C++ server)
+docker build -t wolt-web -f web/Dockerfile .
 docker run --rm -p 3000:3000 \
   -e CPP_SERVICE_HOST=host.docker.internal -e CPP_SERVICE_PORT=8080 \
   wolt-web

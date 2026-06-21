@@ -7,7 +7,8 @@ const usersByUsername = {}
 const publicUser = (user) => {
     if (!user) return null;
 
-    const { passwordHash, passwordSalt, ...safeUser } = user;
+    // Password fields are secret and views are internal recommender state; never expose them.
+    const { passwordHash, passwordSalt, views, ...safeUser } = user;
     return safeUser;
 };
 
@@ -20,7 +21,7 @@ const hashPassword = (password, salt) => {
     });
 };
 
-const createUser = async ({ username, password, name, phone, location, displayName, image, role }) => {
+const createUser = async ({ username, password, name, location, displayName, image, role }) => {
     if (usersByUsername[username]) {
         return null;
     }
@@ -34,7 +35,6 @@ const createUser = async ({ username, password, name, phone, location, displayNa
         name: name || displayName,
         displayName: displayName || name,
         image: image || null,
-        phone,
         location,
         role: role || 'customer',
         passwordSalt,
@@ -129,7 +129,8 @@ const addViews = async (id, productIds) => {
     const user = users[id];
     if (!user || !productIds || productIds.length === 0) return null;
 
-    const newProducts = productIds.filter(pid => !user.views.includes(pid));
+    // An order can list the same product several times (one per unit); views are a set.
+    const newProducts = [...new Set(productIds)].filter(pid => !user.views.includes(pid));
     if (newProducts.length === 0) return publicUser(user);
 
     let startIdx = 0;
@@ -146,6 +147,19 @@ const addViews = async (id, productIds) => {
         user.views.push(...remaining);
     }
 
+    return publicUser(user);
+};
+
+// Withdraws a set of product views, e.g. when an order is cancelled or removed.
+const removeViews = async (id, productIds) => {
+    const user = users[id];
+    if (!user || !productIds || productIds.length === 0) return null;
+
+    const present = [...new Set(productIds)].filter((pid) => user.views.includes(pid));
+    if (present.length === 0) return publicUser(user);
+
+    await tcpClient.removeViews(id, present);
+    user.views = user.views.filter((view) => !present.includes(view));
     return publicUser(user);
 };
 
@@ -166,5 +180,6 @@ module.exports = {
     addView,
     addViews,
     removeView,
+    removeViews,
     getRecommendations
 };

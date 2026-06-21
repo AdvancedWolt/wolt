@@ -2,7 +2,7 @@ const User = require('../models/users');
 const Product = require('../models/products');
 
 const createUser = async (req, res) => {
-    const { username, password, name, phone, location, displayName, image, role = 'customer' } = req.body;
+    const { username, password, name, location, displayName, image, role = 'customer' } = req.body;
     if (!username) {
         return res.status(400).json({ error: 'Username is required' });
     }
@@ -29,7 +29,6 @@ const createUser = async (req, res) => {
             username,
             password,
             name,
-            phone,
             location,
             displayName,
             image,

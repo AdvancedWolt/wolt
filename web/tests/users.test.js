@@ -280,7 +280,10 @@ test('GET /api/restaurants initially returns an array', async () => {
 
 test('POST /api/restaurants creates a restaurant with Location', async () => {
     const created = await request('POST', '/api/restaurants', {
-        name: 'Restaurant Create Test'
+        name: 'Restaurant Create Test',
+        category: 'Italian',
+        image: 'https://images.example/restaurant.jpg',
+        promoted: true
     });
 
     assert.strictEqual(created.status, 201);
@@ -292,12 +295,43 @@ test('POST /api/restaurants creates a restaurant with Location', async () => {
     assert.strictEqual(fetched.status, 200);
     assert.strictEqual(fetched.json.id, id);
     assert.strictEqual(fetched.json.name, 'Restaurant Create Test');
+    assert.strictEqual(fetched.json.category, 'Italian');
+    assert.strictEqual(fetched.json.image, 'https://images.example/restaurant.jpg');
+    assert.strictEqual(fetched.json.promoted, true);
+});
+
+test('restaurants use feed-safe defaults for optional metadata', async () => {
+    const created = await request('POST', '/api/restaurants', {
+        name: 'Restaurant Metadata Defaults'
+    });
+    const id = created.headers.get('location').split('/').pop();
+    const fetched = await request('GET', `/api/restaurants/${id}`);
+
+    assert.strictEqual(fetched.json.category, 'Other');
+    assert.strictEqual(fetched.json.image, null);
+    assert.strictEqual(fetched.json.promoted, false);
 });
 
 test('POST /api/restaurants with missing name -> 400', async () => {
     const res = await request('POST', '/api/restaurants', {});
 
     assert.strictEqual(res.status, 400);
+});
+
+test('POST /api/restaurants validates feed metadata', async () => {
+    const blankName = await request('POST', '/api/restaurants', { name: '   ' });
+    const invalidCategory = await request('POST', '/api/restaurants', {
+        name: 'Invalid Category',
+        category: 42
+    });
+    const invalidPromoted = await request('POST', '/api/restaurants', {
+        name: 'Invalid Promotion',
+        promoted: 'yes'
+    });
+
+    assert.strictEqual(blankName.status, 400);
+    assert.strictEqual(invalidCategory.status, 400);
+    assert.strictEqual(invalidPromoted.status, 400);
 });
 
 test('GET /api/restaurants/:id unknown -> 404', async () => {
@@ -313,12 +347,18 @@ test('PATCH /api/restaurants/:id updates a restaurant', async () => {
     const id = created.headers.get('location').split('/').pop();
 
     const patched = await request('PATCH', `/api/restaurants/${id}`, {
-        name: 'Restaurant After Patch'
+        name: 'Restaurant After Patch',
+        category: 'Asian',
+        image: 'https://images.example/updated.jpg',
+        promoted: true
     });
     const fetched = await request('GET', `/api/restaurants/${id}`);
 
     assert.strictEqual(patched.status, 204);
     assert.strictEqual(fetched.json.name, 'Restaurant After Patch');
+    assert.strictEqual(fetched.json.category, 'Asian');
+    assert.strictEqual(fetched.json.image, 'https://images.example/updated.jpg');
+    assert.strictEqual(fetched.json.promoted, true);
 });
 
 test('PATCH /api/restaurants/:id missing or unknown -> 400/404', async () => {

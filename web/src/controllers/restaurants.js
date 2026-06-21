@@ -1,14 +1,9 @@
 const Restaurant = require('../models/restaurants');
 const Product = require('../models/products');
 const Order = require('../models/orders');
+const { rejectNonOwner, validateLocation } = require('./shared');
 
-const rejectNonOwner = (restaurantId, userId, res) => {
-    if (!Restaurant.isOwnedBy(restaurantId, userId)) {
-        res.status(403).json({ error: 'You can only manage your own restaurants' });
-        return true;
-    }
-    return false;
-};
+const RESTAURANT_OWNER_ERROR = 'You can only manage your own restaurants';
 
 const validateRestaurantFields = ({ name, category, image, promoted, location }, partial = false) => {
     if (!partial || name !== undefined) {
@@ -23,8 +18,8 @@ const validateRestaurantFields = ({ name, category, image, promoted, location },
     if (promoted !== undefined && typeof promoted !== 'boolean') {
         return 'Promoted must be a boolean';
     }
-    if (location !== undefined && (!location || typeof location.x !== 'number' || typeof location.y !== 'number')) {
-        return 'Location coordinates (x, y) must be numbers';
+    if (location !== undefined) {
+        return validateLocation(location);
     }
     return null;
 };
@@ -53,7 +48,7 @@ const updateRestaurant = (req, res) => {
     if (!Restaurant.getRestaurantById(id)) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
-    if (rejectNonOwner(id, req.userId, res)) return;
+    if (rejectNonOwner(id, req.userId, res, RESTAURANT_OWNER_ERROR)) return;
 
     if (
         name === undefined
@@ -88,7 +83,7 @@ const deleteRestaurant = (req, res) => {
     if (!Restaurant.getRestaurantById(id)) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
-    if (rejectNonOwner(id, req.userId, res)) return;
+    if (rejectNonOwner(id, req.userId, res, RESTAURANT_OWNER_ERROR)) return;
 
     if (!Restaurant.deleteRestaurant(id)) {
         return res.status(404).json({ error: 'Restaurant not found' });

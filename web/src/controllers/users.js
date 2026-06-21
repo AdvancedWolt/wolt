@@ -1,5 +1,6 @@
 const User = require('../models/users');
 const Product = require('../models/products');
+const { validateLocation } = require('./shared');
 
 const createUser = async (req, res) => {
     const { username, password, name, location, displayName, image, role = 'customer' } = req.body;
@@ -17,8 +18,9 @@ const createUser = async (req, res) => {
         return res.status(400).json({ error: 'Password must be at least 8 characters long and contain both letters and digits' });
     }
 
-    if (!location || typeof location.x !== 'number' || typeof location.y !== 'number') {
-        return res.status(400).json({ error: 'Location coordinates (x, y) must be numbers' });
+    const locationError = validateLocation(location);
+    if (locationError) {
+        return res.status(400).json({ error: locationError });
     }
     if (!['customer', 'restaurant_owner'].includes(role)) {
         return res.status(400).json({ error: 'Role must be customer or restaurant_owner' });
@@ -95,8 +97,9 @@ const updateUser = async (req, res) => {
         return res.status(400).json({ error: 'Display name must be a non-empty string' });
     }
 
-    if (location !== undefined && (!location || typeof location.x !== 'number' || typeof location.y !== 'number')) {
-        return res.status(400).json({ error: 'Location coordinates (x, y) must be numbers' });
+    if (location !== undefined) {
+        const locationError = validateLocation(location);
+        if (locationError) return res.status(400).json({ error: locationError });
     }
 
     if (image !== undefined && image !== null && typeof image !== 'string') {

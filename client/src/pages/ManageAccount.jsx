@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { updateUser } from '../api/endpoints.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { readImageFile } from '../utils/image.js';
 import '../styles/manage-account.css';
 
 const ManageAccount = () => {
@@ -10,6 +11,7 @@ const ManageAccount = () => {
     const navigate = useNavigate();
 
     const [form, setForm] = useState({
+        username: user?.username || '',
         displayName: user?.displayName || '',
         locationX: user?.location?.x !== undefined ? String(user.location.x) : '',
         locationY: user?.location?.y !== undefined ? String(user.location.y) : '',
@@ -27,6 +29,7 @@ const ManageAccount = () => {
     useEffect(() => {
         if (user) {
             setForm({
+                username: user.username || '',
                 displayName: user.displayName || '',
                 locationX: user.location?.x !== undefined ? String(user.location.x) : '',
                 locationY: user.location?.y !== undefined ? String(user.location.y) : '',
@@ -36,6 +39,11 @@ const ManageAccount = () => {
     }, [user]);
 
     const validators = {
+        username: (val) => {
+            if (!val || !val.trim()) return 'Username is required';
+            if (val.trim().length < 3) return 'Username must be at least 3 characters';
+            return '';
+        },
         displayName: (val) => (!val || !val.trim() ? 'Display name is required' : ''),
         locationX: (val) => {
             const num = Number(val);
@@ -84,22 +92,17 @@ const ManageAccount = () => {
         fileInputRef.current.value = '';
     };
 
-    const handleImageChange = (e) => {
+    const handleImageChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        if (file.size > 5 * 1024 * 1024) {
-            setErrors((prev) => ({ ...prev, image: 'Image size must be less than 5MB' }));
-            return;
+        try {
+            const base64 = await readImageFile(file);
+            setErrors((prev) => ({ ...prev, image: '' }));
+            setImageData(base64);
+        } catch (err) {
+            setErrors((prev) => ({ ...prev, image: err.message }));
         }
-
-        setErrors((prev) => ({ ...prev, image: '' }));
-
-        const reader = new FileReader();
-        reader.onload = () => {
-            setImageData(reader.result);
-        };
-        reader.readAsDataURL(file);
     };
 
     const validateForm = () => {
@@ -111,7 +114,7 @@ const ManageAccount = () => {
             if (err) isValid = false;
         });
         setErrors(fieldErrors);
-        setTouched({ displayName: true, locationX: true, locationY: true });
+        setTouched({ username: true, displayName: true, locationX: true, locationY: true });
         return isValid;
     };
 
@@ -125,6 +128,7 @@ const ManageAccount = () => {
         setSubmitting(true);
         try {
             const updates = {
+                username: form.username.trim(),
                 displayName: form.displayName.trim(),
                 location: {
                     x: Number(form.locationX),
@@ -229,12 +233,20 @@ const ManageAccount = () => {
                                 <input
                                     type="text"
                                     id="username"
-                                    value={user?.username || ''}
-                                    disabled
-                                    className="settings-input"
+                                    name="username"
+                                    value={form.username}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    className={`settings-input ${
+                                        errors.username && touched.username ? 'input-error' : ''
+                                    }`}
+                                    placeholder="Choose a username"
+                                    required
                                 />
                             </div>
-                            <p className="settings-field-hint">Your username is permanent and can&apos;t be changed.</p>
+                            {errors.username && touched.username && (
+                                <span className="settings-error-message">{errors.username}</span>
+                            )}
                         </div>
 
                         <div className="settings-form-group">

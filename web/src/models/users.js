@@ -53,6 +53,11 @@ const updateUser = (id, updates) => {
     const user = users[id];
     if (!user) return null;
 
+    if (updates.username !== undefined && updates.username !== user.username) {
+        delete usersByUsername[user.username];
+        user.username = updates.username;
+        usersByUsername[updates.username] = id;
+    }
     if (updates.displayName !== undefined) {
         user.displayName = updates.displayName;
         user.name = updates.displayName;
@@ -64,6 +69,12 @@ const updateUser = (id, updates) => {
         user.image = updates.image;
     }
     return publicUser(user);
+};
+
+// True when the username is already taken by a different user.
+const usernameTaken = (username, exceptId) => {
+    const ownerId = usersByUsername[username];
+    return ownerId !== undefined && ownerId !== exceptId;
 };
 
 // Getters
@@ -150,6 +161,7 @@ const getRecommendations = async (id, productId) => {
 module.exports = {
     createUser,
     updateUser,
+    usernameTaken,
     getAllUsers,
     getUserById,
     verifyCredentials,

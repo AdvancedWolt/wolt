@@ -78,10 +78,18 @@ const getRecommendations = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-    const { displayName, location, image } = req.body;
+    const { username, displayName, location, image } = req.body;
 
-    if (displayName === undefined && location === undefined && image === undefined) {
+    if (username === undefined && displayName === undefined && location === undefined && image === undefined) {
         return res.status(400).json({ error: 'At least one profile field is required to update' });
+    }
+
+    if (username !== undefined && (typeof username !== 'string' || username.trim().length < 3)) {
+        return res.status(400).json({ error: 'Username must be at least 3 characters' });
+    }
+
+    if (username !== undefined && User.usernameTaken(username.trim(), req.params.id)) {
+        return res.status(409).json({ error: 'Username already exists' });
     }
 
     if (displayName !== undefined && (typeof displayName !== 'string' || !displayName.trim())) {
@@ -98,6 +106,7 @@ const updateUser = async (req, res) => {
 
     try {
         const updated = User.updateUser(req.params.id, {
+            username: username ? username.trim() : undefined,
             displayName: displayName ? displayName.trim() : undefined,
             location,
             image

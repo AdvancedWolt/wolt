@@ -67,7 +67,10 @@ const isOwnedBy = (id, userId) => restaurants[id]?.ownerId === userId;
 
 // helper for GET /api/search/:query endpoint
 const searchRestaurants = (query) => {
-    return Object.values(restaurants).filter(r => r.name.includes(query)).map(formatRestaurant);
+    const normalized = query.toLowerCase();
+    return Object.values(restaurants)
+        .filter(r => r.name.toLowerCase().includes(normalized))
+        .map(formatRestaurant);
 };
 
 module.exports = {

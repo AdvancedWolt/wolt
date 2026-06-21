@@ -1,0 +1,339 @@
+/* Navbar search input styling */
+.navbar-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    margin-left: 24px;
+    width: 280px;
+    transition: width 0.2s ease-in-out;
+}
+
+.navbar-search-input {
+    width: 100%;
+    height: 36px;
+    padding: 6px 12px 6px 36px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    font: inherit;
+    font-size: 0.88rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.navbar-search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.navbar-search-icon {
+    position: absolute;
+    left: 12px;
+    color: var(--muted);
+    font-size: 0.9rem;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Search page layout */
+.search-page {
+    width: min(1280px, 100%);
+    margin: 0 auto;
+    padding: 0 24px 48px;
+}
+
+.search-header {
+    padding: 32px;
+    margin-bottom: 34px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--surface)), var(--surface));
+    border: 1px solid var(--border);
+}
+
+.search-subtitle {
+    margin: 0;
+    color: var(--accent);
+    font-weight: 750;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.78rem;
+}
+
+.search-header h1 {
+    margin: 4px 0 0;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    letter-spacing: -0.045em;
+    color: var(--text);
+}
+
+/* Search page states (idle, loading, error, empty) */
+.search-state {
+    text-align: center;
+    padding: 80px 24px;
+    background: var(--surface);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.search-state-icon {
+    font-size: 56px;
+    display: block;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05));
+}
+
+.search-state h2 {
+    margin: 0 0 10px;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.search-state p {
+    color: var(--muted);
+    margin: 0 auto;
+    max-width: 520px;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* Search loading spinner */
+.search-spinner {
+    width: 44px;
+    height: 44px;
+    border: 4px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    margin: 0 auto 24px;
+    animation: search-spin 0.8s linear infinite;
+}
+
+@keyframes search-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Search Results sections */
+.search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.search-section {
+    margin-bottom: 12px;
+}
+
+.search-section-title {
+    font-size: 1.45rem;
+    margin: 0 0 20px;
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 10px;
+    font-weight: 700;
+}
+
+/* Restaurants search grid */
+.search-restaurants-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+/* Dishes/Menu search grid */
+.search-dishes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+/* Search dish result card */
+.search-dish-card {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--surface);
+    height: 130px;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.search-dish-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+    border-color: var(--accent);
+}
+
+.search-dish-media {
+    width: 120px;
+    min-width: 120px;
+    height: 100%;
+    background: color-mix(in srgb, var(--border) 40%, var(--surface));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+}
+
+.search-dish-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.search-dish-card:hover .search-dish-media img {
+    transform: scale(1.05);
+}
+
+.search-dish-fallback {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--muted);
+    opacity: 0.3;
+    user-select: none;
+}
+
+.search-dish-body {
+    flex: 1;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0; /* Ensures text-truncation works in flex items */
+}
+
+.search-dish-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.search-dish-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-dish-price {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.search-dish-desc {
+    margin: 4px 0 0;
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-dish-footer {
+    margin-top: auto;
+    padding-top: 6px;
+}
+
+.search-dish-restaurant-link {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.search-dish-restaurant-link:hover {
+    color: var(--accent);
+}
+
+.search-dish-restaurant-link strong {
+    color: var(--text);
+    font-weight: 600;
+    transition: color 0.15s ease;
+}
+
+.search-dish-restaurant-link:hover strong {
+    color: var(--accent);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .navbar-search-wrapper {
+        width: 180px;
+        margin-left: 12px;
+    }
+    .search-dish-card {
+        height: auto;
+        flex-direction: column;
+    }
+    .search-dish-media {
+        width: 100%;
+        height: 120px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+    .search-dishes-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar-search-wrapper {
+        display: none; /* Hide search box on very small mobile navbars */
+    }
+}
+
+/* Search Page Main Input */
+.search-page-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+    margin: 24px auto 0;
+}
+
+.search-page-input {
+    width: 100%;
+    height: 48px;
+    padding: 10px 16px 10px 48px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    font: inherit;
+    font-size: 1.05rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-page-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.search-page-input-icon {
+    position: absolute;
+    left: 18px;
+    color: var(--muted);
+    font-size: 1.25rem;
+    pointer-events: none;
+    user-select: none;
+}

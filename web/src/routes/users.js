@@ -9,6 +9,7 @@ router.route('/')
 
 router.route('/:id')
     .get(requireAuth, requireMatchingUser, user.getUserById)
+    .patch(requireAuth, requireMatchingUser, user.updateUser)
 
 router.route('/:id/recommendations')
     .get(requireAuth, requireMatchingUser, user.getRecommendations)

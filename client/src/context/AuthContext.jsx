@@ -36,6 +36,16 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const updateAuthUser = (updatedFields) => {
+        setUser((curr) => {
+            if (!curr) return null;
+            return {
+                ...curr,
+                ...updatedFields
+            };
+        });
+    };
+
     // Mirror auth state to localStorage so it survives a page reload.
     useEffect(() => {
         if (token) localStorage.setItem(TOKEN_KEY, token);
@@ -54,6 +64,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
+        updateAuthUser,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

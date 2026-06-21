@@ -1,4 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
@@ -7,6 +8,24 @@ const Navbar = () => {
     const { user, isAuthenticated, logout } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+
+    const query = searchParams.get('q') || '';
+    const [searchValue, setSearchValue] = useState(query);
+
+    useEffect(() => {
+        setSearchValue(query);
+    }, [query]);
+
+    const handleSearchChange = (e) => {
+        const val = e.target.value;
+        setSearchValue(val);
+        if (val.trim()) {
+            navigate(`/search?q=${encodeURIComponent(val)}`);
+        } else {
+            navigate('/search');
+        }
+    };
 
     const handleLogout = () => {
         logout();
@@ -19,31 +38,46 @@ const Navbar = () => {
 
             <div className="navbar-links">
                 <Link to="/">Home</Link>
-                <Link to="/search">Search</Link>
                 <Link to="/orders">Orders</Link>
                 {user?.role === 'restaurant_owner' && <Link to="/manage">Manage</Link>}
             </div>
 
-            <div className="navbar-actions">
-                <button className="btn" onClick={toggleTheme}>
-                    {theme === 'light' ? 'Dark' : 'Light'} mode
-                </button>
+            <div className="navbar-search-wrapper">
+                <input
+                    type="search"
+                    className="navbar-search-input"
+                    placeholder="Search restaurants or dishes..."
+                    value={searchValue}
+                    onChange={handleSearchChange}
+                />
+                <span className="navbar-search-icon">🔍</span>
+            </div>
 
+            <div className="navbar-actions">
                 {isAuthenticated ? (
                     <>
-                        {user?.image && (
-                            <img
-                                src={user.image}
-                                alt={user.displayName || user.username}
-                                className="navbar-avatar"
-                            />
-                        )}
-                        <span className="navbar-user">{user?.displayName || user?.username}</span>
+                        <div className="navbar-user-profile">
+                            {user?.image && (
+                                <img
+                                    src={user.image}
+                                    alt={user.displayName || user.username}
+                                    className="navbar-avatar"
+                                />
+                            )}
+                            <span className="navbar-user">Hello, {user?.displayName || user?.username}.</span>
+                        </div>
+                        <Link className="btn btn-secondary" to="/manage-account" style={{ marginRight: '4px' }}>
+                            Manage Account
+                        </Link>
                         <button className="btn" onClick={handleLogout}>Log out</button>
                     </>
                 ) : (
                     <Link className="btn" to="/login">Log in</Link>
                 )}
+
+                <button className="btn" onClick={toggleTheme}>
+                    {theme === 'light' ? 'Dark' : 'Light'} mode
+                </button>
             </div>
         </nav>
     );

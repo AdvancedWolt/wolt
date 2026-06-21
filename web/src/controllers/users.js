@@ -1,7 +1,7 @@
 const User = require('../models/users');
 
 const createUser = async (req, res) => {
-    const { username, password, name, phone, location, displayName, image } = req.body;
+    const { username, password, name, phone, location, displayName, image, role = 'customer' } = req.body;
     if (!username) {
         return res.status(400).json({ error: 'Username is required' });
     }
@@ -19,9 +19,21 @@ const createUser = async (req, res) => {
     if (!location || typeof location.x !== 'number' || typeof location.y !== 'number') {
         return res.status(400).json({ error: 'Location coordinates (x, y) must be numbers' });
     }
+    if (!['customer', 'restaurant_owner'].includes(role)) {
+        return res.status(400).json({ error: 'Role must be customer or restaurant_owner' });
+    }
 
     try {
-        const newUser = await User.createUser({ username, password, name, phone, location, displayName, image });
+        const newUser = await User.createUser({
+            username,
+            password,
+            name,
+            phone,
+            location,
+            displayName,
+            image,
+            role
+        });
         if (!newUser) {
             return res.status(409).json({ error: 'Username already exists' });
         }

@@ -2,9 +2,29 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { getRestaurants } from '../api/endpoints.js';
 import RestaurantRow from '../components/RestaurantRow.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import '../styles/home.css';
 
+const toRadians = (degrees) => degrees * (Math.PI / 180);
+
+const distanceInKm = (from, to) => {
+    if (!from || !to) return null;
+
+    const earthRadiusKm = 6371;
+    const latitudeDelta = toRadians(to.x - from.x);
+    const longitudeDelta = toRadians(to.y - from.y);
+    const fromLatitude = toRadians(from.x);
+    const toLatitude = toRadians(to.x);
+    const haversine = (
+        Math.sin(latitudeDelta / 2) ** 2
+        + Math.cos(fromLatitude) * Math.cos(toLatitude) * Math.sin(longitudeDelta / 2) ** 2
+    );
+
+    return earthRadiusKm * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+};
+
 const Home = () => {
+    const { user } = useAuth();
     const [restaurants, setRestaurants] = useState([]);
     const [status, setStatus] = useState('loading');
     const [error, setError] = useState('');
@@ -28,13 +48,23 @@ const Home = () => {
         loadRestaurants();
     }, [loadRestaurants]);
 
+    const restaurantsWithDistance = useMemo(() => restaurants.map((restaurant) => ({
+        ...restaurant,
+        distanceKm: distanceInKm(user?.location, restaurant.location),
+    })), [restaurants, user?.location]);
+
+    const nearby = useMemo(() => restaurantsWithDistance
+        .filter((restaurant) => Number.isFinite(restaurant.distanceKm))
+        .sort((left, right) => left.distanceKm - right.distanceKm)
+        .slice(0, 8), [restaurantsWithDistance]);
+
     const promoted = useMemo(() => {
-        const explicitlyPromoted = restaurants.filter((restaurant) => restaurant.promoted);
-        return explicitlyPromoted.length ? explicitlyPromoted : restaurants.slice(0, 5);
-    }, [restaurants]);
+        const explicitlyPromoted = restaurantsWithDistance.filter((restaurant) => restaurant.promoted);
+        return explicitlyPromoted.length ? explicitlyPromoted : restaurantsWithDistance.slice(0, 5);
+    }, [restaurantsWithDistance]);
 
     const categories = useMemo(() => {
-        const grouped = restaurants.reduce((rows, restaurant) => {
+        const grouped = restaurantsWithDistance.reduce((rows, restaurant) => {
             const category = restaurant.category?.trim() || 'Other';
             if (!rows.has(category)) rows.set(category, []);
             rows.get(category).push(restaurant);
@@ -42,7 +72,7 @@ const Home = () => {
         }, new Map());
 
         return [...grouped.entries()].sort(([left], [right]) => left.localeCompare(right));
-    }, [restaurants]);
+    }, [restaurantsWithDistance]);
 
     if (status === 'loading') {
         return (
@@ -80,9 +110,14 @@ const Home = () => {
             <header className="home-hero">
                 <p className="home-eyebrow">Restaurants near you</p>
                 <h1>What are you craving?</h1>
-                <p>Explore promoted picks and browse every place by category.</p>
+                <p>
+                    {user?.location
+                        ? 'Places are ranked using your saved location.'
+                        : 'Log in to rank restaurants by distance from you.'}
+                </p>
             </header>
 
+            {nearby.length > 0 && <RestaurantRow title="Near you" restaurants={nearby} />}
             <RestaurantRow title="Promoted" restaurants={promoted} />
 
             {categories.map(([category, categoryRestaurants]) => (

@@ -11,7 +11,9 @@ const formatRestaurant = (restaurant) => {
         name: restaurant.name,
         category: restaurant.category,
         image: restaurant.image,
-        promoted: restaurant.promoted
+        promoted: restaurant.promoted,
+        location: restaurant.location,
+        ownerId: restaurant.ownerId
     };
 };
 
@@ -24,6 +26,8 @@ const createRestaurant = (name, details = {}) => {
         category: details.category || 'Other',
         image: details.image || null,
         promoted: details.promoted === true,
+        location: details.location || null,
+        ownerId: details.ownerId,
         products: {}
     };
     
@@ -40,6 +44,7 @@ const updateRestaurant = (id, updates) => {
     if (updates.category !== undefined) restaurant.category = updates.category || 'Other';
     if (updates.image !== undefined) restaurant.image = updates.image || null;
     if (updates.promoted !== undefined) restaurant.promoted = updates.promoted === true;
+    if (updates.location !== undefined) restaurant.location = updates.location;
     return formatRestaurant(restaurant);
 };
 
@@ -58,6 +63,8 @@ const getRestaurantById = (id) => formatRestaurant(restaurants[id]);
 // Expose raw restaurant to the Product model 
 const getRawRestaurantById = (id) => restaurants[id];
 
+const isOwnedBy = (id, userId) => restaurants[id]?.ownerId === userId;
+
 // helper for GET /api/search/:query endpoint
 const searchRestaurants = (query) => {
     return Object.values(restaurants).filter(r => r.name.includes(query)).map(formatRestaurant);
@@ -69,6 +76,7 @@ module.exports = {
     deleteRestaurant,
     getAllRestaurants,
     getRestaurantById,
+    isOwnedBy,
     getRawRestaurantById, // Exported just for models/products.js
     searchRestaurants
 };

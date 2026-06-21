@@ -2,14 +2,15 @@ const express = require('express')
 var router = express.Router()
 
 const restaurant = require('../controllers/restaurants')
+const { requireRestaurantOwner } = require('../middleware/auth');
 
 router.route('/')
     .get(restaurant.getAllRestaurants)
-    .post(restaurant.createRestaurant)
+    .post(requireRestaurantOwner, restaurant.createRestaurant)
 
 router.route('/:id')
     .get(restaurant.getRestaurantById)
-    .patch(restaurant.updateRestaurant)
-    .delete(restaurant.deleteRestaurant)
+    .patch(requireRestaurantOwner, restaurant.updateRestaurant)
+    .delete(requireRestaurantOwner, restaurant.deleteRestaurant)
 
 module.exports = router

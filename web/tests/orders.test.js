@@ -1,5 +1,11 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
+const jwt = require('jsonwebtoken');
+const OWNER_AUTH = `Bearer ${jwt.sign(
+    { userId: 'test-owner', role: 'restaurant_owner' },
+    process.env.JWT_SECRET || 'wolt-secret-key'
+)}`;
+
 const express = require('express');
 const ordersRoutes = require('../src/routes/orders');
 const restaurantsRoutes = require('../src/routes/restaurants');
@@ -30,6 +36,14 @@ after(() => {
 
 const request = async (method, path, body, headers = {}) => {
     const opts = { method, headers: { 'Content-Type': 'application/json', ...headers } };
+    if (
+        ['POST', 'PATCH', 'DELETE'].includes(method)
+        && path.startsWith('/api/restaurants')
+        && !Object.hasOwn(headers, 'Authorization')
+        && !Object.hasOwn(headers, 'authorization')
+    ) {
+        opts.headers.Authorization = OWNER_AUTH;
+    }
     if (body !== undefined) {
         opts.body = JSON.stringify(body);
     }

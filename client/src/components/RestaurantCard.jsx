@@ -29,6 +29,12 @@ const RestaurantCard = ({ restaurant }) => {
             <div className="restaurant-card-body">
                 <h3>{restaurant.name}</h3>
                 <p>{restaurant.category || 'Other'}</p>
+                {restaurant.location && (
+                    <small>{restaurant.location.x}, {restaurant.location.y}</small>
+                )}
+                {Number.isFinite(restaurant.distanceKm) && (
+                    <span className="restaurant-distance">{restaurant.distanceKm.toFixed(1)} km away</span>
+                )}
             </div>
         </Link>
     );

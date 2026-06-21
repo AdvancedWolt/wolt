@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express()
 
-app.use(express.json())
+app.use(express.json({ limit: '6mb' }))
 
 const restaurantRoutes = require('./routes/restaurants');
 const productRoutes = require('./routes/products');

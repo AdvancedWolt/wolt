@@ -1,5 +1,11 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
+const jwt = require('jsonwebtoken');
+const OWNER_AUTH = `Bearer ${jwt.sign(
+    { userId: 'test-owner', role: 'restaurant_owner' },
+    process.env.JWT_SECRET || 'wolt-secret-key'
+)}`;
+
 const express = require('express');
 const usersRoutes = require('../src/routes/users');
 const tokensRoutes = require('../src/routes/tokens');
@@ -30,6 +36,14 @@ after(() => {
 
 const request = async (method, path, body, headers = {}) => {
     const opts = { method, headers: { 'Content-Type': 'application/json', ...headers } };
+    if (
+        ['POST', 'PATCH', 'DELETE'].includes(method)
+        && path.startsWith('/api/restaurants')
+        && !Object.hasOwn(headers, 'Authorization')
+        && !Object.hasOwn(headers, 'authorization')
+    ) {
+        opts.headers.Authorization = OWNER_AUTH;
+    }
     if (body !== undefined) {
         opts.body = JSON.stringify(body);
     }
@@ -283,7 +297,8 @@ test('POST /api/restaurants creates a restaurant with Location', async () => {
         name: 'Restaurant Create Test',
         category: 'Italian',
         image: 'https://images.example/restaurant.jpg',
-        promoted: true
+        promoted: true,
+        location: { x: 32.0853, y: 34.7818 }
     });
 
     assert.strictEqual(created.status, 201);
@@ -298,6 +313,103 @@ test('POST /api/restaurants creates a restaurant with Location', async () => {
     assert.strictEqual(fetched.json.category, 'Italian');
     assert.strictEqual(fetched.json.image, 'https://images.example/restaurant.jpg');
     assert.strictEqual(fetched.json.promoted, true);
+    assert.deepStrictEqual(fetched.json.location, { x: 32.0853, y: 34.7818 });
+});
+
+test('POST /api/restaurants requires a restaurant owner', async () => {
+    const missingCredentials = await request(
+        'POST',
+        '/api/restaurants',
+        { name: 'Unauthorized Restaurant' },
+        { Authorization: '' }
+    );
+    const customerToken = jwt.sign(
+        { userId: 'test-customer', role: 'customer' },
+        process.env.JWT_SECRET || 'wolt-secret-key'
+    );
+    const customerRequest = await request(
+        'POST',
+        '/api/restaurants',
+        { name: 'Customer Restaurant' },
+        { Authorization: `Bearer ${customerToken}` }
+    );
+
+    assert.strictEqual(missingCredentials.status, 401);
+    assert.strictEqual(customerRequest.status, 403);
+});
+
+test('restaurant owner can register, log in and create a restaurant', async () => {
+    const registration = await request('POST', '/api/users', {
+        username: 'restaurant-owner',
+        password: 'OwnerPass123',
+        displayName: 'Restaurant Owner',
+        location: { x: 32.08, y: 34.78 },
+        role: 'restaurant_owner'
+    });
+    const login = await request('POST', '/api/tokens', {
+        username: 'restaurant-owner',
+        password: 'OwnerPass123'
+    });
+    const created = await request(
+        'POST',
+        '/api/restaurants',
+        { name: 'Owner Restaurant', category: 'Owner Picks' },
+        { Authorization: `Bearer ${login.json.token}` }
+    );
+
+    assert.strictEqual(registration.status, 201);
+    assert.strictEqual(registration.json.role, 'restaurant_owner');
+    assert.strictEqual(login.status, 200);
+    assert.strictEqual(login.json.role, 'restaurant_owner');
+    assert.deepStrictEqual(login.json.location, { x: 32.08, y: 34.78 });
+    assert.strictEqual(created.status, 201);
+});
+
+test('restaurant owner cannot manage another owner restaurant or menu', async () => {
+    const created = await request('POST', '/api/restaurants', {
+        name: 'Protected Owner Restaurant'
+    });
+    const restaurantId = created.headers.get('location').split('/').pop();
+    const otherOwnerToken = jwt.sign(
+        { userId: 'different-owner', role: 'restaurant_owner' },
+        process.env.JWT_SECRET || 'wolt-secret-key'
+    );
+    const headers = { Authorization: `Bearer ${otherOwnerToken}` };
+
+    const update = await request(
+        'PATCH',
+        `/api/restaurants/${restaurantId}`,
+        { name: 'Stolen Restaurant' },
+        headers
+    );
+    const addProduct = await request(
+        'POST',
+        `/api/restaurants/${restaurantId}/products`,
+        { name: 'Unauthorized Dish' },
+        headers
+    );
+    const remove = await request(
+        'DELETE',
+        `/api/restaurants/${restaurantId}`,
+        undefined,
+        headers
+    );
+
+    assert.strictEqual(update.status, 403);
+    assert.strictEqual(addProduct.status, 403);
+    assert.strictEqual(remove.status, 403);
+});
+
+test('POST /api/users rejects an unknown account role', async () => {
+    const response = await request('POST', '/api/users', {
+        username: 'invalid-role-user',
+        password: 'Password123',
+        displayName: 'Invalid Role',
+        location: { x: 32.08, y: 34.78 },
+        role: 'admin'
+    });
+
+    assert.strictEqual(response.status, 400);
 });
 
 test('restaurants use feed-safe defaults for optional metadata', async () => {
@@ -310,6 +422,7 @@ test('restaurants use feed-safe defaults for optional metadata', async () => {
     assert.strictEqual(fetched.json.category, 'Other');
     assert.strictEqual(fetched.json.image, null);
     assert.strictEqual(fetched.json.promoted, false);
+    assert.strictEqual(fetched.json.location, null);
 });
 
 test('POST /api/restaurants with missing name -> 400', async () => {
@@ -350,7 +463,8 @@ test('PATCH /api/restaurants/:id updates a restaurant', async () => {
         name: 'Restaurant After Patch',
         category: 'Asian',
         image: 'https://images.example/updated.jpg',
-        promoted: true
+        promoted: true,
+        location: { x: 31.7683, y: 35.2137 }
     });
     const fetched = await request('GET', `/api/restaurants/${id}`);
 
@@ -359,6 +473,7 @@ test('PATCH /api/restaurants/:id updates a restaurant', async () => {
     assert.strictEqual(fetched.json.category, 'Asian');
     assert.strictEqual(fetched.json.image, 'https://images.example/updated.jpg');
     assert.strictEqual(fetched.json.promoted, true);
+    assert.deepStrictEqual(fetched.json.location, { x: 31.7683, y: 35.2137 });
 });
 
 test('PATCH /api/restaurants/:id missing or unknown -> 400/404', async () => {
@@ -403,7 +518,10 @@ test('GET /api/restaurants/:id/products returns products for the restaurant', as
 
     const emptyMenu = await request('GET', `/api/restaurants/${restaurantId}/products`);
     const created = await request('POST', `/api/restaurants/${restaurantId}/products`, {
-        name: 'Falafel'
+        name: 'Falafel',
+        description: 'Crispy chickpea balls',
+        price: 32.5,
+        image: 'data:image/png;base64,test'
     });
     const productId = created.headers.get('location').split('/').pop();
     const menu = await request('GET', `/api/restaurants/${restaurantId}/products`);
@@ -412,7 +530,14 @@ test('GET /api/restaurants/:id/products returns products for the restaurant', as
     assert.deepStrictEqual(emptyMenu.json, []);
     assert.strictEqual(created.status, 201);
     assert.deepStrictEqual(menu.json, [
-        { id: productId, restaurantId, name: 'Falafel' }
+        {
+            id: productId,
+            restaurantId,
+            name: 'Falafel',
+            description: 'Crispy chickpea balls',
+            price: 32.5,
+            image: 'data:image/png;base64,test'
+        }
     ]);
 });
 
@@ -423,11 +548,15 @@ test('POST /api/restaurants/:id/products missing name or restaurant -> 400/404',
     const restaurantId = restaurant.headers.get('location').split('/').pop();
 
     const missingName = await request('POST', `/api/restaurants/${restaurantId}/products`, {});
+    const blankName = await request('POST', `/api/restaurants/${restaurantId}/products`, {
+        name: '   '
+    });
     const unknownRestaurant = await request('POST', '/api/restaurants/unknown-restaurant/products', {
         name: 'Falafel'
     });
 
     assert.strictEqual(missingName.status, 400);
+    assert.strictEqual(blankName.status, 400);
     assert.strictEqual(unknownRestaurant.status, 404);
 });
 
@@ -446,7 +575,14 @@ test('GET /api/restaurants/:id/products/:pId returns product or 404', async () =
     const unknownRestaurant = await request('GET', `/api/restaurants/unknown-restaurant/products/${productId}`);
 
     assert.strictEqual(fetched.status, 200);
-    assert.deepStrictEqual(fetched.json, { id: productId, restaurantId, name: 'Burger' });
+    assert.deepStrictEqual(fetched.json, {
+        id: productId,
+        restaurantId,
+        name: 'Burger',
+        description: '',
+        price: 0,
+        image: null
+    });
     assert.strictEqual(unknownProduct.status, 404);
     assert.strictEqual(unknownRestaurant.status, 404);
 });
@@ -462,12 +598,18 @@ test('PATCH /api/restaurants/:id/products/:pId updates a product', async () => {
     const productId = created.headers.get('location').split('/').pop();
 
     const patched = await request('PATCH', `/api/restaurants/${restaurantId}/products/${productId}`, {
-        name: 'New Name'
+        name: 'New Name',
+        description: 'Updated description',
+        price: 44.9,
+        image: 'data:image/png;base64,updated'
     });
     const fetched = await request('GET', `/api/restaurants/${restaurantId}/products/${productId}`);
 
     assert.strictEqual(patched.status, 204);
     assert.strictEqual(fetched.json.name, 'New Name');
+    assert.strictEqual(fetched.json.description, 'Updated description');
+    assert.strictEqual(fetched.json.price, 44.9);
+    assert.strictEqual(fetched.json.image, 'data:image/png;base64,updated');
 });
 
 test('PATCH /api/restaurants/:id/products/:pId validates missing name and unknown ids', async () => {

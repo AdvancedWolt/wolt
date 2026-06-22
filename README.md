@@ -1,355 +1,203 @@
-# AdvancedWolt – Exercise 3: Food Delivery Web Server
+# AdvancedWolt – Exercise 4: React Web Application
 
-This is **Exercise 3**: a small food‑delivery web server (Wolt style), written in
-**Node.js + Express** with an **MVC** structure. It serves the API behind three
-screens: sign‑up, login, and the main screen (restaurants, menus, orders, and
-search).
+This is **Exercise 4**: a full-stack food-delivery web application. We have added a dynamic **React** frontend to the Node.js + Express backend from Exercise 3, which in turn connects to the C++ TCP server from Exercise 2 for recommendations.
 
-When a request needs the recommendation / "viewed products" feature, the web
-server connects to the **Exercise 2** C++ server over TCP and reuses it instead
-of redoing that work.
+The assignment is split into two parts:
+* **Part A:** Agile project management using JIRA.
+* **Part B:** A React web application with Wolt-inspired design, JWT authentication, and dynamic data integration.
 
-> **This README is for Exercise 3.** The Exercise 2 write‑up (its SOLID answers)
-> is in the [appendix](#appendix--exercise-2) at the bottom, and the Exercise 2
-> code is frozen on the `ex2` branch.
-
-Every `/api/*` route returns JSON, and all data is kept in memory, so restarting
-the server clears it.
+> The Exercise 2 SOLID answers are kept in the [appendix](#appendix--exercise-2) at the bottom.
 
 ---
 
-## Branches (for the checker)
+## Part A: Agile Workflow (JIRA & GitHub)
 
-Each exercise has its own branch, so older submissions stay frozen and gradable:
+The development process was strictly managed via JIRA and synchronized with GitHub, adhering to Agile principles:
 
-| Branch | What's there |
-| :--- | :--- |
-| **`ex1`** | **Exercise 1** – frozen. |
-| **`ex2`** | **Exercise 2** – the C++ TCP server, frozen. |
-| **`ex3`** | **Exercise 3** – this submission: the `web/` server plus the `src/` C++ server it talks to. The Exercise 2 SOLID answers are in this branch's README, in the [appendix](#appendix--exercise-2). |
-
-To grade an earlier exercise, check out its branch (`git checkout ex1` /
-`git checkout ex2`). We kept working on `ex3` for this submission. The C++ code
-still lives in `src/` on `ex3` because the web server runs it as a dependency –
-it's the same code that's frozen on `ex2`.
+* **Epics & User Stories:** The application was divided into logical epics (e.g., Authentication, Ordering, UI/UX) containing specific user stories and actionable tasks.
+* **Sprints & Scrum:** The work was organized into sprints. A Scrum Master was appointed to guide sprint planning, and regular status meetings were held (and documented) at least twice a week.
+* **Workflow Statuses:** Issues moved through `To Do`, `In Progress`, `Code Review`, and `Done`. Tasks were assigned to members before work began.
+* **Blocked Tasks:** Dependencies were explicitly tracked using the `blocked by` link type in JIRA.
+* **Feature Branches & Pull Requests:** Every task was developed on a dedicated feature branch named after the JIRA issue (e.g., `AW-12-login-page`). Code was merged to the main branch strictly via Pull Requests, which required approval from other team members before merging. The Jira-GitHub integration automatically linked PRs and branches to their respective JIRA issues.
 
 ---
 
-## What it does
+## Part B: The React Application (Architecture)
 
-We only built the server side, not the actual screens. The API backs:
+We built a single-page application (SPA) using React, JavaScript, CSS, and HTML. No mock data is used; all content is fetched dynamically from the Node.js server.
 
-* **Sign‑up** – `POST /api/users` with username, password, name, phone, address.
-* **Login** – `POST /api/tokens`, returns the user id if the credentials match.
-* **Main screen** – list restaurants, open a menu, place and manage orders, and
-  search.
+### System Architecture
 
-Browsing is open to everyone. Actions that belong to a user (like placing an
-order) need you to be "logged in", which in this exercise just means sending your
-user id in a `user-id` header.
-
----
-
-## How it's built (MVC)
-
-```
-HTTP / JSON client  (curl, Postman, or the app's screens)
+```text
+Browser (React App)
         │
-        ▼
+        ▼  HTTP (JSON + JWT Auth)
 ┌──────────────────────────────────────────────────────────────────────┐
-│  Express web server   ·   web/   ·   Exercise 3   ·   MVC             │
-│                                                                      │
-│   Routes ──▶ Middleware (auth) ──▶ Controllers ──▶ Models            │
-│   url → fn     user-id header        HTTP logic       in‑memory data  │
+│  Express Web Server   ·   web/   ·   Exercise 3   ·   Node.js        │
+│   (Validations, Routing, Database integration)                       │
 └──────────────────────────────────────────────────────────────────────┘
-        │   only for "viewed product" / recommendations
-        ▼   TCP socket, newline‑delimited text
+        │
+        ▼  TCP socket (Newline delimited text)
 ┌──────────────────────────────────────────────────────────────────────┐
-│  C++ recommendation server   ·   src/   ·   Exercise 2               │
+│  C++ Recommendation Server   ·   src/   ·   Exercise 2               │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-The code follows MVC and lives in `web/src`:
+### Frontend Code Structure
 
-* **Routes** (`routes/`) match a URL and HTTP verb to a controller function.
-* **Middleware** (`middleware/auth.js`) reads the `user-id` header. `requireAuth`
-  blocks with **401** if it's missing; `attachUserId` makes it optional.
-* **Controllers** (`controllers/`) are the HTTP layer: check the input, pick the
-  status code, return JSON. No storage logic here.
-* **Models** (`models/`) hold the in‑memory data and the rules (a product belongs
-  to a restaurant, an order can only change while it's `pending`, passwords are
-  saved only as a salted hash, and so on).
-* **TCP client** (`services/tcpClient.js`) is the one file that knows about the
-  Exercise 2 server. It opens a socket and speaks its text protocol; the address
-  comes from `config/tcpConfig.js`.
+The React codebase (`client/src/`) is structured into functional modules rather than one monolithic component:
 
-**Talking to Exercise 2.** A few actions reuse the old server instead of redoing
-it. When a logged‑in user opens a product (`GET .../products/:pId`), that view is
-sent to the C++ server; creating an order does the same for the ordered items;
-and recommendations are read back from there. Everything about Exercise 2 sits
-behind that one small file, which keeps things loosely coupled.
+* **`pages/`**: The top-level route views.
+  * `Login.jsx` / `Register.jsx`: Authentication pages with full client-side validation.
+  * `Home.jsx`: The main screen showing nearby/promoted restaurants.
+  * `RestaurantDetail.jsx`: The full menu for a specific restaurant.
+  * `Search.jsx`: Dynamic search results.
+  * `Manage.jsx` / `ManageAccount.jsx`: Management dashboards.
+  * `Cart.jsx` / `Orders.jsx`: Shopping cart and order history.
+* **`components/`**: Reusable UI elements.
+  * `Navbar.jsx`: The top navigation bar, displaying user details, auth controls, and the theme toggle.
+  * `RestaurantCard.jsx`, `MenuItem.jsx`, `CartLine.jsx`, etc.
+* **`context/`**: Global state management.
+  * `AuthContext.jsx`: Manages the JWT token, current user details, and provides `login()`, `register()`, and `logout()` functions.
+  * `ThemeContext.jsx`: Manages the application-wide dark/light mode state.
+  * `CartContext.jsx`: Manages the shopping cart state.
+* **`routes/`**: Route protection logic. Contains `ProtectedRoute` components that enforce authentication for sensitive pages.
+
+### Features & In-Depth GUI Walkthrough
+
+1. **Authentication (JWT) & Registration**
+   * **Sign Up:** Users can register an account by providing a unique username, secure password (requiring at least 8 characters, letters, and digits), a display name, geographic location (X/Y coordinates), and an optional profile image (up to 5MB). The UI features a dynamic image preview and real-time form validation.
+   * **Login:** Registered users can log in to receive a JWT. The application securely manages this token in the `AuthContext`.
+   * **Route Protection:** Unauthenticated users can browse restaurants and menus, but attempting to access the shopping cart or order history will automatically redirect them to the Login page.
+   <p align="center">
+     <em>[PLACEHOLDER: docs/screenshots/register.png] - Registration screen showing validation errors and image preview.</em>
+   </p>
+
+2. **Home Screen (Restaurant Discovery)**
+   * **Personalized View:** Upon logging in, the Navbar updates to display the user's name and profile image.
+   * **Restaurant Listing:** The main dashboard fetches data from the Express backend and displays restaurant cards, distinguishing between "Nearby" and "Promoted" locations.
+   * **Responsive Design:** Wolt-inspired cards with smooth hover effects and responsive grids.
+   <p align="center">
+     <em>docs/screenshots/home.png</em>
+   </p>
+
+3. **Restaurant Menus & Recommendations**
+   * **Full Menu:** Clicking a restaurant opens its dedicated page, displaying a grid of available products (dishes) with their prices and descriptions.
+   * **Smart Recommendations:** When a user views a product, the Node.js server seamlessly communicates with the C++ TCP server (from Exercise 2) to log the view and fetch personalized "Users also viewed" recommendations, which are displayed dynamically on the page.
+   <p align="center">
+     <em>[PLACEHOLDER: docs/screenshots/menu.png] - Restaurant detail page showing the product menu and recommendations.</em>
+   </p>
+
+4. **Shopping Cart & Checkout**
+   * **Cart Management:** Users can add multiple products from a restaurant to their shopping cart. A persistent cart context tracks the selected items.
+   * **Real-time Totals:** The cart instantly recalculates sub-totals and allows the user to increment, decrement, or remove items before proceeding to checkout.
+   * **Placing Orders:** A single click sends the order payload to the backend, which creates a new pending order attached to the user's account.
+
+5. **Order Management & History**
+   * **Tracking Orders:** The "My Orders" dashboard allows logged-in users to review all their past and active orders.
+   * **Order Details & Status Updates:** Users can view the itemized receipt for any specific order and change its status (e.g., from `pending` to `completed`) using a simple, intuitive interface that PATCHes the backend.
+   <p align="center">
+     <em>[PLACEHOLDER: docs/screenshots/orders.png] - Order history dashboard and status management.</em>
+   </p>
+
+6. **Search Functionality**
+   * **Global Search:** A dedicated search bar in the Navbar allows users to query the entire platform.
+   * **Granular Results:** The search results page dynamically categorizes matches, showing matching restaurants alongside individual dishes whose name or description contains the query.
+   <p align="center">
+     <em>[PLACEHOLDER: docs/screenshots/search.png] - Search results page displaying matching items.</em>
+   </p>
+
+7. **Dynamic Theming (Light/Dark Mode)**
+   * **Instant Switch:** The Navbar includes a moon/sun toggle icon that instantly switches the application between `light mode` and `dark mode`. 
+   * **Global Application:** This toggles CSS variables globally across all components, instantly re-coloring backgrounds, text, and borders for a comfortable viewing experience without reloading the page.
+   <p align="center">
+     <em>[PLACEHOLDER: docs/screenshots/dark-mode.png] - The application GUI with Dark Mode enabled.</em>
+   </p>
 
 ---
 
-## API reference
+## Running the Application
 
-Base URL: `http://localhost:3000`. Bodies and responses are JSON. "Auth" means
-the request must include a `user-id: <id>` header.
+The entire stack is containerized using Docker Compose.
 
-### Users & authentication
-| Method | Path | Auth | Success | Errors |
-| :--- | :--- | :---: | :--- | :--- |
-| `POST` | `/api/users` | – | `201 Created` + `Location` | `400` missing fields, `409` username taken |
-| `GET`  | `/api/users/:id` | ✓ | `200 OK` (user details) | `404` not found |
-| `POST` | `/api/tokens` | – | `200 OK` (`{ userId }`) | `400` missing fields, `404` bad credentials |
+### Quick Start (Docker Compose)
 
-### Restaurants
-| Method | Path | Auth | Success | Errors |
-| :--- | :--- | :---: | :--- | :--- |
-| `GET`    | `/api/restaurants` | – | `200 OK` (array) | – |
-| `POST`   | `/api/restaurants` | – | `201 Created` + `Location` | `400` name required |
-| `GET`    | `/api/restaurants/:id` | – | `200 OK` | `404` not found |
-| `PATCH`  | `/api/restaurants/:id` | – | `204 No Content` | `400` name required, `404` not found |
-| `DELETE` | `/api/restaurants/:id` | – | `204 No Content` | `404` not found |
-
-### Products (a restaurant's menu)
-| Method | Path | Auth | Success | Errors |
-| :--- | :--- | :---: | :--- | :--- |
-| `GET`    | `/api/restaurants/:id/products` | – | `200 OK` (array) | `404` restaurant not found |
-| `POST`   | `/api/restaurants/:id/products` | – | `201 Created` + `Location` | `400`/`404` |
-| `GET`    | `/api/restaurants/:id/products/:pId` | optional | `200 OK` (records a **view** if `user-id` is sent) | `404` |
-| `PATCH`  | `/api/restaurants/:id/products/:pId` | – | `204 No Content` | `400`/`404` |
-| `DELETE` | `/api/restaurants/:id/products/:pId` | – | `204 No Content` | `404` |
-
-### Orders
-| Method | Path | Auth | Success | Errors |
-| :--- | :--- | :---: | :--- | :--- |
-| `POST`   | `/api/orders` | ✓ | `201 Created` + `Location` | `400` invalid items, `404` restaurant |
-| `GET`    | `/api/orders` | ✓ | `200 OK` (current user's orders) | – |
-| `GET`    | `/api/orders/:id` | ✓ | `200 OK` | `404` not found |
-| `PATCH`  | `/api/orders/:id` | ✓ | `204 No Content` | `400` invalid status/items, `404` |
-| `DELETE` | `/api/orders/:id` | ✓ | `204 No Content` | `400` non‑pending, `404` |
-
-### Search
-| Method | Path | Auth | Success |
-| :--- | :--- | :---: | :--- |
-| `GET` | `/api/search/:query` | – | `200 OK` – `{ restaurants, products }` whose name or description contains `:query` |
-
-**Statuses used:** `200` ok, `201` created (+`Location`), `204` no content,
-`400` bad request, `401` auth required, `404` not found, `409` conflict.
-
----
-
-## Running it
-
-The C++ recommendation service and the Exercise 3 web server run as separate
-containers. React is compiled during the web image build and is served by the
-Express server, so the browser and API share one origin.
-
-### Option A – Docker Compose (easiest)
-
-From the repo root:
+From the root of the project, run:
 
 ```bash
 docker compose up --build
 ```
 
-This starts two containers:
-
-* **`cpp-service`** – the Exercise 2 C++ server on port **8080**.
-* **`web`** – Express plus the compiled React application on port **3000**. It
-  finds the C++ service through the internal Compose hostname `cpp-service`.
-
 <p align="center">
-  <img src="docs/screenshots/00-startup.png" alt="docker compose up — both servers start" width="92%">
+  <em>[PLACEHOLDER: docs/screenshots/docker-build.png] - Terminal output showing the successful compilation of the React app, Express server, and C++ service.</em>
 </p>
 
-Open the React application at `http://localhost:3000`. The API is available on
-the same server under `http://localhost:3000/api`.
+This starts three containers:
+1. **`cpp-service`**: The Exercise 2 C++ server on port 8080.
+2. **`web`**: The Express API backend on port 3000.
+3. **`client`**: The Vite dev server serving the React frontend on port 5173.
 
-### Option B – run the two containers yourself
+Once the containers are running, open your browser to:
+**[http://localhost:5173](http://localhost:5173)**
 
+*Note: Inside the Docker network, the React app proxies its `/api` requests to `http://web:3000`, so cross-container communication works seamlessly.*
+
+### Running Manually
+
+If you prefer to run the components independently:
+
+**1. Start the C++ Server**
 ```bash
-# Exercise 2 C++ server on 8080
 docker build -t wolt-cpp .
 docker run --rm -p 8080:8080 wolt-cpp 8080
-
-# Express + React web server on 3000 (point it at the C++ server)
-docker build -t wolt-web -f web/Dockerfile .
-docker run --rm -p 3000:3000 \
-  -e CPP_SERVICE_HOST=host.docker.internal -e CPP_SERVICE_PORT=8080 \
-  wolt-web
 ```
 
-### Option C – web server with Node
-
+**2. Start the Node.js Server**
 ```bash
-# 1) start the C++ server (Docker, as above, on 8080)
-# 2) then:
 cd web
 npm install
 CPP_SERVICE_HOST=127.0.0.1 CPP_SERVICE_PORT=8080 PORT=3000 npm start
 ```
 
-Most endpoints (restaurants, search, sign‑up) work even when the C++ server is
-down. Only the view and recommendation paths need it.
-
----
-
-## Demo
-
-The screenshots below are real terminal sessions against the running stack,
-captured with `curl -i` so you can see the status line and headers. The ids in
-the output are the real UUIDs the server generated; the commands reuse them with
-shell variables (`$RID`, `$PID`, `$UID`, `$OID`).
-
-### Restaurants and menu
-
-First, the exact flow from the assignment's appendix: an empty list, create a
-restaurant (`201` + `Location`), then list again. After that: one restaurant, a
-couple of error cases, adding a product, and the Exercise 2 bridge – a logged‑in
-user opening a product, which gets recorded on the C++ server.
-
-<table>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/01-restaurants.png" alt="GET empty list, POST a restaurant, GET the list again"></td>
-    <td width="50%"><img src="docs/screenshots/02-restaurant-get.png" alt="GET one restaurant, PATCH unknown id 404, POST empty body 400"></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/03-products.png" alt="POST a product to the menu, GET the menu"></td>
-    <td width="50%"><img src="docs/screenshots/04-product-view.png" alt="GET a product as a logged-in user records the view on the C++ server"></td>
-  </tr>
-</table>
-
-> The bottom‑right shot shows the cross‑server part working: after the logged‑in
-> `GET`, the view appears in the C++ server's file (`data/views.txt`) as
-> `<userId> <productId>`.
-
-### Sign up, log in, order and search
-
-Register a user, log in (plus a failed login), create and update an order while
-logged in (with a `401` when the `user-id` header is missing), and a search that
-matches both a restaurant and a product.
-
-<table>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/05-register.png" alt="POST /api/users to register"></td>
-    <td width="50%"><img src="docs/screenshots/06-login.png" alt="POST /api/tokens login success and failure"></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/screenshots/07-orders.png" alt="create order, 401 without auth, list orders, patch order status"></td>
-    <td width="50%"><img src="docs/screenshots/08-search.png" alt="GET /api/search/:query"></td>
-  </tr>
-</table>
-
----
-
-## Tests
-
+**3. Start the React App**
 ```bash
-# Web tests (Node's built-in test runner, needs Node 18+)
-cd web
+cd client
 npm install
-npm test
-```
-
-```bash
-# Exercise 2 C++ unit tests, inside the image
-docker build -t wolt-cpp .
-docker run --rm --entrypoint ./build/tests/unit_tests wolt-cpp
+VITE_API_URL=http://localhost:3000 npm run dev
 ```
 
 ---
 
-## Security note
+## Security Note
 
-This is a course exercise, so don't store or send real passwords, credit cards,
-API keys, or anything sensitive. Passwords here are only ever kept as a salted
-PBKDF2 hash, and the API never returns them.
+This is a university assignment. No real credentials, API keys, or sensitive personal data are stored in this repository or transmitted to the server. Fake users and tokens are utilized solely for demonstration purposes.
 
 ---
 
 # Appendix – Exercise 2
 
-These questions are from **Exercise 2**. The answers are kept here as they were
-(and also live on the `ex2` branch) so they're easy to find.
+These questions are from **Exercise 2**. The answers are kept here as they were so they're easy to find.
 
 ### 1. Command names changed (add → POST, recommend → GET)
 **Did it require touching closed code?**
-Yes, in ex1 command names were hardcoded strings scattered across `AppInternals`
-dispatch logic. There was no registry abstraction.
+Yes, in ex1 command names were hardcoded strings scattered across `AppInternals` dispatch logic. There was no registry abstraction.
 
-**Fix applied (ex2):** `CommandManager` holds a
-`std::unordered_map<std::string, ICommand*>` registry. The dispatcher never
-mentions a command name, it just looks up the key and forwards. Renaming a
-command is a single string change at the registration site (e.g. `app.cpp`).
-`CommandParser` lowercases the verb before lookup, so case sensitivity is
-handled in one place too. The dispatcher is now genuinely closed to this change.
+**Fix applied (ex2):** `CommandManager` holds a `std::unordered_map<std::string, ICommand*>` registry. The dispatcher never mentions a command name, it just looks up the key and forwards. Renaming a command is a single string change at the registration site (e.g. `app.cpp`). `CommandParser` lowercases the verb before lookup, so case sensitivity is handled in one place too. The dispatcher is now genuinely closed to this change.
 
 ### 2. New commands added (PATCH, DELETE)
 **Did it require touching closed code?**
 No. Each new command is a self-contained class implementing `ICommand`:
 ```cpp
-virtual models::Response execute(const models::ParsedCommand& cmd,
-                                  IdbManager& db) = 0;
+virtual models::Response execute(const models::ParsedCommand& cmd, IdbManager& db) = 0;
 ```
-Registration is one line per command at startup. `CommandManager::dispatch`
-and all existing commands are untouched. `HelpCommand` queries the
-`CommandManager` registry dynamically, new commands appear in `help` output
-automatically with zero changes to `HelpCommand` itself.
-This is the Open/Closed Principle working as intended.
+Registration is one line per command at startup. `CommandManager::dispatch` and all existing commands are untouched. `HelpCommand` queries the `CommandManager` registry dynamically, new commands appear in `help` output automatically with zero changes to `HelpCommand` itself. This is the Open/Closed Principle working as intended.
 
 ### 3. Command output format changed
 **Did it require touching closed code?**
-Partially. In ex1 commands returned raw strings and each command owned its
-own formatting. There was no shared wire-format abstraction.
+Partially. In ex1 commands returned raw strings and each command owned its own formatting. There was no shared wire-format abstraction.
 
-**Fix applied (ex2):** The new `models::Response` class with a `toWire()`
-method centralizes all wire serialization. Commands return a semantic
-`Response` object, not a raw string. Changing how a status serializes to wire bytes now means
-touching only `Response::toWire()`, not every command that produces
-that status. The `models::Status` enum + lookup table further ensure that
-adding or renaming a status phrase is a single-line change.
+**Fix applied (ex2):** The new `models::Response` class with a `toWire()` method centralizes all wire serialization. Commands return a semantic `Response` object, not a raw string. Changing how a status serializes to wire bytes now means touching only `Response::toWire()`, not every command that produces that status. The `models::Status` enum + lookup table further ensure that adding or renaming a status phrase is a single-line change.
 
 ### 4. I/O moved from console to TCP sockets
 **Did it require touching closed code?**
-No. This was the cleanest boundary in the design. Commands operate on
-`ParsedCommand` structs and return `Response` objects, they have
-zero knowledge of transport. The server loop in `main.cpp` owns the
-socket, reads a line, calls `CommandParser` -> `CommandManager`, then
-writes `response.toWire()` to the file descriptor. Switching from
-`std::cin`/`std::cout` to a socket touched only `main.cpp`.
-
-**Architecture overview:**
-```
-[socket fd]
-      │
-      ▼
-┌─────────────────────────────────────────────────────┐
-│  CommandParser                                       │
-│  raw bytes → ParsedCommand                          │
-└─────────────────────────────────────────────────────┘
-      │
-      ▼
-┌─────────────────────────────────────────────────────┐
-│  CommandManager                                      │
-│  registry lookup → dispatch                         │
-└─────────────────────────────────────────────────────┘
-      │
-      ▼
-┌─────────────────────────────────────────────────────┐
-│  ICommand::execute()                                 │
-│  command logic only                                 │
-└─────────────────────────────────────────────────────┘
-      │
-      ▼
-┌─────────────────────────────────────────────────────┐
-│  IdbManager                                          │
-│  abstraction layer for the database                 │
-└─────────────────────────────────────────────────────┘
-```
-
-Each layer is replaceable independently. In ex1, `App` + `AppInternals`
-collapsed several of these layers together, which is why the socket
-migration required no surgery on command or DB code, those layers
-were already properly separated by ex2.
+No. This was the cleanest boundary in the design. Commands operate on `ParsedCommand` structs and return `Response` objects, they have zero knowledge of transport. The server loop in `main.cpp` owns the socket, reads a line, calls `CommandParser` -> `CommandManager`, then writes `response.toWire()` to the file descriptor. Switching from `std::cin`/`std::cout` to a socket touched only `main.cpp`.

@@ -5,7 +5,6 @@ const products = {};
 
 const createProduct = (restaurantId, details) => {
     const id = crypto.randomUUID();
-    // Save the restaurantId so we know who it belongs to
     const newProduct = {
         id,
         restaurantId,
@@ -14,15 +13,13 @@ const createProduct = (restaurantId, details) => {
         price: details.price ?? 0,
         image: details.image || null
     };
-    
+
     products[id] = newProduct;
     return newProduct;
 };
 
 const updateProduct = (restaurantId, productId, updates) => {
     const product = products[productId];
-    
-    // Ensure the product exists AND belongs to the correct restaurant
     if (!product || product.restaurantId !== restaurantId) return null;
 
     if (updates.name !== undefined) product.name = updates.name;
@@ -34,7 +31,7 @@ const updateProduct = (restaurantId, productId, updates) => {
 
 const deleteProduct = (restaurantId, productId) => {
     const product = products[productId];
-    
+
     if (product && product.restaurantId === restaurantId) {
         delete products[productId];
         return true;
@@ -43,22 +40,22 @@ const deleteProduct = (restaurantId, productId) => {
 };
 
 const getAllProducts = (restaurantId) => {
-    // Filter the global products list for this specific restaurant
     return Object.values(products).filter(p => p.restaurantId === restaurantId);
 };
 
 const getProductById = (restaurantId, productId) => {
     const product = products[productId];
-    
+
     if (product && product.restaurantId === restaurantId) {
         return product;
     }
     return null;
 };
 
-// --- HELPER FUNCTIONS ---
+// Global lookup by id, used to resolve recommended product ids into full products.
+const getById = (productId) => products[productId] || null;
 
-// Used from controllers/restaurants.js when a restaurant is deleted
+// Called from controllers/restaurants.js when a restaurant is deleted.
 const deleteProductsByRestaurant = (restaurantId) => {
     for (const key in products) {
         if (products[key].restaurantId === restaurantId) {
@@ -82,6 +79,7 @@ module.exports = {
     deleteProduct,
     getAllProducts,
     getProductById,
+    getById,
     deleteProductsByRestaurant,
     searchProducts
 };

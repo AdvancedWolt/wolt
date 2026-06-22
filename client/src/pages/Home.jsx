@@ -4,25 +4,9 @@ import { Link } from 'react-router-dom';
 import { getRestaurants } from '../api/endpoints.js';
 import RestaurantRow from '../components/RestaurantRow.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { distanceInKm } from '../utils/geo.js';
+import { ROLES } from '../constants.js';
 import '../styles/home.css';
-
-const toRadians = (degrees) => degrees * (Math.PI / 180);
-
-const distanceInKm = (from, to) => {
-    if (!from || !to) return null;
-
-    const earthRadiusKm = 6371;
-    const latitudeDelta = toRadians(to.x - from.x);
-    const longitudeDelta = toRadians(to.y - from.y);
-    const fromLatitude = toRadians(from.x);
-    const toLatitude = toRadians(to.x);
-    const haversine = (
-        Math.sin(latitudeDelta / 2) ** 2
-        + Math.cos(fromLatitude) * Math.cos(toLatitude) * Math.sin(longitudeDelta / 2) ** 2
-    );
-
-    return earthRadiusKm * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
-};
 
 const Home = () => {
     const { user } = useAuth();
@@ -57,7 +41,7 @@ const Home = () => {
     const nearby = useMemo(() => restaurantsWithDistance
         .filter((restaurant) => Number.isFinite(restaurant.distanceKm))
         .sort((left, right) => left.distanceKm - right.distanceKm)
-        .slice(0, 8), [restaurantsWithDistance]);
+        .slice(0, 5), [restaurantsWithDistance]);
 
     const promoted = useMemo(() => {
         const explicitlyPromoted = restaurantsWithDistance.filter((restaurant) => restaurant.promoted);
@@ -101,7 +85,7 @@ const Home = () => {
             <section className="feed-state">
                 <span className="feed-state-icon">⌁</span>
                 <h1>No restaurants yet</h1>
-                {user?.role === 'restaurant_owner' ? (
+                {user?.role === ROLES.OWNER ? (
                     <>
                         <p>Be the first to add a restaurant to the platform!</p>
                         <Link className="btn" to="/manage">Go to Manage to add your restaurant</Link>

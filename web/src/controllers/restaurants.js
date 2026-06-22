@@ -1,27 +1,34 @@
 const Restaurant = require('../models/restaurants');
 const Product = require('../models/products');
 const Order = require('../models/orders');
+const { rejectNonOwner, validateLocation } = require('./shared');
+
+const RESTAURANT_OWNER_ERROR = 'You can only manage your own restaurants';
+
+const validateRestaurantFields = ({ name, category, image, promoted, location }, partial = false) => {
+    if (!partial || name !== undefined) {
+        if (typeof name !== 'string' || !name.trim()) return 'Name is required';
+    }
+    if (category !== undefined && typeof category !== 'string') {
+        return 'Category must be a string';
+    }
+    if (image !== undefined && image !== null && typeof image !== 'string') {
+        return 'Image must be a string or null';
+    }
+    if (promoted !== undefined && typeof promoted !== 'boolean') {
+        return 'Promoted must be a boolean';
+    }
+    if (location !== undefined) {
+        return validateLocation(location);
+    }
+    return null;
+};
 
 const createRestaurant = (req, res) => {
     const { name, category, image, promoted, location } = req.body;
-    if (typeof name !== 'string' || !name.trim()) {
-        return res.status(400).json({ error: 'Name is required' });
-    }
-    if (category !== undefined && typeof category !== 'string') {
-        return res.status(400).json({ error: 'Category must be a string' });
-    }
-    if (image !== undefined && image !== null && typeof image !== 'string') {
-        return res.status(400).json({ error: 'Image must be a string or null' });
-    }
-    if (promoted !== undefined && typeof promoted !== 'boolean') {
-        return res.status(400).json({ error: 'Promoted must be a boolean' });
-    }
-    if (
-        location !== undefined
-        && (!location || typeof location.x !== 'number' || typeof location.y !== 'number')
-    ) {
-        return res.status(400).json({ error: 'Location coordinates (x, y) must be numbers' });
-    }
+
+    const validationError = validateRestaurantFields({ name, category, image, promoted, location });
+    if (validationError) return res.status(400).json({ error: validationError });
 
     const newRestaurant = Restaurant.createRestaurant(name.trim(), {
         category: typeof category === 'string' ? category.trim() : undefined,
@@ -41,9 +48,7 @@ const updateRestaurant = (req, res) => {
     if (!Restaurant.getRestaurantById(id)) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
-    if (!Restaurant.isOwnedBy(id, req.userId)) {
-        return res.status(403).json({ error: 'You can only manage your own restaurants' });
-    }
+    if (rejectNonOwner(id, req.userId, res, RESTAURANT_OWNER_ERROR)) return;
 
     if (
         name === undefined
@@ -54,24 +59,8 @@ const updateRestaurant = (req, res) => {
     ) {
         return res.status(400).json({ error: 'At least one restaurant field is required' });
     }
-    if (name !== undefined && (typeof name !== 'string' || !name.trim())) {
-        return res.status(400).json({ error: 'Name is required' });
-    }
-    if (category !== undefined && typeof category !== 'string') {
-        return res.status(400).json({ error: 'Category must be a string' });
-    }
-    if (image !== undefined && image !== null && typeof image !== 'string') {
-        return res.status(400).json({ error: 'Image must be a string or null' });
-    }
-    if (promoted !== undefined && typeof promoted !== 'boolean') {
-        return res.status(400).json({ error: 'Promoted must be a boolean' });
-    }
-    if (
-        location !== undefined
-        && (!location || typeof location.x !== 'number' || typeof location.y !== 'number')
-    ) {
-        return res.status(400).json({ error: 'Location coordinates (x, y) must be numbers' });
-    }
+    const validationError = validateRestaurantFields({ name, category, image, promoted, location }, true);
+    if (validationError) return res.status(400).json({ error: validationError });
 
     const updatedRestaurant = Restaurant.updateRestaurant(id, {
         name: typeof name === 'string' ? name.trim() : undefined,
@@ -94,20 +83,17 @@ const deleteRestaurant = (req, res) => {
     if (!Restaurant.getRestaurantById(id)) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
-    if (!Restaurant.isOwnedBy(id, req.userId)) {
-        return res.status(403).json({ error: 'You can only manage your own restaurants' });
-    }
+    if (rejectNonOwner(id, req.userId, res, RESTAURANT_OWNER_ERROR)) return;
 
-    const deletedRestaurant = Restaurant.deleteRestaurant(id);
-
-    if (!deletedRestaurant) {
+    if (!Restaurant.deleteRestaurant(id)) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
 
+    // Deleting a restaurant removes its menu and cancels any orders placed against it.
     Product.deleteProductsByRestaurant(id);
     Order.cancelOrdersByRestaurant(id);
 
-    res.status(204).json(deletedRestaurant);
+    res.status(204).end();
 };
 
 const getRestaurantById = (req, res) => {

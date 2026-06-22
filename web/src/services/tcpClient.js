@@ -41,7 +41,7 @@ function send(command) {
 
 // exported API
 const tcpClient = {
-    
+
     createUser(userId, productId) {
         return send(`POST ${userId} ${productId}`);
     },
@@ -50,7 +50,7 @@ const tcpClient = {
         return send(`PATCH ${userId} ${productId}`);
     },
 
-    // multiple products. usage exmpaple: (await cppClient.addViews(5, [12, 13, 14, 20]);)
+    // Records several product views in one command.
     addViews(userId, productIds) {
         const list = productIds.join(' ');
         return send(`PATCH ${userId} ${list}`);
@@ -60,7 +60,7 @@ const tcpClient = {
         return send(`DELETE ${userId} ${productId}`)
     },
 
-    // multiple products. usage exmpaple: (await cppClient.removeViews(5, [12, 13, 14, 20]);)
+    // Removes several product views in one command.
     removeViews(userId, productIds) {
         const list = productIds.join(' ');
         return send(`DELETE ${userId} ${list}`)
@@ -71,4 +71,4 @@ const tcpClient = {
     }
 };
 
-module.exports = { send, tcpClient };
+module.exports = { tcpClient };

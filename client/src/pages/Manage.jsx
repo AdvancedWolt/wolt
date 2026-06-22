@@ -13,7 +13,9 @@ import {
 } from '../api/endpoints.js';
 import ManagedProduct from '../components/ManagedProduct.jsx';
 import RestaurantImageUpload from '../components/RestaurantImageUpload.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { CATEGORIES, ROLES } from '../constants.js';
 import '../styles/manage.css';
 
 const emptyRestaurant = {
@@ -44,6 +46,7 @@ const Manage = () => {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
+    const [confirm, setConfirm] = useState(null);
 
     const selectedRestaurant = useMemo(
         () => restaurants.find((restaurant) => restaurant.id === selectedId) || null,
@@ -84,7 +87,7 @@ const Manage = () => {
     }, []);
 
     useEffect(() => {
-        if (user?.role === 'restaurant_owner') loadRestaurants();
+        if (user?.role === ROLES.OWNER) loadRestaurants();
     }, [loadRestaurants, user?.role]);
 
     useEffect(() => {
@@ -170,7 +173,7 @@ const Manage = () => {
     };
 
     const handleDeleteRestaurant = async () => {
-        if (!window.confirm(`Delete ${selectedRestaurant.name} and its entire menu?`)) return;
+        setConfirm(null);
         clearMessages();
         setBusy(true);
         try {
@@ -183,6 +186,13 @@ const Manage = () => {
             setBusy(false);
         }
     };
+
+    const requestDeleteRestaurant = () => setConfirm({
+        title: 'Delete restaurant?',
+        message: `Delete ${selectedRestaurant.name} and its entire menu? This cannot be undone.`,
+        confirmLabel: 'Delete restaurant',
+        onConfirm: handleDeleteRestaurant,
+    });
 
     const handleCreateProduct = async (event) => {
         event.preventDefault();
@@ -226,7 +236,7 @@ const Manage = () => {
     };
 
     const handleDeleteProduct = async (product) => {
-        if (!window.confirm(`Remove ${product.name} from the menu?`)) return;
+        setConfirm(null);
         clearMessages();
         setBusy(true);
         try {
@@ -240,12 +250,19 @@ const Manage = () => {
         }
     };
 
+    const requestDeleteProduct = (product) => setConfirm({
+        title: 'Remove dish?',
+        message: `Remove ${product.name} from the menu?`,
+        confirmLabel: 'Remove dish',
+        onConfirm: () => handleDeleteProduct(product),
+    });
+
     const updateField = (setter) => (event) => {
         const { name, type, checked, value } = event.target;
         setter((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }));
     };
 
-    if (user?.role !== 'restaurant_owner') {
+    if (user?.role !== ROLES.OWNER) {
         return (
             <section className="manage-gate">
                 <span aria-hidden="true">🔒</span>
@@ -279,7 +296,12 @@ const Manage = () => {
                 </div>
                 <form className="manage-form" onSubmit={handleCreateRestaurant}>
                     <label>Name<input name="name" value={newRestaurant.name} onChange={updateField(setNewRestaurant)} placeholder="Restaurant name" required /></label>
-                    <label>Category<input name="category" value={newRestaurant.category} onChange={updateField(setNewRestaurant)} placeholder="Italian, Burgers…" /></label>
+                    <label>Category
+                        <select name="category" value={newRestaurant.category} onChange={updateField(setNewRestaurant)}>
+                            <option value="">Choose a category</option>
+                            {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                        </select>
+                    </label>
                     <label>Location X<input name="locationX" type="number" step="any" value={newRestaurant.locationX} onChange={updateField(setNewRestaurant)} placeholder="32.0853" required /></label>
                     <label>Location Y<input name="locationY" type="number" step="any" value={newRestaurant.locationY} onChange={updateField(setNewRestaurant)} placeholder="34.7818" required /></label>
                     <div className="manage-wide">
@@ -313,10 +335,15 @@ const Manage = () => {
                     {selectedRestaurant ? (
                         <>
                             <section className="manage-panel">
-                                <div className="manage-panel-title"><div><p>Storefront</p><h2>Edit restaurant</h2></div><button className="manage-delete-link" type="button" disabled={busy} onClick={handleDeleteRestaurant}>Delete restaurant</button></div>
+                                <div className="manage-panel-title"><div><p>Storefront</p><h2>Edit restaurant</h2></div><button className="manage-delete-link" type="button" disabled={busy} onClick={requestDeleteRestaurant}>Delete restaurant</button></div>
                                 <form className="manage-form" onSubmit={handleSaveRestaurant}>
                                     <label>Name<input name="name" value={restaurantForm.name} onChange={updateField(setRestaurantForm)} required /></label>
-                                    <label>Category<input name="category" value={restaurantForm.category} onChange={updateField(setRestaurantForm)} /></label>
+                                    <label>Category
+                                        <select name="category" value={restaurantForm.category} onChange={updateField(setRestaurantForm)}>
+                                            <option value="">Choose a category</option>
+                                            {CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                                        </select>
+                                    </label>
                                     <label>Location X<input name="locationX" type="number" step="any" value={restaurantForm.locationX} onChange={updateField(setRestaurantForm)} required /></label>
                                     <label>Location Y<input name="locationY" type="number" step="any" value={restaurantForm.locationY} onChange={updateField(setRestaurantForm)} required /></label>
                                     <div className="manage-wide">
@@ -342,7 +369,7 @@ const Manage = () => {
                                 </form>
                                 {products.length ? (
                                     <ul className="managed-products">
-                                        {products.map((product) => <ManagedProduct key={product.id} product={product} busy={busy} onSave={handleUpdateProduct} onDelete={handleDeleteProduct} />)}
+                                        {products.map((product) => <ManagedProduct key={product.id} product={product} busy={busy} onSave={handleUpdateProduct} onDelete={requestDeleteProduct} />)}
                                     </ul>
                                 ) : <p className="manage-empty-copy">This menu is empty. Add the first dish above.</p>}
                             </section>
@@ -352,6 +379,15 @@ const Manage = () => {
                     )}
                 </main>
             </div>
+
+            <ConfirmDialog
+                open={Boolean(confirm)}
+                title={confirm?.title}
+                message={confirm?.message}
+                confirmLabel={confirm?.confirmLabel}
+                onConfirm={confirm?.onConfirm}
+                onCancel={() => setConfirm(null)}
+            />
         </div>
     );
 };

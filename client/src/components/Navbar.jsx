@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext.jsx';
-import { useTheme } from '../context/ThemeContext.jsx';
+import { useCart } from '../context/CartContext.jsx';
+import { ROLES } from '../constants.js';
+import ThemeToggle from './ThemeToggle.jsx';
 
 const Navbar = () => {
     const { user, isAuthenticated, logout } = useAuth();
-    const { theme, toggleTheme } = useTheme();
+    const { count } = useCart();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
@@ -38,8 +40,9 @@ const Navbar = () => {
 
             <div className="navbar-links">
                 <Link to="/">Home</Link>
+                <Link to="/cart">Cart{count > 0 && <span className="navbar-cart-count">{count}</span>}</Link>
                 <Link to="/orders">Orders</Link>
-                {user?.role === 'restaurant_owner' && <Link to="/manage">Manage</Link>}
+                {user?.role === ROLES.OWNER && <Link to="/manage">Manage</Link>}
             </div>
 
             <div className="navbar-search-wrapper">
@@ -66,8 +69,8 @@ const Navbar = () => {
                             )}
                             <span className="navbar-user">Hello, {user?.displayName || user?.username}.</span>
                         </div>
-                        <Link className="btn btn-secondary" to="/manage-account" style={{ marginRight: '4px' }}>
-                            Manage Account
+                        <Link className="btn btn-secondary" to="/manage-account">
+                            Manage account
                         </Link>
                         <button className="btn" onClick={handleLogout}>Log out</button>
                     </>
@@ -75,9 +78,7 @@ const Navbar = () => {
                     <Link className="btn" to="/login">Log in</Link>
                 )}
 
-                <button className="btn" onClick={toggleTheme}>
-                    {theme === 'light' ? 'Dark' : 'Light'} mode
-                </button>
+                <ThemeToggle />
             </div>
         </nav>
     );

@@ -1,18 +1,22 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
-import { getProducts, getRestaurant } from '../api/endpoints.js';
+import { getProduct, getProducts, getRestaurant } from '../api/endpoints.js';
 import MenuItem from '../components/MenuItem.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import Thumbnail from '../components/Thumbnail.jsx';
+import { useCart } from '../context/CartContext.jsx';
 import '../styles/restaurant-detail.css';
 
 const RestaurantDetail = () => {
     const { id } = useParams();
+    const { addItem, quantityFor, restaurant: cartRestaurant, count } = useCart();
+
     const [restaurant, setRestaurant] = useState(null);
     const [products, setProducts] = useState([]);
-    const [quantities, setQuantities] = useState({});
     const [status, setStatus] = useState('loading');
     const [error, setError] = useState('');
-    const [imageFailed, setImageFailed] = useState(false);
+    const [pendingProduct, setPendingProduct] = useState(null);
 
     const loadMenu = useCallback(async () => {
         setStatus('loading');
@@ -35,21 +39,28 @@ const RestaurantDetail = () => {
     }, [id]);
 
     useEffect(() => {
-        setQuantities({});
-        setImageFailed(false);
         loadMenu();
     }, [loadMenu]);
 
-    const selectedCount = useMemo(
-        () => Object.values(quantities).reduce((total, quantity) => total + quantity, 0),
-        [quantities]
-    );
+    const cartCount = cartRestaurant?.id === id ? count : 0;
 
-    const addProduct = (product) => {
-        setQuantities((current) => ({
-            ...current,
-            [product.id]: (current[product.id] || 0) + 1,
-        }));
+    const addToCart = (product) => {
+        addItem(product, { id: restaurant.id, name: restaurant.name });
+        // Record interest so the recommender can suggest similar dishes in the cart.
+        getProduct(restaurant.id, product.id).catch(() => {});
+    };
+
+    const handleAdd = (product) => {
+        if (cartRestaurant && cartRestaurant.id !== id && count > 0) {
+            setPendingProduct(product);
+            return;
+        }
+        addToCart(product);
+    };
+
+    const confirmNewCart = () => {
+        addToCart(pendingProduct);
+        setPendingProduct(null);
     };
 
     if (status === 'loading') {
@@ -82,15 +93,7 @@ const RestaurantDetail = () => {
 
             <header className="detail-hero">
                 <div className="detail-hero-media">
-                    {restaurant.image && !imageFailed ? (
-                        <img
-                            src={restaurant.image}
-                            alt=""
-                            onError={() => setImageFailed(true)}
-                        />
-                    ) : (
-                        <span aria-hidden="true">{restaurant.name.slice(0, 1).toUpperCase()}</span>
-                    )}
+                    <Thumbnail src={restaurant.image} name={restaurant.name} />
                 </div>
                 <div className="detail-hero-copy">
                     <p>{restaurant.category || 'Other'}</p>
@@ -108,15 +111,6 @@ const RestaurantDetail = () => {
                         <p className="menu-eyebrow">Full menu</p>
                         <h2 id="menu-heading">Choose your dishes</h2>
                     </div>
-                    {selectedCount > 0 && (
-                        <button
-                            className="menu-clear"
-                            type="button"
-                            onClick={() => setQuantities({})}
-                        >
-                            Clear selection
-                        </button>
-                    )}
                 </div>
 
                 {products.length ? (
@@ -125,8 +119,8 @@ const RestaurantDetail = () => {
                             <MenuItem
                                 key={product.id}
                                 product={product}
-                                quantity={quantities[product.id] || 0}
-                                onAdd={addProduct}
+                                quantity={quantityFor(id, product.id)}
+                                onAdd={handleAdd}
                             />
                         ))}
                     </div>
@@ -139,15 +133,25 @@ const RestaurantDetail = () => {
                 )}
             </section>
 
-            {selectedCount > 0 && (
+            {cartCount > 0 && (
                 <aside className="selection-bar" aria-live="polite">
                     <div>
-                        <strong>{selectedCount}</strong>
-                        <span>{selectedCount === 1 ? ' item selected' : ' items selected'}</span>
+                        <strong>{cartCount}</strong>
+                        <span>{cartCount === 1 ? ' item in cart' : ' items in cart'}</span>
                     </div>
-                    <span className="selection-hint">Ready for checkout integration</span>
+                    <Link className="btn selection-checkout" to="/cart">View cart</Link>
                 </aside>
             )}
+
+            <ConfirmDialog
+                open={Boolean(pendingProduct)}
+                title="Start a new cart?"
+                message={`Your cart has items from ${cartRestaurant?.name}. Adding a dish from ${restaurant.name} will clear it.`}
+                confirmLabel="Start new cart"
+                cancelLabel="Keep current"
+                onConfirm={confirmNewCart}
+                onCancel={() => setPendingProduct(null)}
+            />
         </div>
     );
 };

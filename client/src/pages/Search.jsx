@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import { search, getRestaurants } from '../api/endpoints.js';
 import RestaurantCard from '../components/RestaurantCard.jsx';
+import DishResultCard from '../components/DishResultCard.jsx';
 import '../styles/search.css';
 
 const Search = () => {
-    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchParams] = useSearchParams();
     const query = searchParams.get('q') || '';
 
     const [results, setResults] = useState({ restaurants: [], products: [] });
@@ -63,38 +64,18 @@ const Search = () => {
     const hasProducts = results.products.length > 0;
     const hasResults = hasRestaurants || hasProducts;
 
-    const handlePageSearchChange = (e) => {
-        const val = e.target.value;
-        if (val.trim()) {
-            setSearchParams({ q: val });
-        } else {
-            setSearchParams({});
-        }
-    };
-
     return (
         <div className="search-page">
             <header className="search-header">
-                <p className="search-subtitle">Find your favorite food</p>
-                <h1>Explore Wolt</h1>
-                <div className="search-page-input-wrapper">
-                    <input
-                        type="search"
-                        className="search-page-input"
-                        placeholder="Search for restaurants or dishes..."
-                        value={query}
-                        onChange={handlePageSearchChange}
-                        autoFocus
-                    />
-                    <span className="search-page-input-icon">🔍</span>
-                </div>
+                <p className="search-subtitle">Search</p>
+                <h1>{query ? `Results for “${query}”` : 'Find restaurants & dishes'}</h1>
             </header>
 
             {status === 'idle' && (
                 <section className="search-state search-state-idle" aria-live="polite">
                     <span className="search-state-icon" aria-hidden="true">🔍</span>
-                    <h2>Type to start searching</h2>
-                    <p>Search for pizza, sushi, burgers, or specific restaurants to satisfy your cravings.</p>
+                    <h2>Search restaurants and dishes</h2>
+                    <p>Use the search bar at the top to find a place or a dish you&apos;re craving.</p>
                 </section>
             )}
 
@@ -160,46 +141,6 @@ const Search = () => {
                 </div>
             )}
         </div>
-    );
-};
-
-const DishResultCard = ({ product, restaurantName }) => {
-    const [imageFailed, setImageFailed] = useState(false);
-
-    return (
-        <article className="search-dish-card">
-            <div className="search-dish-media" aria-hidden="true">
-                {product.image && !imageFailed ? (
-                    <img
-                        src={product.image}
-                        alt=""
-                        loading="lazy"
-                        onError={() => setImageFailed(true)}
-                    />
-                ) : (
-                    <span className="search-dish-fallback">
-                        {product.name.slice(0, 1).toUpperCase()}
-                    </span>
-                )}
-            </div>
-            <div className="search-dish-body">
-                <header className="search-dish-header">
-                    <h3>{product.name}</h3>
-                    <span className="search-dish-price">₪{Number(product.price ?? 0).toFixed(2)}</span>
-                </header>
-                <p className="search-dish-desc">{product.description || 'No description provided'}</p>
-                {restaurantName && (
-                    <footer className="search-dish-footer">
-                        <Link
-                            to={`/restaurant/${product.restaurantId}`}
-                            className="search-dish-restaurant-link"
-                        >
-                            Order from <strong>{restaurantName}</strong> &rarr;
-                        </Link>
-                    </footer>
-                )}
-            </div>
-        </article>
     );
 };
 

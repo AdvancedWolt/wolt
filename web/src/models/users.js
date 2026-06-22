@@ -7,7 +7,8 @@ const usersByUsername = {}
 const publicUser = (user) => {
     if (!user) return null;
 
-    const { passwordHash, passwordSalt, ...safeUser } = user;
+    // Password fields are secret and views are internal recommender state; never expose them.
+    const { passwordHash, passwordSalt, views, ...safeUser } = user;
     return safeUser;
 };
 
@@ -20,7 +21,7 @@ const hashPassword = (password, salt) => {
     });
 };
 
-const createUser = async ({ username, password, name, phone, location, displayName, image, role }) => {
+const createUser = async ({ username, password, name, location, displayName, image, role }) => {
     if (usersByUsername[username]) {
         return null;
     }
@@ -34,7 +35,6 @@ const createUser = async ({ username, password, name, phone, location, displayNa
         name: name || displayName,
         displayName: displayName || name,
         image: image || null,
-        phone,
         location,
         role: role || 'customer',
         passwordSalt,
@@ -53,6 +53,11 @@ const updateUser = (id, updates) => {
     const user = users[id];
     if (!user) return null;
 
+    if (updates.username !== undefined && updates.username !== user.username) {
+        delete usersByUsername[user.username];
+        user.username = updates.username;
+        usersByUsername[updates.username] = id;
+    }
     if (updates.displayName !== undefined) {
         user.displayName = updates.displayName;
         user.name = updates.displayName;
@@ -66,18 +71,13 @@ const updateUser = (id, updates) => {
     return publicUser(user);
 };
 
-
-const deleteUser = (id) => {
-    if (users[id]) {
-        delete usersByUsername[users[id].username];
-        delete users[id];
-        return true;
-    }
-    return false;
+// True when the username is already taken by a different user.
+const usernameTaken = (username, exceptId) => {
+    const ownerId = usersByUsername[username];
+    return ownerId !== undefined && ownerId !== exceptId;
 };
 
 // Getters
-const getAllUsers = () => Object.values(users).map(publicUser);
 const getUserById = (id) => publicUser(users[id]);
 
 const verifyCredentials = async (username, password) => {
@@ -104,8 +104,7 @@ const addView = async (id, productId) => {
     }
 
     if (user.views.length === 0) {
-        // create user append to the c++ server when the first view is added, 
-        // so that the user is visible in the recommendation engine immediately
+        // First view registers the user with the recommender; later views are appended.
         await tcpClient.createUser(id, productId);
     } else {
         await tcpClient.addView(id, productId);
@@ -130,8 +129,8 @@ const addViews = async (id, productIds) => {
     const user = users[id];
     if (!user || !productIds || productIds.length === 0) return null;
 
-    // Filter out products already viewed
-    const newProducts = productIds.filter(pid => !user.views.includes(pid));
+    // An order can list the same product several times (one per unit); views are a set.
+    const newProducts = [...new Set(productIds)].filter(pid => !user.views.includes(pid));
     if (newProducts.length === 0) return publicUser(user);
 
     let startIdx = 0;
@@ -151,6 +150,19 @@ const addViews = async (id, productIds) => {
     return publicUser(user);
 };
 
+// Withdraws a set of product views, e.g. when an order is cancelled or removed.
+const removeViews = async (id, productIds) => {
+    const user = users[id];
+    if (!user || !productIds || productIds.length === 0) return null;
+
+    const present = [...new Set(productIds)].filter((pid) => user.views.includes(pid));
+    if (present.length === 0) return publicUser(user);
+
+    await tcpClient.removeViews(id, present);
+    user.views = user.views.filter((view) => !present.includes(view));
+    return publicUser(user);
+};
+
 const getRecommendations = async (id, productId) => {
     const user = users[id]
     if (!user) return null
@@ -162,12 +174,12 @@ const getRecommendations = async (id, productId) => {
 module.exports = {
     createUser,
     updateUser,
-    deleteUser,
-    getAllUsers,
+    usernameTaken,
     getUserById,
     verifyCredentials,
     addView,
     addViews,
     removeView,
+    removeViews,
     getRecommendations
 };

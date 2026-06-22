@@ -2,13 +2,17 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext.jsx';
+import { requiredField } from '../utils/validators.js';
+import ThemeToggle from '../components/ThemeToggle.jsx';
 import '../styles/login-register.css';
+
+const LABELS = { username: 'Username', password: 'Password' };
 
 const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { login } = useAuth();
-    
+
     const from = location.state?.from || '/';
 
     const [form, setForm] = useState({ username: '', password: '' });
@@ -21,32 +25,26 @@ const Login = () => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
 
-        if (touched[name] && !value) {
-            setErrors((prev) => ({ ...prev, [name]: `${name === 'username' ? 'Username' : 'Password'} is required` }));
-        } else if (touched[name]) {
-            setErrors((prev) => ({ ...prev, [name]: '' }));
+        if (touched[name]) {
+            setErrors((prev) => ({ ...prev, [name]: requiredField(value, LABELS[name]) }));
         }
     };
 
     const handleBlur = (e) => {
         const { name, value } = e.target;
         setTouched((prev) => ({ ...prev, [name]: true }));
-        if (!value) {
-            setErrors((prev) => ({
-                ...prev,
-                [name]: `${name === 'username' ? 'Username' : 'Password'} is required`,
-            }));
-        }
+        setErrors((prev) => ({ ...prev, [name]: requiredField(value, LABELS[name]) }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setServerError('');
 
-        const next = {};
-        if (!form.username) next.username = 'Username is required';
-        if (!form.password) next.password = 'Password is required';
-        if (Object.keys(next).length) {
+        const next = {
+            username: requiredField(form.username, 'Username'),
+            password: requiredField(form.password, 'Password'),
+        };
+        if (next.username || next.password) {
             setErrors(next);
             setTouched({ username: true, password: true });
             return;
@@ -69,9 +67,12 @@ const Login = () => {
 
     return (
         <div className="auth-page">
+            <Link to="/" className="auth-back-home btn btn-secondary">← Keep browsing</Link>
+            <ThemeToggle className="auth-theme-toggle btn btn-secondary" />
             <form className="auth-card" onSubmit={handleSubmit} noValidate>
+                <Link to="/" className="auth-brand">AdvancedWolt</Link>
                 <h1 className="auth-title">Welcome back</h1>
-                <p className="auth-subtitle">Log in to AdvancedWolt</p>
+                <p className="auth-subtitle">Log in to keep ordering from places you love.</p>
 
                 {serverError && <div className="auth-server-error">{serverError}</div>}
 

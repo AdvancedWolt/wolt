@@ -1,39 +1,26 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext.jsx';
+import { useImagePicker } from '../hooks/useImagePicker.js';
+import {
+    validateUsername,
+    validatePassword,
+    validateConfirmPassword,
+    validateDisplayName,
+    validateCoordinate,
+} from '../utils/validators.js';
+import { ROLES } from '../constants.js';
+import ThemeToggle from '../components/ThemeToggle.jsx';
 import '../styles/login-register.css';
 
 const validators = {
-    username: (v) => {
-        if (!v) return 'Username is required';
-        if (v.length < 3) return 'Username must be at least 3 characters';
-        return '';
-    },
-    password: (v) => {
-        if (!v) return 'Password is required';
-        if (v.length < 8) return 'Password must be at least 8 characters';
-        if (!/[a-zA-Z]/.test(v)) return 'Password must contain at least one letter';
-        if (!/\d/.test(v)) return 'Password must contain at least one digit';
-        return '';
-    },
-    confirmPassword: (v, form) => {
-        if (!v) return 'Please confirm your password';
-        if (v !== form.password) return 'Passwords do not match';
-        return '';
-    },
-    displayName: (v) => {
-        if (!v) return 'Display name is required';
-        return '';
-    },
-    locationX: (v) => {
-        if (v === '' || v === undefined || isNaN(v)) return 'Valid X coordinate is required';
-        return '';
-    },
-    locationY: (v) => {
-        if (v === '' || v === undefined || isNaN(v)) return 'Valid Y coordinate is required';
-        return '';
-    },
+    username: validateUsername,
+    password: validatePassword,
+    confirmPassword: validateConfirmPassword,
+    displayName: validateDisplayName,
+    locationX: (value) => validateCoordinate(value, 'Latitude'),
+    locationY: (value) => validateCoordinate(value, 'Longitude'),
 };
 
 const Register = () => {
@@ -47,16 +34,13 @@ const Register = () => {
         displayName: '',
         locationX: '',
         locationY: '',
-        role: 'customer',
+        role: ROLES.CUSTOMER,
     });
-    const [imageData, setImageData] = useState(null);
+    const image = useImagePicker();
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
     const [serverError, setServerError] = useState('');
     const [submitting, setSubmitting] = useState(false);
-
-    const fileInputRef = useRef(null);
-    const imagePreviewRef = useRef(null);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -88,36 +72,9 @@ const Register = () => {
         }
     };
 
-    const handleImageClick = () => {
-        fileInputRef.current.click();
-    };
-
     const handleRemoveImage = (e) => {
         e.stopPropagation();
-        setImageData(null);
-        setErrors((prev) => ({ ...prev, image: '' }));
-        fileInputRef.current.value = '';
-    };
-
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        if (file.size > 5 * 1024 * 1024) {
-            setErrors((prev) => ({ ...prev, image: 'Image size must be less than 5MB' }));
-            setTouched((prev) => ({ ...prev, displayName: true }));
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = () => {
-            const base64 = reader.result;
-            setImageData(base64);
-            if (imagePreviewRef.current) {
-                imagePreviewRef.current.src = base64;
-            }
-        };
-        reader.readAsDataURL(file);
+        image.remove();
     };
 
     const allFieldsValid = () => {
@@ -131,7 +88,7 @@ const Register = () => {
         const allTouched = Object.keys(form).reduce((acc, key) => {
             acc[key] = true;
             return acc;
-        }, { displayName: true });
+        }, {});
         setTouched(allTouched);
 
         return Object.values(fieldErrors).every((msg) => !msg);
@@ -149,7 +106,7 @@ const Register = () => {
                 username: form.username,
                 password: form.password,
                 displayName: form.displayName,
-                image: imageData,
+                image: image.imageData,
                 role: form.role,
                 location: {
                     x: parseFloat(form.locationX),
@@ -167,24 +124,27 @@ const Register = () => {
     const hasErrors = Object.values(errors).some(Boolean);
     const missingRequired =
         form.username === '' || form.password === '' || form.confirmPassword === '' || form.displayName === '' || form.locationX === '' || form.locationY === '';
-    const submitDisabled = submitting || hasErrors || missingRequired;
+    const submitDisabled = submitting || hasErrors || missingRequired || Boolean(image.error);
 
     return (
         <div className="auth-page">
-            <form className="auth-card" onSubmit={handleSubmit} noValidate>
-                <h1 className="auth-title">Create account</h1>
-                <p className="auth-subtitle">Join AdvancedWolt today</p>
+            <Link to="/" className="auth-back-home btn btn-secondary">← Keep browsing</Link>
+            <ThemeToggle className="auth-theme-toggle btn btn-secondary" />
+            <form className="auth-card auth-card--wide" onSubmit={handleSubmit} noValidate>
+                <Link to="/" className="auth-brand">AdvancedWolt</Link>
+                <h1 className="auth-title">Create your account</h1>
+                <p className="auth-subtitle">Set up your profile to start ordering.</p>
 
                 {serverError && <div className="auth-server-error">{serverError}</div>}
 
                 <fieldset className="auth-role-picker">
                     <legend>Account type</legend>
-                    <label className={form.role === 'customer' ? 'auth-role-option auth-role-option--active' : 'auth-role-option'}>
+                    <label className={form.role === ROLES.CUSTOMER ? 'auth-role-option auth-role-option--active' : 'auth-role-option'}>
                         <input
                             type="radio"
                             name="role"
-                            value="customer"
-                            checked={form.role === 'customer'}
+                            value={ROLES.CUSTOMER}
+                            checked={form.role === ROLES.CUSTOMER}
                             onChange={handleChange}
                         />
                         <span className="auth-role-icon" aria-hidden="true">🛍️</span>
@@ -193,12 +153,12 @@ const Register = () => {
                             <small>Browse and order food</small>
                         </span>
                     </label>
-                    <label className={form.role === 'restaurant_owner' ? 'auth-role-option auth-role-option--active' : 'auth-role-option'}>
+                    <label className={form.role === ROLES.OWNER ? 'auth-role-option auth-role-option--active' : 'auth-role-option'}>
                         <input
                             type="radio"
                             name="role"
-                            value="restaurant_owner"
-                            checked={form.role === 'restaurant_owner'}
+                            value={ROLES.OWNER}
+                            checked={form.role === ROLES.OWNER}
                             onChange={handleChange}
                         />
                         <span className="auth-role-icon" aria-hidden="true">🍽️</span>
@@ -210,11 +170,10 @@ const Register = () => {
                 </fieldset>
 
                 {/* --- Image picker --- */}
-                <div className="auth-image-picker" onClick={handleImageClick}>
-                    {imageData ? (
+                <div className="auth-image-picker" onClick={image.open}>
+                    {image.imageData ? (
                         <img
-                            ref={imagePreviewRef}
-                            src={imageData}
+                            src={image.imageData}
                             alt="Profile preview"
                             className="auth-image-preview"
                         />
@@ -225,15 +184,15 @@ const Register = () => {
                         </div>
                     )}
                     <input
-                        ref={fileInputRef}
+                        ref={image.inputRef}
                         type="file"
                         accept="image/*"
-                        onChange={handleImageChange}
+                        onChange={image.onChange}
                         className="auth-file-input"
                     />
                 </div>
                 <div className="auth-image-meta">
-                    {imageData && (
+                    {image.imageData && (
                         <button
                             type="button"
                             className="auth-remove-image"
@@ -244,114 +203,115 @@ const Register = () => {
                     )}
                     <span className="auth-image-hint">Optional · Max 5MB</span>
                 </div>
-                {errors.image && touched.displayName && (
-                    <span className="auth-field-error auth-image-error">{errors.image}</span>
+                {image.error && (
+                    <span className="auth-field-error auth-image-error">{image.error}</span>
                 )}
 
-                {/* --- Fields --- */}
-                <div className={`auth-field ${touched.username && errors.username ? 'auth-field--error' : ''}`}>
-                    <label htmlFor="reg-username">Username</label>
-                    <input
-                        id="reg-username"
-                        name="username"
-                        type="text"
-                        autoComplete="username"
-                        value={form.username}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="Choose a username"
-                    />
-                    {touched.username && errors.username && (
-                        <span className="auth-field-error">{errors.username}</span>
-                    )}
+                <div className="auth-row">
+                    <div className={`auth-field ${touched.username && errors.username ? 'auth-field--error' : ''}`}>
+                        <label htmlFor="reg-username">Username</label>
+                        <input
+                            id="reg-username"
+                            name="username"
+                            type="text"
+                            autoComplete="username"
+                            value={form.username}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="Choose a username"
+                        />
+                        {touched.username && errors.username && (
+                            <span className="auth-field-error">{errors.username}</span>
+                        )}
+                    </div>
+
+                    <div className={`auth-field ${touched.displayName && errors.displayName ? 'auth-field--error' : ''}`}>
+                        <label htmlFor="reg-displayName">Display name</label>
+                        <input
+                            id="reg-displayName"
+                            name="displayName"
+                            type="text"
+                            value={form.displayName}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="Shown to others"
+                        />
+                        {touched.displayName && errors.displayName && (
+                            <span className="auth-field-error">{errors.displayName}</span>
+                        )}
+                    </div>
                 </div>
 
-                <div className={`auth-field ${touched.displayName && errors.displayName ? 'auth-field--error' : ''}`}>
-                    <label htmlFor="reg-displayName">Display name</label>
-                    <input
-                        id="reg-displayName"
-                        name="displayName"
-                        type="text"
-                        value={form.displayName}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="How should we call you?"
-                    />
-                    {touched.displayName && errors.displayName && (
-                        <span className="auth-field-error">{errors.displayName}</span>
-                    )}
+                <div className="auth-row">
+                    <div className={`auth-field ${touched.locationX && errors.locationX ? 'auth-field--error' : ''}`}>
+                        <label htmlFor="reg-locationX">Latitude</label>
+                        <input
+                            id="reg-locationX"
+                            name="locationX"
+                            type="number"
+                            step="any"
+                            value={form.locationX}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="e.g. 32.0853"
+                        />
+                        {touched.locationX && errors.locationX && (
+                            <span className="auth-field-error">{errors.locationX}</span>
+                        )}
+                    </div>
+
+                    <div className={`auth-field ${touched.locationY && errors.locationY ? 'auth-field--error' : ''}`}>
+                        <label htmlFor="reg-locationY">Longitude</label>
+                        <input
+                            id="reg-locationY"
+                            name="locationY"
+                            type="number"
+                            step="any"
+                            value={form.locationY}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="e.g. 34.7818"
+                        />
+                        {touched.locationY && errors.locationY && (
+                            <span className="auth-field-error">{errors.locationY}</span>
+                        )}
+                    </div>
                 </div>
 
-                <div className={`auth-field ${touched.locationX && errors.locationX ? 'auth-field--error' : ''}`}>
-                    <label htmlFor="reg-locationX">Location X (Latitude)</label>
-                    <input
-                        id="reg-locationX"
-                        name="locationX"
-                        type="number"
-                        step="any"
-                        value={form.locationX}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="e.g. 32.0853"
-                    />
-                    {touched.locationX && errors.locationX && (
-                        <span className="auth-field-error">{errors.locationX}</span>
-                    )}
-                </div>
+                <div className="auth-row">
+                    <div className={`auth-field ${touched.password && errors.password ? 'auth-field--error' : ''}`}>
+                        <label htmlFor="reg-password">Password</label>
+                        <input
+                            id="reg-password"
+                            name="password"
+                            type="password"
+                            autoComplete="new-password"
+                            value={form.password}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="8+ chars, letters & digits"
+                        />
+                        {touched.password && errors.password && (
+                            <span className="auth-field-error">{errors.password}</span>
+                        )}
+                    </div>
 
-                <div className={`auth-field ${touched.locationY && errors.locationY ? 'auth-field--error' : ''}`}>
-                    <label htmlFor="reg-locationY">Location Y (Longitude)</label>
-                    <input
-                        id="reg-locationY"
-                        name="locationY"
-                        type="number"
-                        step="any"
-                        value={form.locationY}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="e.g. 34.7818"
-                    />
-                    {touched.locationY && errors.locationY && (
-                        <span className="auth-field-error">{errors.locationY}</span>
-                    )}
-                </div>
-
-                <div className={`auth-field ${touched.password && errors.password ? 'auth-field--error' : ''}`}>
-                    <label htmlFor="reg-password">Password</label>
-                    <input
-                        id="reg-password"
-                        name="password"
-                        type="password"
-                        autoComplete="new-password"
-                        value={form.password}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="Min 8 chars, letters & digits"
-                    />
-                    {touched.password && errors.password && (
-                        <span className="auth-field-error">{errors.password}</span>
-                    )}
-                </div>
-
-                <div
-                    className={`auth-field ${
-                        touched.confirmPassword && errors.confirmPassword ? 'auth-field--error' : ''
-                    }`}
-                >
-                    <label htmlFor="reg-confirmPassword">Confirm password</label>
-                    <input
-                        id="reg-confirmPassword"
-                        name="confirmPassword"
-                        type="password"
-                        autoComplete="new-password"
-                        value={form.confirmPassword}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        placeholder="Re-enter your password"
-                    />
-                    {touched.confirmPassword && errors.confirmPassword && (
-                        <span className="auth-field-error">{errors.confirmPassword}</span>
-                    )}
+                    <div className={`auth-field ${touched.confirmPassword && errors.confirmPassword ? 'auth-field--error' : ''}`}>
+                        <label htmlFor="reg-confirmPassword">Confirm password</label>
+                        <input
+                            id="reg-confirmPassword"
+                            name="confirmPassword"
+                            type="password"
+                            autoComplete="new-password"
+                            value={form.confirmPassword}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            placeholder="Re-enter password"
+                        />
+                        {touched.confirmPassword && errors.confirmPassword && (
+                            <span className="auth-field-error">{errors.confirmPassword}</span>
+                        )}
+                    </div>
                 </div>
 
                 <button className="auth-submit" type="submit" disabled={submitDisabled}>

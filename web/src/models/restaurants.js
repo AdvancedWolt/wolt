@@ -1,9 +1,8 @@
 const crypto = require('crypto');
 
-// SINGLE SOURCE OF TRUTH
+// Menu items live in models/products.js, keyed by restaurantId, not embedded here.
 const restaurants = {};
 
-// Return formatted restaurant, hides the empty products object
 const formatRestaurant = (restaurant) => {
     if (!restaurant) return null;
     return {
@@ -19,7 +18,6 @@ const formatRestaurant = (restaurant) => {
 
 const createRestaurant = (name, details = {}) => {
     const id = crypto.randomUUID();
-    // Embed products inside the restaurant
     const newRestaurant = {
         id,
         name,
@@ -27,13 +25,12 @@ const createRestaurant = (name, details = {}) => {
         image: details.image || null,
         promoted: details.promoted === true,
         location: details.location || null,
-        ownerId: details.ownerId,
-        products: {}
+        ownerId: details.ownerId
     };
-    
+
     restaurants[id] = newRestaurant;
-    
-    return formatRestaurant(newRestaurant); 
+
+    return formatRestaurant(newRestaurant);
 };
 
 const updateRestaurant = (id, updates) => {
@@ -50,7 +47,7 @@ const updateRestaurant = (id, updates) => {
 
 const deleteRestaurant = (id) => {
     if (restaurants[id]) {
-        delete restaurants[id]; // Deletes products too
+        delete restaurants[id];
         return true;
     }
     return false;
@@ -59,9 +56,6 @@ const deleteRestaurant = (id) => {
 // Getters
 const getAllRestaurants = () => Object.values(restaurants).map(formatRestaurant);
 const getRestaurantById = (id) => formatRestaurant(restaurants[id]);
-
-// Expose raw restaurant to the Product model 
-const getRawRestaurantById = (id) => restaurants[id];
 
 const isOwnedBy = (id, userId) => restaurants[id]?.ownerId === userId;
 
@@ -80,6 +74,5 @@ module.exports = {
     getAllRestaurants,
     getRestaurantById,
     isOwnedBy,
-    getRawRestaurantById, // Exported just for models/products.js
     searchRestaurants
 };

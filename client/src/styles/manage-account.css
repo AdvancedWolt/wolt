@@ -233,6 +233,10 @@
     padding-bottom: 12px;
 }
 
+.settings-section-title-spaced {
+    margin-top: 36px;
+}
+
 /* Form Groups */
 .settings-form-group {
     margin-bottom: 24px;

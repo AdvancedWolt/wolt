@@ -1,7 +1,9 @@
 const User = require('../models/users');
+const Product = require('../models/products');
+const { validateLocation } = require('./shared');
 
 const createUser = async (req, res) => {
-    const { username, password, name, phone, location, displayName, image, role = 'customer' } = req.body;
+    const { username, password, name, location, displayName, image, role = 'customer' } = req.body;
     if (!username) {
         return res.status(400).json({ error: 'Username is required' });
     }
@@ -16,8 +18,9 @@ const createUser = async (req, res) => {
         return res.status(400).json({ error: 'Password must be at least 8 characters long and contain both letters and digits' });
     }
 
-    if (!location || typeof location.x !== 'number' || typeof location.y !== 'number') {
-        return res.status(400).json({ error: 'Location coordinates (x, y) must be numbers' });
+    const locationError = validateLocation(location);
+    if (locationError) {
+        return res.status(400).json({ error: locationError });
     }
     if (!['customer', 'restaurant_owner'].includes(role)) {
         return res.status(400).json({ error: 'Role must be customer or restaurant_owner' });
@@ -28,7 +31,6 @@ const createUser = async (req, res) => {
             username,
             password,
             name,
-            phone,
             location,
             displayName,
             image,
@@ -59,10 +61,17 @@ const getRecommendations = async (req, res) => {
     }
 
     try {
-        const recommendations = await User.getRecommendations(req.params.id, productId);
-        if (recommendations === null) {
+        const recommendedIds = await User.getRecommendations(req.params.id, productId);
+        if (recommendedIds === null) {
             return res.status(404).json({ error: 'User not found' });
         }
+        // The recommender returns space-separated product ids; resolve them to
+        // full products and drop any that no longer exist.
+        const recommendations = String(recommendedIds)
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((id) => Product.getById(id))
+            .filter(Boolean);
         res.json({ recommendations });
     } catch (err) {
         res.status(502).json({ error: 'Recommendation service unavailable' });
@@ -70,18 +79,27 @@ const getRecommendations = async (req, res) => {
 };
 
 const updateUser = async (req, res) => {
-    const { displayName, location, image } = req.body;
+    const { username, displayName, location, image } = req.body;
 
-    if (displayName === undefined && location === undefined && image === undefined) {
+    if (username === undefined && displayName === undefined && location === undefined && image === undefined) {
         return res.status(400).json({ error: 'At least one profile field is required to update' });
+    }
+
+    if (username !== undefined && (typeof username !== 'string' || username.trim().length < 3)) {
+        return res.status(400).json({ error: 'Username must be at least 3 characters' });
+    }
+
+    if (username !== undefined && User.usernameTaken(username.trim(), req.params.id)) {
+        return res.status(409).json({ error: 'Username already exists' });
     }
 
     if (displayName !== undefined && (typeof displayName !== 'string' || !displayName.trim())) {
         return res.status(400).json({ error: 'Display name must be a non-empty string' });
     }
 
-    if (location !== undefined && (!location || typeof location.x !== 'number' || typeof location.y !== 'number')) {
-        return res.status(400).json({ error: 'Location coordinates (x, y) must be numbers' });
+    if (location !== undefined) {
+        const locationError = validateLocation(location);
+        if (locationError) return res.status(400).json({ error: locationError });
     }
 
     if (image !== undefined && image !== null && typeof image !== 'string') {
@@ -90,6 +108,7 @@ const updateUser = async (req, res) => {
 
     try {
         const updated = User.updateUser(req.params.id, {
+            username: username ? username.trim() : undefined,
             displayName: displayName ? displayName.trim() : undefined,
             location,
             image

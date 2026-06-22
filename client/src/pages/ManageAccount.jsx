@@ -1,55 +1,69 @@
-import { useRef, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { updateUser } from '../api/endpoints.js';
+import { getUser, updateUser } from '../api/endpoints.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useImagePicker } from '../hooks/useImagePicker.js';
+import { validateUsername, validateDisplayName, validateCoordinate } from '../utils/validators.js';
+import { ROLES } from '../constants.js';
 import '../styles/manage-account.css';
+
+const validators = {
+    username: validateUsername,
+    displayName: validateDisplayName,
+    locationX: (value) => validateCoordinate(value, 'Latitude'),
+    locationY: (value) => validateCoordinate(value, 'Longitude'),
+};
 
 const ManageAccount = () => {
     const { user, updateAuthUser } = useAuth();
     const navigate = useNavigate();
 
     const [form, setForm] = useState({
+        username: user?.username || '',
         displayName: user?.displayName || '',
         locationX: user?.location?.x !== undefined ? String(user.location.x) : '',
         locationY: user?.location?.y !== undefined ? String(user.location.y) : '',
     });
-    const [imageData, setImageData] = useState(user?.image || null);
+    const image = useImagePicker(user?.image || null);
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
     const [successMessage, setSuccessMessage] = useState('');
     const [serverError, setServerError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
-    const fileInputRef = useRef(null);
-
-    // Sync form with user state when it changes
+    // Keep the form in step with the signed-in user.
     useEffect(() => {
         if (user) {
             setForm({
+                username: user.username || '',
                 displayName: user.displayName || '',
                 locationX: user.location?.x !== undefined ? String(user.location.x) : '',
                 locationY: user.location?.y !== undefined ? String(user.location.y) : '',
             });
-            setImageData(user.image || null);
+            image.setImageData(user.image || null);
         }
     }, [user]);
 
-    const validators = {
-        displayName: (val) => (!val || !val.trim() ? 'Display name is required' : ''),
-        locationX: (val) => {
-            const num = Number(val);
-            if (!val || val.trim() === '') return 'Latitude is required';
-            if (Number.isNaN(num)) return 'Coordinate must be a number';
-            return '';
-        },
-        locationY: (val) => {
-            const num = Number(val);
-            if (!val || val.trim() === '') return 'Longitude is required';
-            if (Number.isNaN(num)) return 'Coordinate must be a number';
-            return '';
-        },
-    };
+    // Refresh from the server (the source of truth) when the page opens, falling
+    // back to the cached profile already shown if the request fails.
+    useEffect(() => {
+        if (!user?.id) return undefined;
+        let active = true;
+        getUser(user.id)
+            .then((profile) => {
+                if (!active || !profile) return;
+                setForm({
+                    username: profile.username || '',
+                    displayName: profile.displayName || '',
+                    locationX: profile.location?.x !== undefined ? String(profile.location.x) : '',
+                    locationY: profile.location?.y !== undefined ? String(profile.location.y) : '',
+                });
+                image.setImageData(profile.image || null);
+            })
+            .catch(() => {});
+        return () => { active = false; };
+    }, [user?.id]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -74,34 +88,6 @@ const ManageAccount = () => {
         }
     };
 
-    const handleImageClick = () => {
-        fileInputRef.current.click();
-    };
-
-    const handleRemoveImage = (e) => {
-        e.stopPropagation();
-        setImageData(null);
-        fileInputRef.current.value = '';
-    };
-
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        if (file.size > 5 * 1024 * 1024) {
-            setErrors((prev) => ({ ...prev, image: 'Image size must be less than 5MB' }));
-            return;
-        }
-
-        setErrors((prev) => ({ ...prev, image: '' }));
-
-        const reader = new FileReader();
-        reader.onload = () => {
-            setImageData(reader.result);
-        };
-        reader.readAsDataURL(file);
-    };
-
     const validateForm = () => {
         const fieldErrors = {};
         let isValid = true;
@@ -111,7 +97,7 @@ const ManageAccount = () => {
             if (err) isValid = false;
         });
         setErrors(fieldErrors);
-        setTouched({ displayName: true, locationX: true, locationY: true });
+        setTouched({ username: true, displayName: true, locationX: true, locationY: true });
         return isValid;
     };
 
@@ -125,12 +111,13 @@ const ManageAccount = () => {
         setSubmitting(true);
         try {
             const updates = {
+                username: form.username.trim(),
                 displayName: form.displayName.trim(),
                 location: {
                     x: Number(form.locationX),
                     y: Number(form.locationY),
                 },
-                image: imageData,
+                image: image.imageData,
             };
 
             await updateUser(user.id, updates);
@@ -145,15 +132,15 @@ const ManageAccount = () => {
         }
     };
 
-    const roleName = user?.role === 'restaurant_owner' ? 'Restaurant Owner' : 'Customer';
-    const roleClass = user?.role === 'restaurant_owner' ? 'owner' : 'customer';
+    const roleName = user?.role === ROLES.OWNER ? 'Restaurant Owner' : 'Customer';
+    const roleClass = user?.role === ROLES.OWNER ? 'owner' : 'customer';
 
     return (
         <div className="manage-account-container">
             <header className="account-header">
-                <p className="search-subtitle">Account Management</p>
-                <h1>Profile Settings</h1>
-                <p>Manage your account settings, display preferences, and coordinates.</p>
+                <p className="search-subtitle">Account</p>
+                <h1>Profile settings</h1>
+                <p>Update your display name, photo and delivery location.</p>
             </header>
 
             {serverError && (
@@ -174,19 +161,19 @@ const ManageAccount = () => {
                         <input
                             type="file"
                             accept="image/*"
-                            ref={fileInputRef}
-                            onChange={handleImageChange}
+                            ref={image.inputRef}
+                            onChange={image.onChange}
                             style={{ display: 'none' }}
                         />
                         <div
                             className="avatar-container"
-                            onClick={handleImageClick}
+                            onClick={image.open}
                             role="button"
                             tabIndex={0}
                             title="Click to upload profile picture"
                         >
-                            {imageData ? (
-                                <img src={imageData} alt="Profile" className="avatar-image" />
+                            {image.imageData ? (
+                                <img src={image.imageData} alt="Profile" className="avatar-image" />
                             ) : (
                                 <span className="avatar-fallback" aria-hidden="true">
                                     {user?.username?.slice(0, 1).toUpperCase()}
@@ -197,11 +184,11 @@ const ManageAccount = () => {
                                 <span>Change Photo</span>
                             </div>
                         </div>
-                        {imageData && (
+                        {image.imageData && (
                             <button
                                 type="button"
                                 className="remove-avatar-btn"
-                                onClick={handleRemoveImage}
+                                onClick={image.remove}
                                 title="Remove photo"
                                 aria-label="Remove profile photo"
                             >
@@ -209,6 +196,9 @@ const ManageAccount = () => {
                             </button>
                         )}
                     </div>
+                    {image.error && (
+                        <span className="settings-error-message" role="alert">{image.error}</span>
+                    )}
 
                     <div className="profile-names">
                         <h2>{user?.displayName || user?.username}</h2>
@@ -220,24 +210,33 @@ const ManageAccount = () => {
 
                 {/* Form Fields Main Body */}
                 <main className="settings-form-card">
-                    <h2 className="settings-section-title">Personal Details</h2>
+                    <h2 className="settings-section-title">Personal details</h2>
                     <form onSubmit={handleSubmit}>
                         <div className="settings-form-group">
-                            <label htmlFor="username">Username (Locked)</label>
+                            <label htmlFor="username">Username</label>
                             <div className="settings-input-wrapper">
-                                <span className="settings-input-icon" aria-hidden="true">🔒</span>
+                                <span className="settings-input-icon" aria-hidden="true">@</span>
                                 <input
                                     type="text"
                                     id="username"
-                                    value={user?.username || ''}
-                                    disabled
-                                    className="settings-input"
+                                    name="username"
+                                    value={form.username}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    className={`settings-input ${
+                                        errors.username && touched.username ? 'input-error' : ''
+                                    }`}
+                                    placeholder="Choose a username"
+                                    required
                                 />
                             </div>
+                            {errors.username && touched.username && (
+                                <span className="settings-error-message">{errors.username}</span>
+                            )}
                         </div>
 
                         <div className="settings-form-group">
-                            <label htmlFor="displayName">Display Name</label>
+                            <label htmlFor="displayName">Display name</label>
                             <div className="settings-input-wrapper">
                                 <span className="settings-input-icon" aria-hidden="true">👤</span>
                                 <input
@@ -259,13 +258,13 @@ const ManageAccount = () => {
                             )}
                         </div>
 
-                        <h2 className="settings-section-title" style={{ marginTop: '36px' }}>
-                            Delivery Address Location
+                        <h2 className="settings-section-title settings-section-title-spaced">
+                            Delivery location
                         </h2>
 
                         <div className="coordinates-row">
                             <div className="settings-form-group">
-                                <label htmlFor="locationX">Latitude (X Coordinate)</label>
+                                <label htmlFor="locationX">Latitude (X)</label>
                                 <div className="settings-input-wrapper">
                                     <span className="settings-input-icon" aria-hidden="true">📍</span>
                                     <input
@@ -288,7 +287,7 @@ const ManageAccount = () => {
                             </div>
 
                             <div className="settings-form-group">
-                                <label htmlFor="locationY">Longitude (Y Coordinate)</label>
+                                <label htmlFor="locationY">Longitude (Y)</label>
                                 <div className="settings-input-wrapper">
                                     <span className="settings-input-icon" aria-hidden="true">📍</span>
                                     <input
@@ -317,7 +316,7 @@ const ManageAccount = () => {
                                 className="btn"
                                 disabled={submitting}
                             >
-                                {submitting ? 'Saving changes...' : 'Save Profile'}
+                                {submitting ? 'Saving changes…' : 'Save changes'}
                             </button>
                             <button
                                 type="button"

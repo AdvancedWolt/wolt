@@ -44,6 +44,15 @@ const request = async (method, path, body, headers = {}) => {
     ) {
         opts.headers.Authorization = OWNER_AUTH;
     }
+    // Tests authenticate with a convenient `user-id` header; translate it into the
+    // Bearer JWT the API actually expects.
+    if (opts.headers['user-id']) {
+        opts.headers.Authorization = `Bearer ${jwt.sign(
+            { userId: opts.headers['user-id'], role: 'customer' },
+            process.env.JWT_SECRET || 'wolt-secret-key'
+        )}`;
+        delete opts.headers['user-id'];
+    }
     if (body !== undefined) {
         opts.body = JSON.stringify(body);
     }
@@ -61,8 +70,9 @@ const request = async (method, path, body, headers = {}) => {
 const createAuthenticatedUser = async (username) => {
     const created = await request('POST', '/api/users', {
         username,
-        password: 'secret',
-        name: username
+        password: 'Password123',
+        name: username,
+        location: { x: 32.08, y: 34.78 }
     });
     const userId = created.json.id;
     return { userId, headers: { 'user-id': userId } };

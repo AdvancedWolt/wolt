@@ -32,8 +32,14 @@ const createOrder = async (req, res) => {
 
     const newOrder = Order.createOrder(req.userId, restaurantId, items);
 
+    // Ordered items feed the recommender, but that is best-effort: an outage
+    // must not fail an order that was already created.
     if (items && items.length > 0) {
-        await User.addViews(req.userId, items);
+        try {
+            await User.addViews(req.userId, items);
+        } catch (err) {
+            console.error('Failed to record order views:', err.message);
+        }
     }
 
     res.status(201).location(`/api/orders/${newOrder.id}`).end();
@@ -42,18 +48,18 @@ const createOrder = async (req, res) => {
 const getOrderById = (req, res) => {
     const order = Order.getOrderById(req.params.id);
 
-    if (!order) {
+    if (!order || order.userId !== req.userId) {
         return res.status(404).json({ error: 'Order not found' });
     }
 
     res.status(200).json(order);
 };
 
-const updateOrder = (req, res) => {
+const updateOrder = async (req, res) => {
     const { items, status } = req.body;
 
     const order = Order.getOrderById(req.params.id);
-    if (!order) {
+    if (!order || order.userId !== req.userId) {
         return res.status(404).json({ error: 'Order not found' });
     }
 
@@ -62,7 +68,7 @@ const updateOrder = (req, res) => {
     }
 
     if (items !== undefined) {
-        if (order.status !== 'pending') {
+        if (order.status !== Order.STATUS.PENDING) {
             return res.status(400).json({ error: 'Cannot update items for a non-pending order' });
         }
         if (!Array.isArray(items)) {
@@ -75,23 +81,45 @@ const updateOrder = (req, res) => {
         }
     }
 
+    const cancelledItems = status === Order.STATUS.CANCELLED ? [...order.items] : [];
     Order.updateOrder(req.params.id, { items, status });
+
+    // Cancelling an order withdraws its items from the recommender (best-effort).
+    if (cancelledItems.length > 0) {
+        try {
+            await User.removeViews(req.userId, cancelledItems);
+        } catch (err) {
+            console.error('Failed to withdraw cancelled order views:', err.message);
+        }
+    }
 
     res.status(204).end();
 };
 
-const deleteOrder = (req, res) => {
+const deleteOrder = async (req, res) => {
     const order = Order.getOrderById(req.params.id);
 
-    if (!order) {
+    if (!order || order.userId !== req.userId) {
         return res.status(404).json({ error: 'Order not found' });
     }
 
-    if (order.status !== 'pending') {
-        return res.status(400).json({ error: 'Cannot delete a non-pending order' });
+    // A customer can remove a pending or already-cancelled order from their
+    // history, but not one the restaurant is preparing or delivering.
+    if (order.status === Order.STATUS.IN_PROGRESS || order.status === Order.STATUS.DELIVERED) {
+        return res.status(400).json({ error: 'Cannot remove an order while it is in progress' });
     }
 
+    const removedItems = [...order.items];
     Order.deleteOrder(req.params.id);
+
+    // Removing an order withdraws its items from the recommender (best-effort).
+    if (removedItems.length > 0) {
+        try {
+            await User.removeViews(req.userId, removedItems);
+        } catch (err) {
+            console.error('Failed to withdraw removed order views:', err.message);
+        }
+    }
 
     res.status(204).end();
 };

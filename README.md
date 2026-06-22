@@ -6,8 +6,6 @@ The assignment is split into two parts:
 * **Part A:** Agile project management using JIRA.
 * **Part B:** A React web application with Wolt-inspired design, JWT authentication, and dynamic data integration.
 
-> The Exercise 2 SOLID answers are kept in the [appendix](#appendix--exercise-2) at the bottom.
-
 ---
 
 ## Part A: Agile Workflow (JIRA & GitHub)
@@ -153,26 +151,4 @@ Once the containers are running, open your browser to:
 
 *Note: Inside the Docker network, the React app proxies its `/api` requests to `http://web:3000`, so cross-container communication works seamlessly.*
 
-### Running Manually
 
-If you prefer to run the components independently:
-
-**1. Start the C++ Server**
-```bash
-docker build -t wolt-cpp .
-docker run --rm -p 8080:8080 wolt-cpp 8080
-```
-
-**2. Start the Node.js Server**
-```bash
-cd web
-npm install
-CPP_SERVICE_HOST=127.0.0.1 CPP_SERVICE_PORT=8080 PORT=3000 npm start
-```
-
-**3. Start the React App**
-```bash
-cd client
-npm install
-VITE_API_URL=http://localhost:3000 npm run dev
-```

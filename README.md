@@ -70,7 +70,10 @@ The React codebase (`client/src/`) is structured into functional modules rather 
    * **Login:** Registered users can log in to receive a JWT. The application securely manages this token in the `AuthContext`.
    * **Route Protection:** Unauthenticated users can browse restaurants and menus, but attempting to access the shopping cart or order history will automatically redirect them to the Login page.
    <p align="center">
-     <em>[PLACEHOLDER: docs/screenshots/register.png] - Registration screen showing validation errors and image preview.</em>
+     <em><img width="1875" height="907" alt="image" src="https://github.com/user-attachments/assets/8a099b76-3498-4846-add0-071e355da833" />
+<img width="1907" height="906" alt="image" src="https://github.com/user-attachments/assets/904d5d00-3d1d-4f3d-be3b-aef0c740e1f0" />
+<img width="1902" height="881" alt="image" src="https://github.com/user-attachments/assets/aabdb541-df9b-4684-af88-fd39f55901e3" />
+</em>
    </p>
 
 2. **Home Screen (Restaurant Discovery)**
@@ -78,40 +81,47 @@ The React codebase (`client/src/`) is structured into functional modules rather 
    * **Restaurant Listing:** The main dashboard fetches data from the Express backend and displays restaurant cards, distinguishing between "Nearby" and "Promoted" locations.
    * **Responsive Design:** Wolt-inspired cards with smooth hover effects and responsive grids.
    <p align="center">
-     <em>docs/screenshots/home.png</em>
+     <em> <img width="1908" height="911" alt="image" src="https://github.com/user-attachments/assets/bdecccd1-66aa-4050-812e-aa4514ef541c" />
+</em>
    </p>
 
 3. **Restaurant Menus & Recommendations**
    * **Full Menu:** Clicking a restaurant opens its dedicated page, displaying a grid of available products (dishes) with their prices and descriptions.
    * **Smart Recommendations:** When a user views a product, the Node.js server seamlessly communicates with the C++ TCP server (from Exercise 2) to log the view and fetch personalized "Users also viewed" recommendations, which are displayed dynamically on the page.
    <p align="center">
-     <em>[PLACEHOLDER: docs/screenshots/menu.png] - Restaurant detail page showing the product menu and recommendations.</em>
+     <em><img width="1898" height="908" alt="image" src="https://github.com/user-attachments/assets/5f85e698-c0d0-46bb-a8dd-1d9ff2485c94" />
+     <img width="1878" height="790" alt="image" src="https://github.com/user-attachments/assets/8e02342b-2977-43f6-b945-083e3c37acbb" />
+</em>
    </p>
 
 4. **Shopping Cart & Checkout**
    * **Cart Management:** Users can add multiple products from a restaurant to their shopping cart. A persistent cart context tracks the selected items.
    * **Real-time Totals:** The cart instantly recalculates sub-totals and allows the user to increment, decrement, or remove items before proceeding to checkout.
    * **Placing Orders:** A single click sends the order payload to the backend, which creates a new pending order attached to the user's account.
+   <img width="1902" height="922" alt="image" src="https://github.com/user-attachments/assets/8aed6898-e186-4fe3-9964-5e0271b4177b" />
 
 5. **Order Management & History**
    * **Tracking Orders:** The "My Orders" dashboard allows logged-in users to review all their past and active orders.
    * **Order Details & Status Updates:** Users can view the itemized receipt for any specific order and change its status (e.g., from `pending` to `completed`) using a simple, intuitive interface that PATCHes the backend.
    <p align="center">
-     <em>[PLACEHOLDER: docs/screenshots/orders.png] - Order history dashboard and status management.</em>
+     <em><img width="1896" height="897" alt="image" src="https://github.com/user-attachments/assets/2f6410ad-f7d7-4100-8e8c-9d007032110e" />
+</em>
    </p>
 
 6. **Search Functionality**
    * **Global Search:** A dedicated search bar in the Navbar allows users to query the entire platform.
    * **Granular Results:** The search results page dynamically categorizes matches, showing matching restaurants alongside individual dishes whose name or description contains the query.
    <p align="center">
-     <em>[PLACEHOLDER: docs/screenshots/search.png] - Search results page displaying matching items.</em>
+     <em><img width="1906" height="897" alt="image" src="https://github.com/user-attachments/assets/b99b082d-3bdb-45c3-b314-42e6443465a1" />
+</em>
    </p>
 
 7. **Dynamic Theming (Light/Dark Mode)**
    * **Instant Switch:** The Navbar includes a moon/sun toggle icon that instantly switches the application between `light mode` and `dark mode`. 
    * **Global Application:** This toggles CSS variables globally across all components, instantly re-coloring backgrounds, text, and borders for a comfortable viewing experience without reloading the page.
    <p align="center">
-     <em>[PLACEHOLDER: docs/screenshots/dark-mode.png] - The application GUI with Dark Mode enabled.</em>
+     <em><img width="1906" height="898" alt="image" src="https://github.com/user-attachments/assets/104ab69e-17bc-4ef5-8456-406290930cef" />
+</em>
    </p>
 
 ---
@@ -129,7 +139,8 @@ docker compose up --build
 ```
 
 <p align="center">
-  <em>[PLACEHOLDER: docs/screenshots/docker-build.png] - Terminal output showing the successful compilation of the React app, Express server, and C++ service.</em>
+  <em><img width="746" height="527" alt="image" src="https://github.com/user-attachments/assets/6495bf84-c938-4bb3-8655-76af5beecc5d" />
+</em>
 </p>
 
 This starts three containers:
@@ -165,39 +176,3 @@ cd client
 npm install
 VITE_API_URL=http://localhost:3000 npm run dev
 ```
-
----
-
-## Security Note
-
-This is a university assignment. No real credentials, API keys, or sensitive personal data are stored in this repository or transmitted to the server. Fake users and tokens are utilized solely for demonstration purposes.
-
----
-
-# Appendix – Exercise 2
-
-These questions are from **Exercise 2**. The answers are kept here as they were so they're easy to find.
-
-### 1. Command names changed (add → POST, recommend → GET)
-**Did it require touching closed code?**
-Yes, in ex1 command names were hardcoded strings scattered across `AppInternals` dispatch logic. There was no registry abstraction.
-
-**Fix applied (ex2):** `CommandManager` holds a `std::unordered_map<std::string, ICommand*>` registry. The dispatcher never mentions a command name, it just looks up the key and forwards. Renaming a command is a single string change at the registration site (e.g. `app.cpp`). `CommandParser` lowercases the verb before lookup, so case sensitivity is handled in one place too. The dispatcher is now genuinely closed to this change.
-
-### 2. New commands added (PATCH, DELETE)
-**Did it require touching closed code?**
-No. Each new command is a self-contained class implementing `ICommand`:
-```cpp
-virtual models::Response execute(const models::ParsedCommand& cmd, IdbManager& db) = 0;
-```
-Registration is one line per command at startup. `CommandManager::dispatch` and all existing commands are untouched. `HelpCommand` queries the `CommandManager` registry dynamically, new commands appear in `help` output automatically with zero changes to `HelpCommand` itself. This is the Open/Closed Principle working as intended.
-
-### 3. Command output format changed
-**Did it require touching closed code?**
-Partially. In ex1 commands returned raw strings and each command owned its own formatting. There was no shared wire-format abstraction.
-
-**Fix applied (ex2):** The new `models::Response` class with a `toWire()` method centralizes all wire serialization. Commands return a semantic `Response` object, not a raw string. Changing how a status serializes to wire bytes now means touching only `Response::toWire()`, not every command that produces that status. The `models::Status` enum + lookup table further ensure that adding or renaming a status phrase is a single-line change.
-
-### 4. I/O moved from console to TCP sockets
-**Did it require touching closed code?**
-No. This was the cleanest boundary in the design. Commands operate on `ParsedCommand` structs and return `Response` objects, they have zero knowledge of transport. The server loop in `main.cpp` owns the socket, reads a line, calls `CommandParser` -> `CommandManager`, then writes `response.toWire()` to the file descriptor. Switching from `std::cin`/`std::cout` to a socket touched only `main.cpp`.

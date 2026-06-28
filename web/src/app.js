@@ -13,6 +13,7 @@ const tokensRoutes = require('./routes/tokens');
 const ordersRoutes = require('./routes/orders')
 const { errorHandler } = require('./middleware/errorHandler');
 const { seedDatabase } = require('./seed');
+const { connectToDatabase } = require('./config/db');
 
 
 app.use('/api/restaurants', restaurantRoutes);
@@ -43,15 +44,29 @@ app.use(errorHandler);
 
 if (require.main === module) {
     const port = process.env.PORT || 3000;
-    app.listen(port, async () => {
-        console.log(`Web server listening on port ${port}`);
+
+    // Connect to MongoDB before accepting traffic. A missing database is fatal,
+    // so fail fast with a readable error rather than serving a broken server.
+    const start = async () => {
         try {
-            await seedDatabase();
-            console.log('Initial restaurants, menus and orders seeded');
+            await connectToDatabase();
         } catch (err) {
-            console.error('Seeding failed:', err.message);
+            console.error('Failed to connect to MongoDB:', err.message);
+            process.exit(1);
         }
-    });
+
+        app.listen(port, async () => {
+            console.log(`Web server listening on port ${port}`);
+            try {
+                await seedDatabase();
+                console.log('Initial restaurants, menus and orders seeded');
+            } catch (err) {
+                console.error('Seeding failed:', err.message);
+            }
+        });
+    };
+
+    start();
 }
 
 module.exports = app;

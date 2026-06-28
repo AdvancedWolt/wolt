@@ -13,7 +13,7 @@ const tokensRoutes = require('./routes/tokens');
 const ordersRoutes = require('./routes/orders')
 const { errorHandler } = require('./middleware/errorHandler');
 const { seedDatabase } = require('./seed');
-const { connectToDatabase } = require('./config/db');
+const { connectToDatabase, mongoose } = require('./config/db');
 
 
 app.use('/api/restaurants', restaurantRoutes);
@@ -55,7 +55,7 @@ if (require.main === module) {
             process.exit(1);
         }
 
-        app.listen(port, async () => {
+        const server = app.listen(port, async () => {
             console.log(`Web server listening on port ${port}`);
             try {
                 await seedDatabase();
@@ -64,6 +64,18 @@ if (require.main === module) {
                 console.error('Seeding failed:', err.message);
             }
         });
+
+        // Close the HTTP server and Mongo connection on shutdown so
+        // `docker compose down` (and Ctrl+C) drains cleanly instead of being
+        // yanked mid-connection.
+        const shutdown = async (signal) => {
+            console.log(`${signal} received, shutting down`);
+            server.close();
+            await mongoose.connection.close();
+            process.exit(0);
+        };
+        process.on('SIGTERM', () => shutdown('SIGTERM'));
+        process.on('SIGINT', () => shutdown('SIGINT'));
     };
 
     start();

@@ -14,6 +14,13 @@ services:
       - mongo-data:/data/db
     ports:
       - "27017:27017"
+    # Gate dependents on Mongo actually accepting connections, not just the
+    # container starting, so web doesn't fail-fast on a cold start.
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   web:
     build:
@@ -27,8 +34,10 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - cpp-service
-      - mongo
+      cpp-service:
+        condition: service_started
+      mongo:
+        condition: service_healthy
 
   client:
     build:

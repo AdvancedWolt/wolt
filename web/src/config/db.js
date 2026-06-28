@@ -14,8 +14,19 @@ const safeUri = (uri) => uri.replace(/\/\/[^@/]+@/, '//');
 // module reusable from tests and scripts.
 const connectToDatabase = async () => {
     try {
-        await mongoose.connect(MONGO_URI);
+        // Cap server selection so a bad URI fails in seconds instead of hanging
+        // for the ~30s default before the boot sequence can react.
+        await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 });
         console.log(`Connected to MongoDB at ${safeUri(MONGO_URI)}`);
+
+        // Surface a mid-run connection drop instead of failing silently.
+        mongoose.connection.on('error', (err) => {
+            console.error(`MongoDB connection error: ${err.message}`);
+        });
+        mongoose.connection.on('disconnected', () => {
+            console.warn('MongoDB disconnected');
+        });
+
         return mongoose.connection;
     } catch (err) {
         throw new Error(`Could not connect to MongoDB at ${safeUri(MONGO_URI)}: ${err.message}`);

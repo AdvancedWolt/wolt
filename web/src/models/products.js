@@ -1,76 +1,80 @@
-const crypto = require('crypto');
+const { Product } = require('./schemas');
 
-// Structure: { productId: { id, restaurantId, name, description, price, image } }
-const products = {};
+// Maps a Mongoose product document to the EX4 API shape. The schema stores
+// `_id` and a `restaurant` ref; the API has always exposed `id` and
+// `restaurantId`, so the clients (and tests) stay unchanged.
+const formatProduct = (product) => {
+    if (!product) return null;
+    return {
+        id: product._id,
+        restaurantId: product.restaurant,
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        image: product.image
+    };
+};
 
-const createProduct = (restaurantId, details) => {
-    const id = crypto.randomUUID();
-    const newProduct = {
-        id,
-        restaurantId,
+// Escapes regex metacharacters so a search query is matched literally.
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const createProduct = async (restaurantId, details) => {
+    const created = await Product.create({
+        restaurant: restaurantId,
         name: details.name,
         description: details.description || '',
         price: details.price ?? 0,
         image: details.image || null
-    };
+    });
 
-    products[id] = newProduct;
-    return newProduct;
+    return formatProduct(created);
 };
 
-const updateProduct = (restaurantId, productId, updates) => {
-    const product = products[productId];
-    if (!product || product.restaurantId !== restaurantId) return null;
+const updateProduct = async (restaurantId, productId, updates) => {
+    const product = await Product.findOne({ _id: productId, restaurant: restaurantId });
+    if (!product) return null;
 
     if (updates.name !== undefined) product.name = updates.name;
     if (updates.description !== undefined) product.description = updates.description;
     if (updates.price !== undefined) product.price = updates.price;
     if (updates.image !== undefined) product.image = updates.image || null;
-    return product;
+    await product.save();
+    return formatProduct(product);
 };
 
-const deleteProduct = (restaurantId, productId) => {
-    const product = products[productId];
-
-    if (product && product.restaurantId === restaurantId) {
-        delete products[productId];
-        return true;
-    }
-    return false;
+const deleteProduct = async (restaurantId, productId) => {
+    const deleted = await Product.findOneAndDelete({ _id: productId, restaurant: restaurantId });
+    return deleted !== null;
 };
 
-const getAllProducts = (restaurantId) => {
-    return Object.values(products).filter(p => p.restaurantId === restaurantId);
+const getAllProducts = async (restaurantId) => {
+    const products = await Product.find({ restaurant: restaurantId }).lean();
+    return products.map(formatProduct);
 };
 
-const getProductById = (restaurantId, productId) => {
-    const product = products[productId];
-
-    if (product && product.restaurantId === restaurantId) {
-        return product;
-    }
-    return null;
+const getProductById = async (restaurantId, productId) => {
+    const product = await Product.findOne({ _id: productId, restaurant: restaurantId }).lean();
+    return formatProduct(product);
 };
 
 // Global lookup by id, used to resolve recommended product ids into full products.
-const getById = (productId) => products[productId] || null;
+const getById = async (productId) => formatProduct(await Product.findById(productId).lean());
 
 // Called from controllers/restaurants.js when a restaurant is deleted.
-const deleteProductsByRestaurant = (restaurantId) => {
-    for (const key in products) {
-        if (products[key].restaurantId === restaurantId) {
-            delete products[key];
-        }
-    }
+const deleteProductsByRestaurant = async (restaurantId) => {
+    await Product.deleteMany({ restaurant: restaurantId });
 };
 
 // helper for GET /api/search/:query endpoint
-const searchProducts = (query) => {
-    const normalized = query.toLowerCase();
-    return Object.values(products).filter((product) => (
-        product.name.toLowerCase().includes(normalized)
-        || product.description.toLowerCase().includes(normalized)
-    ));
+const searchProducts = async (query) => {
+    const pattern = escapeRegex(query);
+    const products = await Product.find({
+        $or: [
+            { name: { $regex: pattern, $options: 'i' } },
+            { description: { $regex: pattern, $options: 'i' } }
+        ]
+    }).lean();
+    return products.map(formatProduct);
 };
 
 module.exports = {

@@ -1,15 +1,15 @@
 const crypto = require('crypto');
+const { User } = require('./schemas');
 const { tcpClient } = require('../services/tcpClient');
 
-const users = {}
-const usersByUsername = {}
-
+// Maps a Mongoose user document to the public API shape: `_id` becomes `id`, and
+// the secret password fields plus the internal recommender `views` are stripped.
 const publicUser = (user) => {
     if (!user) return null;
 
-    // Password fields are secret and views are internal recommender state; never expose them.
-    const { passwordHash, passwordSalt, views, ...safeUser } = user;
-    return safeUser;
+    const source = typeof user.toObject === 'function' ? user.toObject() : user;
+    const { _id, passwordHash, passwordSalt, views, __v, ...rest } = source;
+    return { id: _id, ...rest };
 };
 
 const hashPassword = (password, salt) => {
@@ -22,41 +22,41 @@ const hashPassword = (password, salt) => {
 };
 
 const createUser = async ({ username, password, name, location, displayName, image, role }) => {
-    if (usersByUsername[username]) {
+    if (await User.exists({ username })) {
         return null;
     }
 
-    const id = crypto.randomUUID();
     const passwordSalt = crypto.randomBytes(16).toString('hex');
     const passwordHash = await hashPassword(password, passwordSalt);
-    const newUser = {
-        id,
-        username,
-        name: name || displayName,
-        displayName: displayName || name,
-        image: image || null,
-        location,
-        role: role || 'customer',
-        passwordSalt,
-        passwordHash,
-        views: []
-    };
 
-    users[id] = newUser;
-    usersByUsername[username] = id;
-
-    return publicUser(newUser);
+    try {
+        const created = await User.create({
+            username,
+            name: name || displayName,
+            displayName: displayName || name,
+            image: image || null,
+            location,
+            role: role || 'customer',
+            passwordSalt,
+            passwordHash,
+            views: []
+        });
+        return publicUser(created);
+    } catch (err) {
+        // A concurrent insert can still race past the existence check; the unique
+        // index is the source of truth, so treat a duplicate key as "taken".
+        if (err.code === 11000) return null;
+        throw err;
+    }
 };
 
 
-const updateUser = (id, updates) => {
-    const user = users[id];
+const updateUser = async (id, updates) => {
+    const user = await User.findById(id);
     if (!user) return null;
 
-    if (updates.username !== undefined && updates.username !== user.username) {
-        delete usersByUsername[user.username];
+    if (updates.username !== undefined) {
         user.username = updates.username;
-        usersByUsername[updates.username] = id;
     }
     if (updates.displayName !== undefined) {
         user.displayName = updates.displayName;
@@ -68,23 +68,23 @@ const updateUser = (id, updates) => {
     if (updates.image !== undefined) {
         user.image = updates.image;
     }
+    await user.save();
     return publicUser(user);
 };
 
 // True when the username is already taken by a different user.
-const usernameTaken = (username, exceptId) => {
-    const ownerId = usersByUsername[username];
-    return ownerId !== undefined && ownerId !== exceptId;
+const usernameTaken = async (username, exceptId) => {
+    const owner = await User.findOne({ username }).select('_id').lean();
+    return owner !== null && owner._id !== exceptId;
 };
 
 // Getters
-const getUserById = (id) => publicUser(users[id]);
+const getUserById = async (id) => publicUser(await User.findById(id).lean());
 
 const verifyCredentials = async (username, password) => {
-    const id = usersByUsername[username];
-    if (!id) return null;
+    const user = await User.findOne({ username }).lean();
+    if (!user) return null;
 
-    const user = users[id];
     const passwordHash = await hashPassword(password, user.passwordSalt);
     if (passwordHash !== user.passwordHash) return null;
 
@@ -96,11 +96,11 @@ const verifyCredentials = async (username, password) => {
 
 // Records a product view locally and mirrors new views to the C++ recommender.
 const addView = async (id, productId) => {
-    const user = users[id]
-    if (!user) return null
+    const user = await User.findById(id);
+    if (!user) return null;
 
     if (user.views.includes(productId)) {
-        return publicUser(user)
+        return publicUser(user);
     }
 
     if (user.views.length === 0) {
@@ -111,22 +111,24 @@ const addView = async (id, productId) => {
     }
 
     user.views.push(productId);
-    return publicUser(user)
+    await user.save();
+    return publicUser(user);
 };
 
 
 const removeView = async (id, productId) => {
-    const user = users[id]
-    if (!user) return null
+    const user = await User.findById(id);
+    if (!user) return null;
 
     await tcpClient.removeView(id, productId);
 
     user.views = user.views.filter((view) => view !== productId);
-    return publicUser(user)
+    await user.save();
+    return publicUser(user);
 };
 
 const addViews = async (id, productIds) => {
-    const user = users[id];
+    const user = await User.findById(id);
     if (!user || !productIds || productIds.length === 0) return null;
 
     // An order can list the same product several times (one per unit); views are a set.
@@ -147,12 +149,13 @@ const addViews = async (id, productIds) => {
         user.views.push(...remaining);
     }
 
+    await user.save();
     return publicUser(user);
 };
 
 // Withdraws a set of product views, e.g. when an order is cancelled or removed.
 const removeViews = async (id, productIds) => {
-    const user = users[id];
+    const user = await User.findById(id);
     if (!user || !productIds || productIds.length === 0) return null;
 
     const present = [...new Set(productIds)].filter((pid) => user.views.includes(pid));
@@ -160,12 +163,13 @@ const removeViews = async (id, productIds) => {
 
     await tcpClient.removeViews(id, present);
     user.views = user.views.filter((view) => !present.includes(view));
+    await user.save();
     return publicUser(user);
 };
 
 const getRecommendations = async (id, productId) => {
-    const user = users[id]
-    if (!user) return null
+    const user = await User.findById(id).select('_id').lean();
+    if (!user) return null;
 
     return tcpClient.getRecommendations(id, productId);
 };

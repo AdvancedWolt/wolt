@@ -164,4 +164,35 @@ reusable module, **`web/src/config/db.js`**, which every Mongoose model imports.
 * On boot the server connects via Mongoose, logs `Connected to MongoDB at …`, and
   **fails fast** (logs a readable error and exits) if MongoDB is unreachable.
 
+Every controller reads and writes through Mongoose models (`web/src/models/*.js`,
+backed by the schemas in `web/src/models/schemas/`); no data is kept in in-memory
+arrays. The HTTP API is unchanged — the same response bodies and status codes the
+EX4 web client and the mobile app expect.
+
+### Seeding the database
+
+On boot the server seeds an empty database with demo restaurants, menus, users and
+orders (the seed is idempotent: it skips when restaurants already exist, so data in
+the `mongo-data` volume is never duplicated). To seed a fresh database without
+starting the API, run the standalone script:
+
+```bash
+cd web
+npm install
+npm run seed   # connects to MONGO_URI, seeds if empty, then exits
+```
+
+### Tests
+
+```bash
+cd web
+npm install
+npm test       # runs the Mongoose schema validation tests (no database required)
+```
+
+The schema tests (`web/tests/models.test.js`) validate the domain models in memory
+via `validateSync()` and need no MongoDB connection. End-to-end CRUD is verified
+against the running stack — bring the system up with `docker compose up` and use
+`tests.ps1` (an HTTP smoke script against `http://localhost:3000`).
+
 

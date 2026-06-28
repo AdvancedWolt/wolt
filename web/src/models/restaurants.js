@@ -1,40 +1,39 @@
-const crypto = require('crypto');
+const { Restaurant } = require('./schemas');
 
-// Menu items live in models/products.js, keyed by restaurantId, not embedded here.
-const restaurants = {};
-
+// Maps a Mongoose restaurant document to the EX4 API shape. The schema stores
+// `_id` and an `owner` ref; the API has always exposed `id` and `ownerId`, so
+// the clients (and tests) stay unchanged.
 const formatRestaurant = (restaurant) => {
     if (!restaurant) return null;
     return {
-        id: restaurant.id,
+        id: restaurant._id,
         name: restaurant.name,
         category: restaurant.category,
         image: restaurant.image,
         promoted: restaurant.promoted,
-        location: restaurant.location,
-        ownerId: restaurant.ownerId
+        location: restaurant.location ? { x: restaurant.location.x, y: restaurant.location.y } : null,
+        ownerId: restaurant.owner
     };
 };
 
-const createRestaurant = (name, details = {}) => {
-    const id = crypto.randomUUID();
-    const newRestaurant = {
-        id,
+// Escapes regex metacharacters so a search query is matched literally.
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const createRestaurant = async (name, details = {}) => {
+    const created = await Restaurant.create({
         name,
         category: details.category || 'Other',
         image: details.image || null,
         promoted: details.promoted === true,
         location: details.location || null,
-        ownerId: details.ownerId
-    };
+        owner: details.ownerId
+    });
 
-    restaurants[id] = newRestaurant;
-
-    return formatRestaurant(newRestaurant);
+    return formatRestaurant(created);
 };
 
-const updateRestaurant = (id, updates) => {
-    const restaurant = restaurants[id];
+const updateRestaurant = async (id, updates) => {
+    const restaurant = await Restaurant.findById(id);
     if (!restaurant) return null;
 
     if (updates.name !== undefined) restaurant.name = updates.name;
@@ -42,29 +41,34 @@ const updateRestaurant = (id, updates) => {
     if (updates.image !== undefined) restaurant.image = updates.image || null;
     if (updates.promoted !== undefined) restaurant.promoted = updates.promoted === true;
     if (updates.location !== undefined) restaurant.location = updates.location;
+    await restaurant.save();
     return formatRestaurant(restaurant);
 };
 
-const deleteRestaurant = (id) => {
-    if (restaurants[id]) {
-        delete restaurants[id];
-        return true;
-    }
-    return false;
+const deleteRestaurant = async (id) => {
+    const deleted = await Restaurant.findByIdAndDelete(id);
+    return deleted !== null;
 };
 
 // Getters
-const getAllRestaurants = () => Object.values(restaurants).map(formatRestaurant);
-const getRestaurantById = (id) => formatRestaurant(restaurants[id]);
+const getAllRestaurants = async () => {
+    const restaurants = await Restaurant.find().lean();
+    return restaurants.map(formatRestaurant);
+};
 
-const isOwnedBy = (id, userId) => restaurants[id]?.ownerId === userId;
+const getRestaurantById = async (id) => formatRestaurant(await Restaurant.findById(id).lean());
+
+const isOwnedBy = async (id, userId) => {
+    const restaurant = await Restaurant.findById(id).select('owner').lean();
+    return restaurant?.owner === userId;
+};
 
 // helper for GET /api/search/:query endpoint
-const searchRestaurants = (query) => {
-    const normalized = query.toLowerCase();
-    return Object.values(restaurants)
-        .filter(r => r.name.toLowerCase().includes(normalized))
-        .map(formatRestaurant);
+const searchRestaurants = async (query) => {
+    const restaurants = await Restaurant
+        .find({ name: { $regex: escapeRegex(query), $options: 'i' } })
+        .lean();
+    return restaurants.map(formatRestaurant);
 };
 
 module.exports = {

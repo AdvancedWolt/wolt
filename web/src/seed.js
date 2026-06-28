@@ -496,21 +496,25 @@ const OWNER = {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const seedDatabase = async () => {
-    if (Restaurant.getAllRestaurants().length > 0) return;
+    if ((await Restaurant.getAllRestaurants()).length > 0) return;
 
     const owner = await User.createUser(OWNER);
 
-    const restaurants = RESTAURANTS.map((r) => {
-        const created = Restaurant.createRestaurant(r.name, {
+    const restaurants = [];
+    for (const r of RESTAURANTS) {
+        const created = await Restaurant.createRestaurant(r.name, {
             category: r.category,
             promoted: r.promoted,
             location: r.location,
             image: r.hero,
             ownerId: owner.id,
         });
-        const products = r.menu.map((dish) => Product.createProduct(created.id, dish));
-        return { id: created.id, products };
-    });
+        const products = [];
+        for (const dish of r.menu) {
+            products.push(await Product.createProduct(created.id, dish));
+        }
+        restaurants.push({ id: created.id, products });
+    }
 
     const customers = [];
     for (const customer of CUSTOMERS) {
@@ -519,7 +523,7 @@ const seedDatabase = async () => {
 
     for (const [ci, ri, dishes] of PURCHASES) {
         const items = dishes.map((di) => restaurants[ri].products[di].id);
-        Order.createOrder(customers[ci].id, restaurants[ri].id, items);
+        await Order.createOrder(customers[ci].id, restaurants[ri].id, items);
 
         // Feed the C++ recommender, retrying briefly in case it is still starting.
         for (let attempt = 0; attempt < 3; attempt += 1) {

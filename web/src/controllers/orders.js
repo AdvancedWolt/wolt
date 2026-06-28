@@ -3,8 +3,8 @@ const Restaurant = require('../models/restaurants');
 const Product = require('../models/products');
 const User = require('../models/users');
 
-const getOrdersByCurrUser = (req, res) => {
-    const orders = Order.getOrdersByUserId(req.userId);
+const getOrdersByCurrUser = async (req, res) => {
+    const orders = await Order.getOrdersByUserId(req.userId);
     res.status(200).json(orders);
 };
 
@@ -15,7 +15,7 @@ const createOrder = async (req, res) => {
         return res.status(400).json({ error: 'restaurantId is required' });
     }
 
-    if (!Restaurant.getRestaurantById(restaurantId)) {
+    if (!(await Restaurant.getRestaurantById(restaurantId))) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
 
@@ -24,13 +24,13 @@ const createOrder = async (req, res) => {
             return res.status(400).json({ error: 'items must be an array' });
         }
         for (const productId of items) {
-            if (!Product.getProductById(restaurantId, productId)) {
+            if (!(await Product.getProductById(restaurantId, productId))) {
                 return res.status(400).json({ error: 'All products must belong to the correct restaurant' });
             }
         }
     }
 
-    const newOrder = Order.createOrder(req.userId, restaurantId, items);
+    const newOrder = await Order.createOrder(req.userId, restaurantId, items);
 
     // Ordered items feed the recommender, but that is best-effort: an outage
     // must not fail an order that was already created.
@@ -45,8 +45,8 @@ const createOrder = async (req, res) => {
     res.status(201).location(`/api/orders/${newOrder.id}`).end();
 };
 
-const getOrderById = (req, res) => {
-    const order = Order.getOrderById(req.params.id);
+const getOrderById = async (req, res) => {
+    const order = await Order.getOrderById(req.params.id);
 
     if (!order || order.userId !== req.userId) {
         return res.status(404).json({ error: 'Order not found' });
@@ -58,7 +58,7 @@ const getOrderById = (req, res) => {
 const updateOrder = async (req, res) => {
     const { items, status } = req.body;
 
-    const order = Order.getOrderById(req.params.id);
+    const order = await Order.getOrderById(req.params.id);
     if (!order || order.userId !== req.userId) {
         return res.status(404).json({ error: 'Order not found' });
     }
@@ -75,14 +75,14 @@ const updateOrder = async (req, res) => {
             return res.status(400).json({ error: 'items must be an array' });
         }
         for (const productId of items) {
-            if (!Product.getProductById(order.restaurantId, productId)) {
+            if (!(await Product.getProductById(order.restaurantId, productId))) {
                 return res.status(400).json({ error: 'All products must belong to the correct restaurant' });
             }
         }
     }
 
     const cancelledItems = status === Order.STATUS.CANCELLED ? [...order.items] : [];
-    Order.updateOrder(req.params.id, { items, status });
+    await Order.updateOrder(req.params.id, { items, status });
 
     // Cancelling an order withdraws its items from the recommender (best-effort).
     if (cancelledItems.length > 0) {
@@ -97,7 +97,7 @@ const updateOrder = async (req, res) => {
 };
 
 const deleteOrder = async (req, res) => {
-    const order = Order.getOrderById(req.params.id);
+    const order = await Order.getOrderById(req.params.id);
 
     if (!order || order.userId !== req.userId) {
         return res.status(404).json({ error: 'Order not found' });
@@ -110,7 +110,7 @@ const deleteOrder = async (req, res) => {
     }
 
     const removedItems = [...order.items];
-    Order.deleteOrder(req.params.id);
+    await Order.deleteOrder(req.params.id);
 
     // Removing an order withdraws its items from the recommender (best-effort).
     if (removedItems.length > 0) {

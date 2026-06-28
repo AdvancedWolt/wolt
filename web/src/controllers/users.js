@@ -45,8 +45,8 @@ const createUser = async (req, res) => {
     }
 };
 
-const getUserById = (req, res) => {
-    const user = User.getUserById(req.params.id);
+const getUserById = async (req, res) => {
+    const user = await User.getUserById(req.params.id);
     if (!user) {
         return res.status(404).json({ error: 'User not found' });
     }
@@ -67,11 +67,13 @@ const getRecommendations = async (req, res) => {
         }
         // The recommender returns space-separated product ids; resolve them to
         // full products and drop any that no longer exist.
-        const recommendations = String(recommendedIds)
-            .split(/\s+/)
-            .filter(Boolean)
-            .map((id) => Product.getById(id))
-            .filter(Boolean);
+        const resolved = await Promise.all(
+            String(recommendedIds)
+                .split(/\s+/)
+                .filter(Boolean)
+                .map((id) => Product.getById(id))
+        );
+        const recommendations = resolved.filter(Boolean);
         res.json({ recommendations });
     } catch (err) {
         res.status(502).json({ error: 'Recommendation service unavailable' });
@@ -89,7 +91,7 @@ const updateUser = async (req, res) => {
         return res.status(400).json({ error: 'Username must be at least 3 characters' });
     }
 
-    if (username !== undefined && User.usernameTaken(username.trim(), req.params.id)) {
+    if (username !== undefined && await User.usernameTaken(username.trim(), req.params.id)) {
         return res.status(409).json({ error: 'Username already exists' });
     }
 
@@ -107,7 +109,7 @@ const updateUser = async (req, res) => {
     }
 
     try {
-        const updated = User.updateUser(req.params.id, {
+        const updated = await User.updateUser(req.params.id, {
             username: username ? username.trim() : undefined,
             displayName: displayName ? displayName.trim() : undefined,
             location,

@@ -17,11 +17,11 @@ const orderSchema = new Schema(
         user: { type: String, ref: 'User', required: true, index: true },
         restaurant: { type: String, ref: 'Restaurant', required: true, index: true },
         items: { type: [{ type: String, ref: 'Product' }], default: [] },
+        // `default` already guarantees a value, so `required` would never fire.
         status: {
             type: String,
             enum: ORDER_STATUSES,
             default: 'pending',
-            required: true,
         },
     },
     { timestamps: true }

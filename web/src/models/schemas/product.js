@@ -10,7 +10,8 @@ const productSchema = new Schema({
     restaurant: { type: String, ref: 'Restaurant', required: true, index: true },
     name: { type: String, required: true, trim: true, index: true },
     description: { type: String, default: '' },
-    price: { type: Number, required: true, default: 0, min: 0 },
+    // `default` already guarantees a value, so `required` would never fire.
+    price: { type: Number, default: 0, min: 0 },
     image: { type: String, default: null },
 });
 

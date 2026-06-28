@@ -1,23 +1,16 @@
 const crypto = require('crypto');
 const { mongoose } = require('../../config/db');
+const { locationSchema } = require('./location');
 
 const { Schema } = mongoose;
-
-// A map point. The EX4 API stores a user's home location as { x, y } and the
-// schemas mirror that shape so nothing in the API surface has to change.
-const locationSchema = new Schema(
-    {
-        x: { type: Number },
-        y: { type: Number },
-    },
-    { _id: false }
-);
 
 // User of the Wolt app. Passwords are never stored in the clear: we keep only a
 // PBKDF2 hash and its per-user salt (the "password-rule" fields), both required.
 const userSchema = new Schema({
     _id: { type: String, default: () => crypto.randomUUID() },
-    username: { type: String, required: true, unique: true, trim: true, index: true },
+    // `unique` already builds the index we look users up by, so there is no
+    // separate `index: true` (which would trigger a duplicate-index warning).
+    username: { type: String, required: true, unique: true, trim: true },
     name: { type: String },
     displayName: { type: String },
     image: { type: String, default: null },

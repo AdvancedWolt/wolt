@@ -8,6 +8,20 @@ services:
     ports:
       - "8080:8080"
 
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+    # Gate dependents on Mongo actually accepting connections, not just the
+    # container starting, so web doesn't fail-fast on a cold start.
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   web:
     build:
       context: .
@@ -16,10 +30,14 @@ services:
       PORT: 3000
       CPP_SERVICE_HOST: cpp-service
       CPP_SERVICE_PORT: 8080
+      MONGO_URI: mongodb://mongo:27017/wolt
     ports:
       - "3000:3000"
     depends_on:
-      - cpp-service
+      cpp-service:
+        condition: service_started
+      mongo:
+        condition: service_healthy
 
   client:
     build:
@@ -31,6 +49,10 @@ services:
       - "5173:5173"
     depends_on:
       - web
+
+volumes:
+  # Named volume keeps MongoDB data across container restarts.
+  mongo-data:
 
 # usage:
 # build: docker compose build

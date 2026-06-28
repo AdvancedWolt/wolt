@@ -141,14 +141,27 @@ docker compose up --build
 </em>
 </p>
 
-This starts three containers:
+This starts four containers:
 1. **`cpp-service`**: The Exercise 2 C++ server on port 8080.
-2. **`web`**: The Express API backend on port 3000.
-3. **`client`**: The Vite dev server serving the React frontend on port 5173.
+2. **`mongo`**: A MongoDB instance on port 27017. Its data is stored in the named Docker volume `mongo-data`, so it **survives container restarts** (`docker compose down` followed by `docker compose up` keeps your data).
+3. **`web`**: The Express API backend on port 3000. It connects to MongoDB through Mongoose on boot.
+4. **`client`**: The Vite dev server serving the React frontend on port 5173.
 
 Once the containers are running, open your browser to:
 **[http://localhost:5173](http://localhost:5173)**
 
 *Note: Inside the Docker network, the React app proxies its `/api` requests to `http://web:3000`, so cross-container communication works seamlessly.*
+
+### Database connection (MongoDB / Mongoose)
+
+The Node server persists data in MongoDB. The connection is centralized in a single
+reusable module, **`web/src/config/db.js`**, which every Mongoose model imports.
+
+* **`MONGO_URI`** — the connection string, read from the environment so **no
+  connection string or secret is ever committed**. Docker Compose sets it to
+  `mongodb://mongo:27017/wolt`. When running the server outside Docker it defaults to
+  `mongodb://localhost:27017/wolt`. The default URI carries no credentials.
+* On boot the server connects via Mongoose, logs `Connected to MongoDB at …`, and
+  **fails fast** (logs a readable error and exits) if MongoDB is unreachable.
 
 

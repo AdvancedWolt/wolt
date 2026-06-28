@@ -24,13 +24,13 @@ const validateRestaurantFields = ({ name, category, image, promoted, location },
     return null;
 };
 
-const createRestaurant = (req, res) => {
+const createRestaurant = async (req, res) => {
     const { name, category, image, promoted, location } = req.body;
 
     const validationError = validateRestaurantFields({ name, category, image, promoted, location });
     if (validationError) return res.status(400).json({ error: validationError });
 
-    const newRestaurant = Restaurant.createRestaurant(name.trim(), {
+    const newRestaurant = await Restaurant.createRestaurant(name.trim(), {
         category: typeof category === 'string' ? category.trim() : undefined,
         image: typeof image === 'string' ? image : null,
         promoted,
@@ -41,14 +41,14 @@ const createRestaurant = (req, res) => {
     res.status(201).location(`/api/restaurants/${newRestaurant.id}`).end();
 };
 
-const updateRestaurant = (req, res) => {
+const updateRestaurant = async (req, res) => {
     const id = req.params.id;
     const { name, category, image, promoted, location } = req.body;
 
-    if (!Restaurant.getRestaurantById(id)) {
+    if (!(await Restaurant.getRestaurantById(id))) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
-    if (rejectNonOwner(id, req.userId, res, RESTAURANT_OWNER_ERROR)) return;
+    if (await rejectNonOwner(id, req.userId, res, RESTAURANT_OWNER_ERROR)) return;
 
     if (
         name === undefined
@@ -62,7 +62,7 @@ const updateRestaurant = (req, res) => {
     const validationError = validateRestaurantFields({ name, category, image, promoted, location }, true);
     if (validationError) return res.status(400).json({ error: validationError });
 
-    const updatedRestaurant = Restaurant.updateRestaurant(id, {
+    const updatedRestaurant = await Restaurant.updateRestaurant(id, {
         name: typeof name === 'string' ? name.trim() : undefined,
         category: typeof category === 'string' ? category.trim() : category,
         image: typeof image === 'string' ? image : image === null ? null : undefined,
@@ -77,27 +77,27 @@ const updateRestaurant = (req, res) => {
     res.status(204).end();
 };
 
-const deleteRestaurant = (req, res) => {
+const deleteRestaurant = async (req, res) => {
     const id = req.params.id;
 
-    if (!Restaurant.getRestaurantById(id)) {
+    if (!(await Restaurant.getRestaurantById(id))) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
-    if (rejectNonOwner(id, req.userId, res, RESTAURANT_OWNER_ERROR)) return;
+    if (await rejectNonOwner(id, req.userId, res, RESTAURANT_OWNER_ERROR)) return;
 
-    if (!Restaurant.deleteRestaurant(id)) {
+    if (!(await Restaurant.deleteRestaurant(id))) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
 
     // Deleting a restaurant removes its menu and cancels any orders placed against it.
-    Product.deleteProductsByRestaurant(id);
-    Order.cancelOrdersByRestaurant(id);
+    await Product.deleteProductsByRestaurant(id);
+    await Order.cancelOrdersByRestaurant(id);
 
     res.status(204).end();
 };
 
-const getRestaurantById = (req, res) => {
-    const restaurant = Restaurant.getRestaurantById(req.params.id);
+const getRestaurantById = async (req, res) => {
+    const restaurant = await Restaurant.getRestaurantById(req.params.id);
     if (!restaurant) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
@@ -105,8 +105,8 @@ const getRestaurantById = (req, res) => {
     res.json(restaurant);
 };
 
-const getAllRestaurants = (req, res) => {
-    res.json(Restaurant.getAllRestaurants());
+const getAllRestaurants = async (req, res) => {
+    res.json(await Restaurant.getAllRestaurants());
 };
 
 module.exports = {

@@ -21,29 +21,29 @@ const validateProductFields = ({ name, description, price, image }, partial = fa
     return null;
 };
 
-const getAllProducts = (req, res) => {
+const getAllProducts = async (req, res) => {
     const restaurantId = req.params.id;
 
-    if (!Restaurant.getRestaurantById(restaurantId)) {
+    if (!(await Restaurant.getRestaurantById(restaurantId))) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
 
-    res.status(200).json(Product.getAllProducts(restaurantId));
+    res.status(200).json(await Product.getAllProducts(restaurantId));
 };
 
-const createProduct = (req, res) => {
+const createProduct = async (req, res) => {
     const restaurantId = req.params.id;
     const { name, description, price, image } = req.body;
 
-    if (!Restaurant.getRestaurantById(restaurantId)) {
+    if (!(await Restaurant.getRestaurantById(restaurantId))) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
-    if (rejectNonOwner(restaurantId, req.userId, res, PRODUCT_OWNER_ERROR)) return;
+    if (await rejectNonOwner(restaurantId, req.userId, res, PRODUCT_OWNER_ERROR)) return;
 
     const validationError = validateProductFields({ name, description, price, image });
     if (validationError) return res.status(400).json({ error: validationError });
 
-    const newProduct = Product.createProduct(restaurantId, {
+    const newProduct = await Product.createProduct(restaurantId, {
         name: name.trim(),
         description: description?.trim() || '',
         price: price ?? 0,
@@ -56,11 +56,11 @@ const createProduct = (req, res) => {
 const getProductById = async (req, res) => {
     const { id: restaurantId, pId: productId } = req.params;
 
-    if (!Restaurant.getRestaurantById(restaurantId)) {
+    if (!(await Restaurant.getRestaurantById(restaurantId))) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
 
-    const product = Product.getProductById(restaurantId, productId);
+    const product = await Product.getProductById(restaurantId, productId);
 
     if (!product) {
         return res.status(404).json({ error: 'Product not found' });
@@ -78,14 +78,14 @@ const getProductById = async (req, res) => {
     res.status(200).json(product);
 };
 
-const updateProduct = (req, res) => {
+const updateProduct = async (req, res) => {
     const { id: restaurantId, pId: productId } = req.params;
     const { name, description, price, image } = req.body;
 
-    if (!Restaurant.getRestaurantById(restaurantId)) {
+    if (!(await Restaurant.getRestaurantById(restaurantId))) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
-    if (rejectNonOwner(restaurantId, req.userId, res, PRODUCT_OWNER_ERROR)) return;
+    if (await rejectNonOwner(restaurantId, req.userId, res, PRODUCT_OWNER_ERROR)) return;
 
     if (name === undefined && description === undefined && price === undefined && image === undefined) {
         return res.status(400).json({ error: 'At least one product field is required' });
@@ -93,7 +93,7 @@ const updateProduct = (req, res) => {
     const validationError = validateProductFields({ name, description, price, image }, true);
     if (validationError) return res.status(400).json({ error: validationError });
 
-    const updatedProduct = Product.updateProduct(restaurantId, productId, {
+    const updatedProduct = await Product.updateProduct(restaurantId, productId, {
         name: typeof name === 'string' ? name.trim() : undefined,
         description: typeof description === 'string' ? description.trim() : undefined,
         price,
@@ -107,15 +107,15 @@ const updateProduct = (req, res) => {
     res.status(204).end();
 };
 
-const deleteProduct = (req, res) => {
+const deleteProduct = async (req, res) => {
     const { id: restaurantId, pId: productId } = req.params;
 
-    if (!Restaurant.getRestaurantById(restaurantId)) {
+    if (!(await Restaurant.getRestaurantById(restaurantId))) {
         return res.status(404).json({ error: 'Restaurant not found' });
     }
-    if (rejectNonOwner(restaurantId, req.userId, res, PRODUCT_OWNER_ERROR)) return;
+    if (await rejectNonOwner(restaurantId, req.userId, res, PRODUCT_OWNER_ERROR)) return;
 
-    const isDeleted = Product.deleteProduct(restaurantId, productId);
+    const isDeleted = await Product.deleteProduct(restaurantId, productId);
 
     if (!isDeleted) {
         return res.status(404).json({ error: 'Product not found' });

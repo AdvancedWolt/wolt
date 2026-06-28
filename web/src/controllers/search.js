@@ -1,11 +1,11 @@
 const Restaurant = require('../models/restaurants');
 const Product = require('../models/products');
 
-const searchByQuery = (req, res) => {
+const searchByQuery = async (req, res) => {
     const query = req.params.query;
 
-    const restaurants = Restaurant.searchRestaurants(query);
-    const products = Product.searchProducts(query);
+    const restaurants = await Restaurant.searchRestaurants(query);
+    const products = await Product.searchProducts(query);
 
     res.json({ restaurants, products });
 }

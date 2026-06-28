@@ -1,7 +1,4 @@
-const crypto = require('crypto');
-
-// Structure: { orderId: { id, userId, restaurantId, items, status } }
-const orders = {};
+const { Order, ORDER_STATUSES } = require('./schemas');
 
 const STATUS = {
     PENDING: 'pending',
@@ -9,50 +6,58 @@ const STATUS = {
     DELIVERED: 'delivered',
     CANCELLED: 'cancelled',
 };
-const VALID_STATUSES = Object.values(STATUS);
+const VALID_STATUSES = ORDER_STATUSES;
 
-
-const createOrder = (userId, restaurantId, items) => {
-    const id = crypto.randomUUID();
-    const newOrder = { id, userId, restaurantId, items: items || [], status: STATUS.PENDING };
-
-    orders[id] = newOrder;
-    return newOrder;
+// Maps a Mongoose order document to the EX4 API shape. The schema stores `_id`,
+// `user`/`restaurant` refs and timestamps; the API has always exposed
+// `{ id, userId, restaurantId, items, status }`, so the clients stay unchanged.
+const formatOrder = (order) => {
+    if (!order) return null;
+    return {
+        id: order._id,
+        userId: order.user,
+        restaurantId: order.restaurant,
+        items: order.items,
+        status: order.status
+    };
 };
 
-const getOrderById = (orderId) => {
-    return orders[orderId] || null;
+const createOrder = async (userId, restaurantId, items) => {
+    const created = await Order.create({
+        user: userId,
+        restaurant: restaurantId,
+        items: items || [],
+        status: STATUS.PENDING
+    });
+    return formatOrder(created);
 };
 
-const getOrdersByUserId = (userId) => {
-    return Object.values(orders).filter(o => o.userId === userId);
+const getOrderById = async (orderId) => formatOrder(await Order.findById(orderId).lean());
+
+const getOrdersByUserId = async (userId) => {
+    const orders = await Order.find({ user: userId }).lean();
+    return orders.map(formatOrder);
 };
 
-const updateOrder = (orderId, updates) => {
-    const order = orders[orderId];
+const updateOrder = async (orderId, updates) => {
+    const order = await Order.findById(orderId);
     if (!order) return null;
 
     // Update only provided fields
     if (updates.items !== undefined) order.items = updates.items;
     if (updates.status !== undefined) order.status = updates.status;
+    await order.save();
 
-    return order;
+    return formatOrder(order);
 };
 
-const deleteOrder = (orderId) => {
-    if (orders[orderId]) {
-        delete orders[orderId];
-        return true;
-    }
-    return false;
+const deleteOrder = async (orderId) => {
+    const deleted = await Order.findByIdAndDelete(orderId);
+    return deleted !== null;
 };
 
-const cancelOrdersByRestaurant = (restaurantId) => {
-    for (const key in orders) {
-        if (orders[key].restaurantId === restaurantId) {
-            orders[key].status = STATUS.CANCELLED;
-        }
-    }
+const cancelOrdersByRestaurant = async (restaurantId) => {
+    await Order.updateMany({ restaurant: restaurantId }, { status: STATUS.CANCELLED });
 };
 
 module.exports = {

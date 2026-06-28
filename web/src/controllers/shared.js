@@ -2,8 +2,8 @@ const Restaurant = require('../models/restaurants');
 
 // 403 guard for owner-only restaurant actions: writes the response and returns
 // true when the current user does not own the restaurant.
-const rejectNonOwner = (restaurantId, userId, res, message) => {
-    if (!Restaurant.isOwnedBy(restaurantId, userId)) {
+const rejectNonOwner = async (restaurantId, userId, res, message) => {
+    if (!(await Restaurant.isOwnedBy(restaurantId, userId))) {
         res.status(403).json({ error: message });
         return true;
     }

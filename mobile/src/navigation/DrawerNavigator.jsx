@@ -2,6 +2,7 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { ROLES } from '../constants';
 import DrawerContent from './DrawerContent';
 import ProtectedScreen from './ProtectedScreen';
@@ -34,6 +35,7 @@ const ProtectedAccountScreen = protectedComponent(AccountScreen);
 const DrawerNavigator = () => {
   const { theme } = useTheme();
   const { user } = useAuth();
+  const { count } = useCart();
   const isOwner = user?.role === ROLES.OWNER;
 
   return (
@@ -49,7 +51,11 @@ const DrawerNavigator = () => {
     >
       <Drawer.Screen name="Home" component={HomeScreen} options={{ title: 'AdvancedWolt' }} />
       <Drawer.Screen name="Search" component={SearchScreen} />
-      <Drawer.Screen name="Cart" component={ProtectedCartScreen} />
+      <Drawer.Screen
+        name="Cart"
+        component={ProtectedCartScreen}
+        options={{ title: count ? `Cart (${count})` : 'Cart' }}
+      />
       <Drawer.Screen name="Orders" component={ProtectedOrdersScreen} />
       <Drawer.Screen
         name="Manage"

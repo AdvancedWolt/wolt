@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, FlatList, Image, Pressable, StyleSheet, RefreshControl } from 'react-native';
+import { ScrollView, View, StyleSheet, RefreshControl } from 'react-native';
 
 import AppText from '../components/AppText';
 import Button from '../components/Button';
 import Loading from '../components/Loading';
+import RestaurantRow from '../components/RestaurantRow';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getRestaurants } from '../api/endpoints';
 import { distanceInKm } from '../utils/geo';
 
-// The main feed: pulls live restaurants from the server and ranks them by
-// distance from the signed-in user. Tapping a card opens its menu. (The richer
-// promoted/category rows from the web feed land with EX5-7.)
+// The discovery feed: live restaurants grouped into "Near you", "Promoted" and
+// per-category rows, ranked by distance from the signed-in user (same shape as
+// the web home page). Tapping a card opens its menu.
 const HomeScreen = ({ navigation }) => {
   const { theme } = useTheme();
   const { user } = useAuth();
@@ -19,9 +20,9 @@ const HomeScreen = ({ navigation }) => {
   const [restaurants, setRestaurants] = useState([]);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    setStatus('loading');
     setError('');
     try {
       const data = await getRestaurants();
@@ -36,14 +37,43 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => { load(); }, [load]);
 
-  const ranked = useMemo(() => restaurants
-    .map((restaurant) => ({ ...restaurant, distanceKm: distanceInKm(user?.location, restaurant.location) }))
-    .sort((left, right) => (left.distanceKm ?? Infinity) - (right.distanceKm ?? Infinity)),
-  [restaurants, user?.location]);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
 
-  if (status === 'loading' && !restaurants.length) {
-    return <Loading message="Finding restaurants near you" />;
-  }
+  const withDistance = useMemo(() => restaurants.map((restaurant) => ({
+    ...restaurant,
+    distanceKm: distanceInKm(user?.location, restaurant.location),
+  })), [restaurants, user?.location]);
+
+  const nearby = useMemo(() => withDistance
+    .filter((restaurant) => Number.isFinite(restaurant.distanceKm))
+    .sort((left, right) => left.distanceKm - right.distanceKm)
+    .slice(0, 8), [withDistance]);
+
+  const promoted = useMemo(() => {
+    const explicit = withDistance.filter((restaurant) => restaurant.promoted);
+    return explicit.length ? explicit : withDistance.slice(0, 8);
+  }, [withDistance]);
+
+  const categories = useMemo(() => {
+    const grouped = withDistance.reduce((rows, restaurant) => {
+      const category = restaurant.category?.trim() || 'Other';
+      if (!rows.has(category)) rows.set(category, []);
+      rows.get(category).push(restaurant);
+      return rows;
+    }, new Map());
+    return [...grouped.entries()].sort(([left], [right]) => left.localeCompare(right));
+  }, [withDistance]);
+
+  const openRestaurant = (restaurant) => navigation.navigate('Restaurant', {
+    id: restaurant.id,
+    name: restaurant.name,
+  });
+
+  if (status === 'loading') return <Loading message="Finding restaurants near you" />;
 
   if (status === 'error') {
     return (
@@ -55,61 +85,38 @@ const HomeScreen = ({ navigation }) => {
     );
   }
 
-  const renderCard = ({ item }) => (
-    <Pressable
-      onPress={() => navigation.navigate('Restaurant', { id: item.id, name: item.name })}
-      style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
+  return (
+    <ScrollView
+      style={{ backgroundColor: theme.background }}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.brand} />}
     >
-      {item.image ? (
-        <Image source={{ uri: item.image }} style={styles.cardImage} />
-      ) : (
-        <View style={[styles.cardImage, styles.cardImageFallback, { backgroundColor: theme.surface }]}>
-          <AppText variant="title">🍽️</AppText>
-        </View>
-      )}
-      <View style={styles.cardBody}>
-        <AppText weight="700">{item.name}</AppText>
-        <AppText variant="small" muted>
-          {item.category || 'Other'}
-          {Number.isFinite(item.distanceKm) ? ` · ${item.distanceKm.toFixed(1)} km away` : ''}
+      <View style={styles.hero}>
+        <AppText variant="small" muted weight="700" style={styles.eyebrow}>RESTAURANTS NEAR YOU</AppText>
+        <AppText variant="title" weight="800">What are you craving?</AppText>
+        <AppText muted style={styles.heroSub}>
+          {user?.location ? 'Ranked using your saved location.' : 'Log in to rank places by distance.'}
         </AppText>
       </View>
-    </Pressable>
-  );
 
-  return (
-    <View style={[styles.fill, { backgroundColor: theme.background }]}>
-      <FlatList
-        data={ranked}
-        keyExtractor={(item) => item.id}
-        renderItem={renderCard}
-        contentContainerStyle={styles.list}
-        ListHeaderComponent={(
-          <View style={styles.header}>
-            <AppText variant="title" weight="800">What are you craving?</AppText>
-            <AppText muted style={styles.headerSub}>
-              {user?.location ? 'Ranked by distance from your saved location.' : 'Log in to rank places by distance.'}
-            </AppText>
-          </View>
-        )}
-        ListEmptyComponent={<AppText muted style={styles.empty}>No restaurants yet.</AppText>}
-        refreshControl={(
-          <RefreshControl refreshing={status === 'loading'} onRefresh={load} tintColor={theme.brand} />
-        )}
-      />
-    </View>
+      {nearby.length > 0 && (
+        <RestaurantRow title="Near you" restaurants={nearby} onPressRestaurant={openRestaurant} />
+      )}
+      <RestaurantRow title="Promoted" restaurants={promoted} onPressRestaurant={openRestaurant} />
+      {categories.map(([category, list]) => (
+        <RestaurantRow key={category} title={category} restaurants={list} onPressRestaurant={openRestaurant} />
+      ))}
+
+      {!restaurants.length && <AppText muted style={styles.empty}>No restaurants yet.</AppText>}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
-  list: { padding: 16, gap: 12 },
-  header: { marginBottom: 4 },
-  headerSub: { marginTop: 4 },
-  card: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
-  cardImage: { width: 88, height: 88 },
-  cardImageFallback: { alignItems: 'center', justifyContent: 'center' },
-  cardBody: { flex: 1, paddingHorizontal: 14, gap: 4 },
+  content: { paddingTop: 16, paddingBottom: 28 },
+  hero: { paddingHorizontal: 16, marginBottom: 22 },
+  eyebrow: { letterSpacing: 1, marginBottom: 4 },
+  heroSub: { marginTop: 4 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { marginVertical: 8, textAlign: 'center' },
   retry: { alignSelf: 'stretch', marginTop: 8 },

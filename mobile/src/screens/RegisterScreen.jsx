@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Image, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Image, Pressable, StyleSheet } from 'react-native';
 
 import Screen from '../components/Screen';
 import AppText from '../components/AppText';
@@ -113,7 +113,7 @@ const RegisterScreen = ({ navigation }) => {
 
   return (
     <Screen scroll>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View>
         <AppText variant="title" weight="800">Create your account</AppText>
         <AppText muted style={styles.subtitle}>Set up your profile to start ordering.</AppText>
 
@@ -216,7 +216,7 @@ const RegisterScreen = ({ navigation }) => {
             Log in
           </AppText>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Screen>
   );
 };

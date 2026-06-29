@@ -48,13 +48,15 @@ const RegisterScreen = ({ navigation }) => {
   const setField = (name) => (value) => {
     const next = { ...form, [name]: value };
     setForm(next);
-    if (touched[name] && validators[name]) {
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    if (validators[name]) {
       setErrors((prev) => ({ ...prev, [name]: validators[name](value, next) }));
     }
     // Re-check the confirmation whenever the password itself changes.
     if (name === 'password' && touched.confirmPassword) {
       setErrors((prev) => ({ ...prev, confirmPassword: validators.confirmPassword(next.confirmPassword, next) }));
     }
+    if (serverError) setServerError('');
   };
 
   const handleBlur = (name) => () => {
@@ -62,13 +64,21 @@ const RegisterScreen = ({ navigation }) => {
     if (validators[name]) setErrors((prev) => ({ ...prev, [name]: validators[name](form[name], form) }));
   };
 
-  const validateAll = () => {
+  const getFieldErrors = () => {
     const fieldErrors = {};
     for (const key of Object.keys(validators)) fieldErrors[key] = validators[key](form[key], form);
+    return fieldErrors;
+  };
+
+  const validateAll = () => {
+    const fieldErrors = getFieldErrors();
     setErrors(fieldErrors);
     setTouched(Object.keys(form).reduce((acc, key) => ({ ...acc, [key]: true }), {}));
     return Object.values(fieldErrors).every((message) => !message);
   };
+
+  const currentErrors = getFieldErrors();
+  const disabled = submitting || Boolean(image.error) || Object.values(currentErrors).some(Boolean);
 
   const submit = async () => {
     setServerError('');
@@ -206,7 +216,7 @@ const RegisterScreen = ({ navigation }) => {
         <Button
           title={submitting ? 'Creating account…' : 'Register'}
           onPress={submit}
-          disabled={submitting}
+          disabled={disabled}
           loading={submitting}
         />
 

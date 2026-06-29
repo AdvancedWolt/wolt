@@ -11,9 +11,10 @@ import { requiredField } from '../utils/validators';
 
 const LABELS = { username: 'Username', password: 'Password' };
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = ({ navigation, route }) => {
   const { login } = useAuth();
   const { theme } = useTheme();
+  const redirectTo = route.params?.redirectTo;
 
   const [form, setForm] = useState({ username: '', password: '' });
   const [errors, setErrors] = useState({});
@@ -23,7 +24,9 @@ const LoginScreen = ({ navigation }) => {
 
   const setField = (name) => (value) => {
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (touched[name]) setErrors((prev) => ({ ...prev, [name]: requiredField(value, LABELS[name]) }));
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    setErrors((prev) => ({ ...prev, [name]: requiredField(value, LABELS[name]) }));
+    if (serverError) setServerError('');
   };
 
   const handleBlur = (name) => () => {
@@ -47,7 +50,10 @@ const LoginScreen = ({ navigation }) => {
     try {
       await login(form.username, form.password);
       // Drop the auth screens and land back on the main app, signed in.
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Main', params: redirectTo }],
+      });
     } catch (err) {
       setServerError(err.message || 'Invalid username or password');
     } finally {
@@ -55,7 +61,11 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
-  const disabled = submitting || !form.username || !form.password;
+  const currentErrors = {
+    username: requiredField(form.username, 'Username'),
+    password: requiredField(form.password, 'Password'),
+  };
+  const disabled = submitting || Boolean(currentErrors.username || currentErrors.password);
 
   return (
     <Screen scroll>

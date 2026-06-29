@@ -14,9 +14,9 @@ export const validateUsername = (value) => {
 
 export const validatePassword = (value) => {
   if (!value) return 'Password is required';
-  if (value.length < 8) return 'Password must be at least 8 characters';
-  if (!/[a-zA-Z]/.test(value)) return 'Password must contain at least one letter';
-  if (!/\d/.test(value)) return 'Password must contain at least one digit';
+  if (value.length < 8 || !/[a-zA-Z]/.test(value) || !/\d/.test(value)) {
+    return 'Password must be at least 8 characters long and contain both letters and digits';
+  }
   return '';
 };
 

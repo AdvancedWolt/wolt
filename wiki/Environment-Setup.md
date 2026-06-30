@@ -9,15 +9,91 @@ This page walks through bringing up **the entire stack** with `docker-compose` a
 
 ## 0. Prerequisites
 
-- **Docker Desktop** (provides `docker compose`) — runs the C++ recommender, MongoDB, and
-  the Express API + web client.
-- **Node.js 20+** and **npm** — only needed to run the **mobile** client locally.
-- **Mobile runtime**, one of:
-  - **Android emulator** (Android Studio), or
-  - a **physical phone** with the **Expo Go** app installed.
+This section is exhaustive on purpose: install exactly what's listed and the system will build
+and run. The **backend stack is fully containerized**, so for the web app you only need Docker —
+no local Node, C++ compiler, or MongoDB. You only need a Node toolchain for the **mobile** app.
 
-No secrets or `.env` files are required: the connection string and ports are provided by
-`docker-compose.yml`, and the API seeds an empty database automatically on first boot.
+### 0.1 What you must install
+
+**For the backend + web client (required):**
+
+- **Docker Desktop** — the only requirement to run the whole backend (C++ recommender,
+  MongoDB, Express API, and the built web client).
+  - Windows/macOS: install **Docker Desktop** (latest). On Windows it uses the **WSL 2**
+    backend — Docker Desktop installs/enables WSL 2 for you; just keep it enabled.
+  - Linux: Docker Engine + the **Compose v2 plugin**.
+  - It must provide **Compose v2** — i.e. the `docker compose` (space) command, *not* the old
+    `docker-compose` (hyphen). The `docker-compose.yml` here uses healthchecks and
+    `depends_on: condition: service_healthy`, which require Compose v2.
+- **An internet connection for the first build.** The first `docker compose up --build` pulls
+  the base images (`gcc:15`, `node:20-alpine`, `mongo:7`) and runs `npm install` for the API
+  and web client. Expect the **C++ image to take several minutes** to compile the first time;
+  later runs are cached and start in seconds.
+- **~3–4 GB free disk** for the images and the Mongo volume.
+
+**For the mobile client (only if you run the mobile app):**
+
+- **Node.js 20 LTS or newer** and **npm** (bundled with Node). Expo SDK 54 requires Node ≥ 20.
+- **One** mobile runtime:
+  - **Recommended — a physical phone with the Expo Go app** (Android or iOS). This needs **no**
+    Android Studio, JDK, or native SDK: the app runs inside Expo Go. The phone and your computer
+    must be on the **same Wi‑Fi**. Make sure the installed **Expo Go supports SDK 54** (install
+    the current version from the store).
+  - **Android emulator** — install **Android Studio**, which bundles the Android SDK, a JDK, and
+    the emulator (AVD). Create and start one virtual device. You still run the app via Expo Go
+    inside the emulator (`npm run android`), so no Gradle/native build setup is required.
+
+> ℹ️ You do **not** need to install a C++ compiler, CMake, or MongoDB locally — all three run in
+> containers. You also don't need the Expo CLI globally; `npx expo` is invoked via the project's
+> npm scripts.
+
+### 0.2 Pinned versions (what the project builds against)
+
+You don't install these yourself (Docker and npm handle them), but they document the exact
+toolchain so a version mismatch can be ruled out:
+
+| Area                | Pinned version                         | Where                         |
+| ------------------- | -------------------------------------- | ----------------------------- |
+| C++ build image     | `gcc:15` + CMake                       | root `Dockerfile`             |
+| API / web build     | **Node 20** (`node:20-alpine`)         | `web/Dockerfile`              |
+| Database            | **MongoDB 7** (`mongo:7`)              | `docker-compose.yml`          |
+| Express             | `^5.2.1`                               | `web/package.json`            |
+| Mongoose            | `^8.9.5`                               | `web/package.json`            |
+| jsonwebtoken (JWT)  | `^9.0.2`                               | `web/package.json`            |
+| Mobile — Node       | **≥ 20 LTS**                           | required by Expo SDK 54       |
+| Mobile — Expo SDK   | **54** (`expo ^54.0.35`)               | `mobile/package.json`         |
+| Mobile — React Native | **0.81.5**                           | `mobile/package.json`         |
+| Mobile — React      | **19.1.0**                             | `mobile/package.json`         |
+
+### 0.3 Verify your toolchain before starting
+
+```bash
+docker --version            # Docker present
+docker compose version      # MUST work (Compose v2). If "docker-compose" only → upgrade.
+docker info                 # daemon is running (Docker Desktop started)
+
+# Mobile only:
+node --version              # v20.x or newer
+npm --version
+```
+
+### 0.4 Ports & network
+
+| Port    | Used by                    | Exposed to host? | Must be free on host |
+| ------- | -------------------------- | ---------------- | -------------------- |
+| `3000`  | Express API + web client   | **yes**          | **yes**              |
+| `8080`  | C++ recommender            | **yes**          | **yes**              |
+| `27017` | MongoDB                    | no (internal)    | no — can't clash     |
+
+If `3000` or `8080` is already taken on your machine, stop whatever is using it (or the stack
+will fail to bind). MongoDB is intentionally **not** published, so a local MongoDB won't clash.
+
+### 0.5 No secrets or config files needed
+
+The backend needs **no `.env` and no secrets**: the connection string and ports are provided by
+`docker-compose.yml`, and the API **seeds an empty database automatically** on first boot. The
+only optional config is `mobile/.env` — and only when running the mobile app on a **physical
+phone** (to point it at your computer's LAN IP; see §2).
 
 ---
 

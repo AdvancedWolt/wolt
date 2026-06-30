@@ -15,11 +15,13 @@ The project is a Wolt-inspired food-delivery system built across the course exer
 
 ## Table of contents
 
-1. **[Environment Setup](Environment-Setup.md)** — raise the whole stack with
+1. **[Architecture Overview](Architecture-Overview.md)** — the components, how a request flows
+   through them, persistence, auth, and how the two clients share one API.
+2. **[Environment Setup](Environment-Setup.md)** — raise the whole stack with
    `docker-compose` and run both the web and mobile clients (ordered commands + screenshots).
-2. **[Authentication Flows](Authentication-Flows.md)** — register and login on web and
+3. **[Authentication Flows](Authentication-Flows.md)** — register and login on web and
    mobile, including field validation and error states.
-3. **[CRUD Flows](CRUD-Flows.md)** — create / edit / delete restaurants, dishes, and orders
+4. **[CRUD Flows](CRUD-Flows.md)** — create / edit / delete restaurants, dishes, and orders
    on both clients.
 
 ---

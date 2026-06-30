@@ -1,12 +1,26 @@
-# AdvancedWolt – Exercise 4: React Web Application
+# AdvancedWolt – Exercise 5: Mobile Client & Persistent Data
 
-This is **Exercise 4**: a full-stack food-delivery web application. We have added a dynamic **React** frontend to the Node.js + Express backend from Exercise 3, which in turn connects to the C++ TCP server from Exercise 2 for recommendations.
+This is **Exercise 5**: a full-stack, **multi-client** food-delivery system. It extends the
+Exercise 4 React web app with two major additions:
+
+* **Persistent storage (MongoDB).** The Express API now stores everything in **MongoDB** via
+  **Mongoose** instead of in-memory arrays, so restaurants, menus, users and orders survive
+  restarts. Data lives in a Docker volume and is seeded automatically on first boot.
+* **A native mobile client (React Native + Expo).** A new `mobile/` app talks to the **same**
+  Express API as the web client, with **full feature parity** — authentication, restaurant
+  discovery, search, cart, orders, and restaurant-owner management.
+
+It builds on the earlier exercises: the **C++ TCP recommendation server (Exercise 2)** powers
+"you might also like" suggestions, and the **Node.js + Express REST API (Exercise 3)** is the
+single backend serving both clients.
 
 The assignment is split into two parts:
 * **Part A:** Agile project management using JIRA.
-* **Part B:** A React web application with Wolt-inspired design, JWT authentication, and dynamic data integration.
+* **Part B:** The multi-client architecture — a MongoDB-backed Express API serving a React web
+  client and a React Native mobile client, with JWT authentication and live (no-mock) data.
 
 > 📖 **Full build & run walkthrough with screenshots** — see the **[Wiki](wiki/Home.md)**:
+> [Architecture Overview](wiki/Architecture-Overview.md),
 > [Environment Setup](wiki/Environment-Setup.md) (raise everything with `docker-compose` and
 > run **both** the web and mobile clients), [Authentication Flows](wiki/Authentication-Flows.md),
 > and [CRUD Flows](wiki/CRUD-Flows.md).
@@ -31,48 +45,93 @@ links, and branch/PR names embed the issue key so JIRA links them automatically.
 
 ---
 
-## Part B: The React Application (Architecture)
+## Part B: System Architecture
 
-We built a single-page application (SPA) using React, JavaScript, CSS, and HTML. No mock data is used; all content is fetched dynamically from the Node.js server.
-
-### System Architecture
+The platform is built from **four cooperating components**. Both clients are *thin* — they
+hold no mock data; every screen reads and writes live through the same Express REST API, which
+persists to MongoDB and consults the C++ recommender. The web client is built into the Express
+image and served from the same process; the mobile client runs through Expo and points at the
+API via `EXPO_PUBLIC_API_URL`.
 
 ```text
-Browser (React App)
-        │
-        ▼  HTTP (JSON + JWT Auth)
+┌─────────────────────────┐        ┌─────────────────────────┐
+│  Web client (React)     │        │  Mobile client          │
+│  client/ · EX4          │        │  React Native + Expo    │
+│  served at :3000        │        │  mobile/ · EX5          │
+└───────────┬─────────────┘        └───────────┬─────────────┘
+            │  HTTP (JSON + JWT Auth)           │
+            └─────────────────┬─────────────────┘
+                              ▼
 ┌──────────────────────────────────────────────────────────────────────┐
-│  Express Web Server   ·   web/   ·   Exercise 3   ·   Node.js        │
-│   (Validations, Routing, Database integration)                       │
-└──────────────────────────────────────────────────────────────────────┘
-        │
-        ▼  TCP socket (Newline delimited text)
-┌──────────────────────────────────────────────────────────────────────┐
-│  C++ Recommendation Server   ·   src/   ·   Exercise 2               │
-└──────────────────────────────────────────────────────────────────────┘
+│  Express REST API   ·   web/   ·   EX3   ·   Node.js                  │
+│   (Validation, Routing, JWT auth, MongoDB via Mongoose)              │
+└───────────┬─────────────────────────────────────┬────────────────────┘
+            │  TCP socket (newline-delimited)      │  Mongoose
+            ▼                                      ▼
+┌───────────────────────────────┐   ┌──────────────────────────────────┐
+│  C++ Recommendation Server    │   │  MongoDB                         │
+│  src/ · EX2 · :8080           │   │  mongo:27017 (internal)          │
+└───────────────────────────────┘   └──────────────────────────────────┘
 ```
 
-### Frontend Code Structure
+| Component         | Path       | Exercise | Role                                                         |
+| ----------------- | ---------- | -------- | ------------------------------------------------------------ |
+| C++ recommender   | `src/`     | EX2      | TCP service that logs product views and returns suggestions. |
+| Express REST API  | `web/`     | EX3      | Single backend: validation, JWT auth, MongoDB persistence.   |
+| Web client        | `client/`  | EX4      | React SPA, built into and served by the Express image.       |
+| Mobile client     | `mobile/`  | EX5      | React Native (Expo) app against the same API.                |
+| MongoDB           | —          | EX5      | Document store (Mongoose); data persists in a Docker volume. |
 
-The React codebase (`client/src/`) is structured into functional modules rather than one monolithic component:
+The data flow is the same for both clients: a client sends an authenticated HTTP request → the
+Express API validates it and reads/writes MongoDB through Mongoose → when a dish is viewed, the
+API opens a TCP socket to the C++ recommender to log the view and fetch related dishes, which
+then surface as "you might also like" in the cart.
 
-* **`pages/`**: The top-level route views.
-  * `Login.jsx` / `Register.jsx`: Authentication pages with full client-side validation.
-  * `Home.jsx`: The main screen showing nearby/promoted restaurants.
-  * `RestaurantDetail.jsx`: The full menu for a specific restaurant.
-  * `Search.jsx`: Dynamic search results.
-  * `Manage.jsx` / `ManageAccount.jsx`: Management dashboards.
-  * `Cart.jsx` / `Orders.jsx`: Shopping cart and order history.
-* **`components/`**: Reusable UI elements.
-  * `Navbar.jsx`: The top navigation bar, displaying user details, auth controls, and the theme toggle.
-  * `RestaurantCard.jsx`, `MenuItem.jsx`, `CartLine.jsx`, etc.
-* **`context/`**: Global state management.
-  * `AuthContext.jsx`: Manages the JWT token, current user details, and provides `login()`, `register()`, and `logout()` functions.
-  * `ThemeContext.jsx`: Manages the application-wide dark/light mode state.
-  * `CartContext.jsx`: Manages the shopping cart state.
-* **`routes/`**: Route protection logic. Contains `ProtectedRoute` components that enforce authentication for sensitive pages.
+### Repository Layout
+
+```text
+src/        EX2 · C++ TCP recommendation server
+web/        EX3 · Node.js + Express REST API (Mongoose, JWT, seed) — also serves the built web client
+client/     EX4 · React web client (SPA)
+mobile/     EX5 · React Native (Expo) mobile client
+```
+
+#### Backend — `web/src/`
+
+* **`controllers/`** + **`routes/`** — the REST API (restaurants, products, users, tokens,
+  orders, search, recommendations).
+* **`models/`** + **`models/schemas/`** — Mongoose models and the schemas that validate them.
+* **`config/db.js`** — the single, reusable MongoDB connection module every model imports.
+* **`services/tcpClient.js`** — the TCP client that talks to the C++ recommender (EX2).
+* **`middleware/`** — JWT authentication and request validation.
+* **`seed.js`** / **`seedScript.js`** — idempotent demo-data seeding (boot-time and standalone).
+
+#### Web client — `client/src/`
+
+* **`pages/`** — route views: `Login` / `Register`, `Home`, `RestaurantDetail`, `Search`,
+  `Manage` / `ManageAccount`, `Cart` / `Orders` / `OrderDetail`.
+* **`components/`** — reusable UI (`Navbar`, `RestaurantCard`, `MenuItem`, `CartLine`, …).
+* **`context/`** — `AuthContext` (JWT + user), `ThemeContext` (dark/light), `CartContext`.
+* **`routes/`** — `ProtectedRoute` guards for authenticated-only pages.
+
+#### Mobile client — `mobile/src/`
+
+A React Native (Expo) app that mirrors the web client against the same API. The drawer is the
+phone's take on the web navbar.
+
+* **`screens/`** — `Login` / `Register`, `Home`, `Restaurant`, `Search`, `Cart`,
+  `Orders` / `OrderDetail`, `Manage`, `Account`.
+* **`navigation/`** — a drawer over a native stack, with `ProtectedScreen` guards mirroring the
+  web's `ProtectedRoute`.
+* **`context/`** — the same `Auth` / `Theme` / `Cart` providers, persisted with AsyncStorage.
+* **`api/`** + **`config/api.js`** — the fetch wrapper and the single configurable backend URL
+  (`EXPO_PUBLIC_API_URL`).
 
 ### Features & In-Depth GUI Walkthrough
+
+The screenshots below are from the **web client**. Every feature also ships on the **mobile
+client** with the same behavior — see the **[Wiki](wiki/Home.md)** for the mobile,
+screenshot-backed walkthroughs of each flow.
 
 1. **Authentication (JWT) & Registration**
    * **Sign Up:** Users can register an account by providing a unique username, secure password (requiring at least 8 characters, letters, and digits), a display name, geographic location (X/Y coordinates), and an optional profile image (up to 5MB). The UI features a dynamic image preview and real-time form validation.
@@ -133,11 +192,36 @@ The React codebase (`client/src/`) is structured into functional modules rather 
 </em>
    </p>
 
+8. **Mobile client (React Native + Expo) — full feature parity**
+   * All of the above flows — JWT auth & registration, restaurant discovery (Near you /
+     Promoted / per-category), restaurant menus, **cart with C++-powered recommendations**,
+     checkout, orders & order detail, global search, profile management, and dark/light theming
+     — are reimplemented natively in `mobile/`.
+   * The drawer replaces the web navbar; owner-only **Manage** is gated to restaurant owners;
+     state and auth persist across restarts via AsyncStorage.
+   * **Screenshot walkthroughs for the mobile client live in the
+     [Wiki](wiki/Home.md):** [Environment Setup](wiki/Environment-Setup.md),
+     [Authentication Flows](wiki/Authentication-Flows.md), and [CRUD Flows](wiki/CRUD-Flows.md).
+
 ---
 
 ## Running the Application
 
 The entire stack is containerized using Docker Compose.
+
+### Prerequisites (short version)
+
+- **Docker Desktop** with **Compose v2** (the `docker compose` command) — the only thing needed
+  for the backend + web client. No local Node, C++ compiler, or MongoDB required.
+- **Node.js 20 LTS+** and a mobile runtime — *only* if you run the mobile app. Easiest is a
+  phone with the **Expo Go** app (supporting **Expo SDK 54**); an **Android emulator** also
+  works. Pinned toolchain: Node 20, MongoDB 7, Expo SDK 54, React Native 0.81, React 19.
+- Host ports **3000** and **8080** must be free (MongoDB's 27017 stays internal). No `.env` or
+  secrets are needed for the backend.
+
+> 📋 **Full, bulletproof prerequisites** — exact versions, toolchain verification commands, and
+> the two mobile-runtime paths — are in the
+> **[Wiki → Environment Setup](wiki/Environment-Setup.md#0-prerequisites)**.
 
 ### Running the full system (web **and** mobile) — TL;DR
 

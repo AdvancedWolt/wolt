@@ -12,8 +12,6 @@ services:
     image: mongo:7
     volumes:
       - mongo-data:/data/db
-    ports:
-      - "27017:27017"
     # Gate dependents on Mongo actually accepting connections, not just the
     # container starting, so web doesn't fail-fast on a cold start.
     healthcheck:
@@ -38,17 +36,6 @@ services:
         condition: service_started
       mongo:
         condition: service_healthy
-
-  client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-    environment:
-      - VITE_API_URL=http://web:3000
-    ports:
-      - "5173:5173"
-    depends_on:
-      - web
 
 volumes:
   # Named volume keeps MongoDB data across container restarts.

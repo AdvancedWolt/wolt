@@ -141,16 +141,47 @@ docker compose up --build
 </em>
 </p>
 
-This starts four containers:
+This starts the backend stack:
 1. **`cpp-service`**: The Exercise 2 C++ server on port 8080.
-2. **`mongo`**: A MongoDB instance on port 27017. Its data is stored in the named Docker volume `mongo-data`, so it **survives container restarts** (`docker compose down` followed by `docker compose up` keeps your data).
-3. **`web`**: The Express API backend on port 3000. It connects to MongoDB through Mongoose on boot.
-4. **`client`**: The Vite dev server serving the React frontend on port 5173.
+2. **`mongo`**: A MongoDB instance available to the other Compose services as
+   `mongo:27017`. Its data is stored in the named Docker volume `mongo-data`,
+   so it **survives container restarts** (`docker compose down` followed by
+   `docker compose up` keeps your data). MongoDB is not published to the host,
+   which avoids conflicts with any local MongoDB already using port 27017.
+3. **`web`**: The Express API backend on port 3000. It connects to MongoDB through Mongoose on boot, seeds an empty database, and serves the built React web client from the same process.
 
 Once the containers are running, open your browser to:
-**[http://localhost:5173](http://localhost:5173)**
+**[http://localhost:3000](http://localhost:3000)**
 
-*Note: Inside the Docker network, the React app proxies its `/api` requests to `http://web:3000`, so cross-container communication works seamlessly.*
+API endpoints are available under **[http://localhost:3000/api](http://localhost:3000/api)**.
+
+### Mobile app against the Docker stack
+
+The mobile app is not containerized; run it with Expo after the stack above is
+up. The app reads the API base URL from `EXPO_PUBLIC_API_URL`, defaulting to
+`http://10.0.2.2:3000` for the Android emulator.
+
+```bash
+cd mobile
+npm install
+npm run android
+```
+
+For a physical device, point Expo at the host machine's LAN IP:
+
+```bash
+EXPO_PUBLIC_API_URL=http://<your-computer-lan-ip>:3000 npx expo start
+```
+
+Keep `node_modules` local; it is intentionally ignored and must not be
+committed. A minimal end-to-end smoke check is:
+
+1. Run `docker compose up --build` and wait for the API to log its MongoDB
+   connection and seed completion.
+2. Launch the mobile app with the base URL pointing at the API.
+3. Confirm the Home feed shows seeded restaurants.
+4. Log in or register, then open a protected screen to confirm JWT-backed auth
+   works against MongoDB-backed data.
 
 ### Database connection (MongoDB / Mongoose)
 

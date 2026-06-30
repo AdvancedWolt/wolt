@@ -6,9 +6,14 @@ The assignment is split into two parts:
 * **Part A:** Agile project management using JIRA.
 * **Part B:** A React web application with Wolt-inspired design, JWT authentication, and dynamic data integration.
 
+> 📖 **Full build & run walkthrough with screenshots** — see the **[Wiki](wiki/Home.md)**:
+> [Environment Setup](wiki/Environment-Setup.md) (raise everything with `docker-compose` and
+> run **both** the web and mobile clients), [Authentication Flows](wiki/Authentication-Flows.md),
+> and [CRUD Flows](wiki/CRUD-Flows.md).
+
 ---
 
-## Part A: Agile Workflow (JIRA & GitHub)
+## Part A: Agile Workflow (JIRA & GitHub) — *How we worked*
 
 The development process was strictly managed via JIRA and synchronized with GitHub, adhering to Agile principles:
 
@@ -17,6 +22,12 @@ The development process was strictly managed via JIRA and synchronized with GitH
 * **Workflow Statuses:** Issues moved through `To Do`, `In Progress`, `Code Review`, and `Done`. Tasks were assigned to members before work began.
 * **Blocked Tasks:** Dependencies were explicitly tracked using the `blocked by` link type in JIRA.
 * **Feature Branches & Pull Requests:** Every task was developed on a dedicated feature branch named after the JIRA issue (e.g., `AW-12-login-page`). Code was merged to the main branch strictly via Pull Requests, which required approval from other team members before merging. The Jira-GitHub integration automatically linked PRs and branches to their respective JIRA issues.
+
+**In short:** we plan each task in JIRA (epic → user story → task, assigned to an owner
+before work starts) → branch off `main` as `AW-<issue>-<slug>` → open a Pull Request, which
+moves the issue to **Code Review** → a *different* team member reviews and approves → merge to
+`main` moves the issue to **Done**. Blocking dependencies are tracked with JIRA's `blocked by`
+links, and branch/PR names embed the issue key so JIRA links them automatically.
 
 ---
 
@@ -127,6 +138,30 @@ The React codebase (`client/src/`) is structured into functional modules rather 
 ## Running the Application
 
 The entire stack is containerized using Docker Compose.
+
+### Running the full system (web **and** mobile) — TL;DR
+
+There are **two clients** against one backend. Run them in this order:
+
+```bash
+# 1) Backend + web client (C++ recommender, MongoDB, Express API, built React web app)
+#    From the repo root:
+docker compose up --build
+#    → Web client:  http://localhost:3000
+#    → REST API:    http://localhost:3000/api
+
+# 2) Mobile client (React Native + Expo) — in a second terminal, after the backend is up:
+cd mobile
+npm install
+npm run android        # or: npx expo start  → press a, or scan the QR in Expo Go
+```
+
+The mobile app reads the API base URL from `EXPO_PUBLIC_API_URL`, defaulting to
+`http://10.0.2.2:3000` (Android emulator → host). For a **physical phone**, point it at your
+computer's LAN IP, e.g. `EXPO_PUBLIC_API_URL=http://192.168.1.20:3000 npx expo start`.
+
+The detailed, screenshot-backed version of this is in the
+**[Wiki → Environment Setup](wiki/Environment-Setup.md)**.
 
 ### Quick Start (Docker Compose)
 

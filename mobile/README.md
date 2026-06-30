@@ -27,43 +27,126 @@ mobile/
 
 ## Pointing the app at the server
 
-The phone/emulator can't reach the server over `localhost`, so the base URL is
-configurable via `EXPO_PUBLIC_API_URL` (see `src/config/api.js`):
+The phone/emulator **cannot reach the server over `localhost`** — on a device,
+`localhost` means the device itself, not your computer. So every request is
+prefixed with a configurable base URL, `EXPO_PUBLIC_API_URL`
+(single source of truth: `src/config/api.js`). If it is unset, the app falls
+back to `http://10.0.2.2:3000`, which is the Android emulator's alias for the
+host machine.
 
-- **Android emulator:** nothing to set when Docker exposes the API on the host.
-  The default `http://10.0.2.2:3000` reaches the host machine where
-  `docker compose up --build` publishes the Node API.
-- **Physical phone (Expo Go):** set it to your computer's LAN address, e.g.
-  `EXPO_PUBLIC_API_URL=http://192.168.1.20:3000 npx expo start`.
-- **WSL with Android emulator on Windows:** if the emulator cannot reach the
-  API directly, expose the API from WSL to Windows first, then start Expo with
-  that port. Example:
-  ```bash
-  # In WSL, from any directory:
-  python3 - <<'PY'
-  import socket, threading
-  src = ('0.0.0.0', 3001)
-  dst = ('127.0.0.1', 3000)
-  def pipe(a, b):
-      try:
-          while True:
-              data = a.recv(65536)
-              if not data: break
-              b.sendall(data)
-      finally:
-          a.close(); b.close()
-  s = socket.socket()
-  s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-  s.bind(src); s.listen()
-  print(f'proxy listening on {src} -> {dst}', flush=True)
-  while True:
-      client, _ = s.accept()
-      server = socket.create_connection(dst)
-      threading.Thread(target=pipe, args=(client, server), daemon=True).start()
-      threading.Thread(target=pipe, args=(server, client), daemon=True).start()
-  PY
+### 1. Pick the right address for how you run the app
+
+| You are running the app on…            | Use this `EXPO_PUBLIC_API_URL`        | Why                                                            |
+| -------------------------------------- | ------------------------------------- | ------------------------------------------------------------- |
+| **Android emulator** (AVD)             | *leave unset* → default `http://10.0.2.2:3000` | `10.0.2.2` is the emulator's special alias for the host's `localhost`. |
+| **iOS simulator** (macOS)              | `http://localhost:3000`               | The simulator shares the Mac's network stack.                 |
+| **Physical phone, Expo Go** (Android/iOS) | `http://<YOUR-PC-LAN-IP>:3000`, e.g. `http://192.168.1.20:3000` | The phone reaches your PC over Wi‑Fi by its LAN IP. |
+| **Web preview** (`npm run web`)        | `http://localhost:3000`               | Runs in the desktop browser on the host.                      |
+
+> The default exists so a grader running the **Android emulator** needs to set
+> **nothing** — just `docker compose up --build` then `npm run android`.
+
+### 2. Find your computer's LAN IP (only needed for a physical phone)
+
+- **Windows (PowerShell):**
+  ```powershell
+  (Get-NetIPAddress -AddressFamily IPv4 |
+    Where-Object InterfaceAlias -match 'Wi-Fi|Ethernet' |
+    Where-Object IPAddress -notlike '169.*').IPAddress
   ```
-  Then run Expo with `EXPO_PUBLIC_API_URL=http://10.0.2.2:3001`.
+  Or run `ipconfig` and read the **IPv4 Address** under your active Wi‑Fi /
+  Ethernet adapter (typically `192.168.x.x` or `10.0.x.x`).
+- **macOS:** `ipconfig getifaddr en0` (Wi‑Fi) or `ipconfig getifaddr en1`.
+- **Linux:** `hostname -I` and take the first `192.168.*` / `10.*` address.
+
+Ignore `127.0.0.1`, `169.254.*` (link‑local), and the WSL/Hyper‑V adapter
+(`172.x.x.x`) — those are not reachable from your phone.
+
+### 3. Set the variable (three equivalent ways)
+
+**Option A — `.env` file (recommended, foolproof, no shell syntax to remember).**
+Expo (SDK 49+) auto‑loads `EXPO_PUBLIC_*` variables from `mobile/.env`. Create
+the file once and every `expo start` picks it up:
+```bash
+# mobile/.env  (physical phone example — change the IP to YOUR LAN IP)
+EXPO_PUBLIC_API_URL=http://192.168.1.20:3000
+```
+Then just run `npx expo start` normally. (Delete or empty the file to fall back
+to the emulator default.) `.env` is git‑ignored, so it won't be committed.
+
+**Option B — Windows PowerShell** (the inline `VAR=... command` form is *bash
+only* and fails in PowerShell):
+```powershell
+$env:EXPO_PUBLIC_API_URL = "http://192.168.1.20:3000"
+npx expo start
+```
+
+**Option C — macOS / Linux / Git Bash** (inline, one‑off):
+```bash
+EXPO_PUBLIC_API_URL=http://192.168.1.20:3000 npx expo start
+```
+
+> ⚠️ `EXPO_PUBLIC_*` values are **baked in when Expo starts**. After creating or
+> changing the variable, fully **stop and restart** `expo start` (press `r` to
+> reload is not enough if the value changed).
+
+### 4. Make sure the phone can actually reach the API
+
+When using a **physical phone**, confirm all of these:
+
+1. **Same network:** phone and PC are on the **same Wi‑Fi** (and the network is
+   not "client‑isolated"/guest mode, which blocks device‑to‑device traffic).
+2. **API listens on all interfaces:** `docker compose up --build` publishes the
+   Node API on the host's `0.0.0.0:3000`, so this is already satisfied. (A bare
+   `node` server bound only to `127.0.0.1` would *not* be reachable.)
+3. **Firewall allows port 3000:** on Windows, allow Node.js / TCP port `3000`
+   for **Private** networks (Windows Defender Firewall → *Allow an app* or add
+   an inbound rule). This is the most common reason a phone "can't connect".
+4. **Quick sanity check:** open `http://<YOUR-PC-LAN-IP>:3000` in the phone's
+   **browser**. If the API responds there, Expo Go will too; if it doesn't, it's
+   a network/firewall issue, not an app issue.
+
+### 5. WSL with the Android emulator on Windows
+
+If you run the backend inside **WSL** but the Android emulator on Windows can't
+reach it directly, forward the WSL port to Windows, then point Expo at the
+forwarded port. Example proxy:
+```bash
+# In WSL, from any directory:
+python3 - <<'PY'
+import socket, threading
+src = ('0.0.0.0', 3001)
+dst = ('127.0.0.1', 3000)
+def pipe(a, b):
+    try:
+        while True:
+            data = a.recv(65536)
+            if not data: break
+            b.sendall(data)
+    finally:
+        a.close(); b.close()
+s = socket.socket()
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind(src); s.listen()
+print(f'proxy listening on {src} -> {dst}', flush=True)
+while True:
+    client, _ = s.accept()
+    server = socket.create_connection(dst)
+    threading.Thread(target=pipe, args=(client, server), daemon=True).start()
+    threading.Thread(target=pipe, args=(server, client), daemon=True).start()
+PY
+```
+Then start Expo with `EXPO_PUBLIC_API_URL=http://10.0.2.2:3001`.
+
+### Troubleshooting "Network request failed"
+
+| Symptom                                          | Likely cause & fix                                                                 |
+| ------------------------------------------------ | --------------------------------------------------------------------------------- |
+| Works on emulator, fails on physical phone       | Wrong base URL — you used `10.0.2.2`/`localhost` instead of the **PC LAN IP**.     |
+| Phone browser can't open `http://<PC-IP>:3000`   | Firewall blocking port 3000, or phone/PC on **different Wi‑Fi** / guest network.   |
+| Changed the IP but the app still hits the old one| `EXPO_PUBLIC_*` is baked at start — **fully restart** `expo start`.                |
+| Emulator can't reach `10.0.2.2`                  | API isn't published on the host (run `docker compose up --build`) or wrong port.   |
+| All requests 404 / wrong data                    | Backend not seeded yet — wait for the API to finish seeding MongoDB on boot.       |
 
 ## Running
 

@@ -114,9 +114,19 @@ Any logged-in user can place an order from the **Cart**, then track it under **O
 ## Search (bonus flow, both clients)
 
 A global search queries restaurants and dishes together (`GET /api/search/:query`).
+Both clients search as you type and group the matches into **Restaurants** and
+**Dishes & items**.
+
+### Web
 
 <p align="center">
   <img width="1906" height="897" alt="Web search results" src="https://github.com/user-attachments/assets/b99b082d-3bdb-45c3-b314-42e6443465a1" />
+</p>
+
+### Mobile
+
+<p align="center">
+  <img width="300" alt="Mobile search results grouped into restaurants and dishes" src="images/mobile-search.png" />
 </p>
 
 ---

@@ -90,6 +90,16 @@ via `expo-image-picker` and shows a preview.
   <img width="300" alt="Mobile form showing an inline validation error with the submit button disabled" src="images/mobile-validation-error.png" />
 </p>
 
+### Manage account (mobile)
+
+Once signed in, **Manage account** (drawer) lets a user edit their display name,
+username, delivery location and profile photo. Changes `PATCH /api/users/:id` and
+update the drawer header immediately, with the same validation as registration.
+
+<p align="center">
+  <img width="300" alt="Mobile Manage account — editing display name, location and profile photo" src="images/mobile-account.png" />
+</p>
+
 ---
 
 Next: **[CRUD Flows](CRUD-Flows.md)** — creating, editing and deleting restaurants, dishes

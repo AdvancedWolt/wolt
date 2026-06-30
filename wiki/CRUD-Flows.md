@@ -21,6 +21,21 @@ sure the stack is up (**[Environment Setup](Environment-Setup.md)**) and you are
 > screen. **Orders** are created by any logged-in user from the **Cart**. Deleting a
 > restaurant cascades — its menu (and related orders) are removed on the server.
 
+## Demo accounts (seeded — no setup needed)
+
+To test these flows, log in with the accounts the database seeds automatically:
+
+| Role             | Username                                 | Password    | Use it for                                                              |
+| ---------------- | ---------------------------------------- | ----------- | ----------------------------------------------------------------------- |
+| Restaurant owner | `wolt-partners`                          | `Partners1` | **Managing restaurants & dishes** — owns the whole seeded catalog.      |
+| Customer         | `noa` (also `amir`, `maya`, `daniel`, …) | `Password1` | Browsing, search, cart and orders.                                      |
+
+> 🔑 **To manage restaurants, log in as `wolt-partners` / `Partners1`.** It owns every
+> seeded restaurant, so **Manage** opens pre-filled and ready to edit, create and delete.
+> On **mobile**, the **Manage** drawer item only appears for restaurant owners — so a
+> customer account won't see it. To demo creating a storefront from scratch, register a
+> fresh **Restaurant owner** account instead.
+
 ---
 
 ## Restaurants (create / edit / delete)

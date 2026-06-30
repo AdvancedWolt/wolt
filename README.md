@@ -248,6 +248,23 @@ npm install
 npm run seed   # connects to MONGO_URI, seeds if empty, then exits
 ```
 
+### Demo accounts (for graders)
+
+The seed creates ready-to-use logins, so you can exercise every flow without
+registering. **No setup beyond `docker compose up` is required** — these exist as
+soon as the database is seeded.
+
+| Role             | Username                                | Password    | What you can do                                                                                      |
+| ---------------- | --------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------- |
+| Restaurant owner | `wolt-partners`                         | `Partners1` | Owns **all seeded restaurants** — open **Manage** to create, edit and delete restaurants and dishes. |
+| Customer         | `noa` (also `amir`, `maya`, `daniel`, …) | `Password1` | Browse, search, add to cart, place and manage orders.                                                |
+
+> **To test restaurant management** (web *or* mobile), log in as
+> **`wolt-partners` / `Partners1`**. It owns the entire seeded catalog, so the
+> **Manage** screen opens pre-filled and ready to edit. On **mobile**, the
+> **Manage** drawer item only appears for restaurant owners. You can also register
+> a new **Restaurant owner** account to see the create-from-empty flow.
+
 ### Tests
 
 ```bash

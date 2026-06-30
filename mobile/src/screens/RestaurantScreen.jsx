@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Image, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
+import { Alert, FlatList, Image, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
 import AppText from '../components/AppText';
 import Button from '../components/Button';
@@ -55,9 +55,27 @@ const RestaurantScreen = ({ navigation, route }) => {
   const activeRestaurant = restaurant || { id, name: name || 'Restaurant' };
   const cartCount = cartRestaurant?.id === id ? count : 0;
 
-  const handleAdd = (product) => {
+  const doAdd = (product) => {
     addItem(product, { id: activeRestaurant.id, name: activeRestaurant.name });
+    // Record interest so the recommender can suggest similar dishes in the cart.
     getProduct(activeRestaurant.id, product.id).catch(() => {});
+  };
+
+  // A cart holds one restaurant at a time, so warn before replacing items from a
+  // different restaurant (mirrors the web "Start a new cart?" confirm).
+  const handleAdd = (product) => {
+    if (cartRestaurant && cartRestaurant.id !== id && count > 0) {
+      Alert.alert(
+        'Start a new cart?',
+        `Your cart has items from ${cartRestaurant.name}. Adding a dish from ${activeRestaurant.name} will clear it.`,
+        [
+          { text: 'Keep current', style: 'cancel' },
+          { text: 'Start new cart', style: 'destructive', onPress: () => doAdd(product) },
+        ]
+      );
+      return;
+    }
+    doAdd(product);
   };
 
   if (status === 'loading' && !restaurant) return <Loading message="Loading the menu" />;

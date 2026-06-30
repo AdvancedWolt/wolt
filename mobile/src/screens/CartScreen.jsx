@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { Alert, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, FlatList, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import AppText from '../components/AppText';
 import Button from '../components/Button';
-import { createOrder } from '../api/endpoints';
+import { createOrder, getProducts, getRecommendations } from '../api/endpoints';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
@@ -11,7 +11,7 @@ import { formatPrice } from '../utils/format';
 
 const CartScreen = ({ navigation }) => {
   const { theme } = useTheme();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const {
     restaurant,
     items,
@@ -26,6 +26,45 @@ const CartScreen = ({ navigation }) => {
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState('');
   const [confirmation, setConfirmation] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+
+  // "You might also like": other dishes from this restaurant (so they can be
+  // added to the same order), ordered by the C++ recommender when signed in.
+  // Mirrors the web Cart page.
+  const restaurantId = restaurant?.id;
+  const anchorId = items[0]?.product.id;
+  const inCartIds = items.map((line) => line.product.id).join(',');
+  useEffect(() => {
+    if (!restaurantId || !inCartIds) {
+      setSuggestions([]);
+      return undefined;
+    }
+    let active = true;
+    const inCart = new Set(inCartIds.split(','));
+
+    (async () => {
+      let menu = [];
+      try {
+        menu = await getProducts(restaurantId);
+      } catch {
+        menu = [];
+      }
+      const candidates = (Array.isArray(menu) ? menu : []).filter((product) => !inCart.has(product.id));
+
+      if (isAuthenticated && anchorId && user?.id) {
+        try {
+          const data = await getRecommendations(user.id, anchorId);
+          const recommended = new Set((data.recommendations || []).map((product) => product.id));
+          candidates.sort((left, right) => Number(recommended.has(right.id)) - Number(recommended.has(left.id)));
+        } catch {
+          // ranking is best-effort; fall back to the unranked menu order
+        }
+      }
+      if (active) setSuggestions(candidates.slice(0, 6));
+    })();
+
+    return () => { active = false; };
+  }, [restaurantId, inCartIds, isAuthenticated, user?.id, anchorId]);
 
   const checkout = async () => {
     if (!isAuthenticated) {
@@ -142,7 +181,39 @@ const CartScreen = ({ navigation }) => {
             ) : null}
           </View>
         )}
-        ListFooterComponent={<View style={{ height: 138 }} />}
+        ListFooterComponent={(
+          <View>
+            {suggestions.length ? (
+              <View style={styles.recs}>
+                <AppText variant="subtitle" weight="800" style={styles.recsTitle}>You might also like</AppText>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recsList}>
+                  {suggestions.map((product) => (
+                    <View key={product.id} style={[styles.recCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                      {product.image ? (
+                        <Image source={{ uri: product.image }} style={styles.recImage} />
+                      ) : (
+                        <View style={[styles.recImage, styles.imageFallback, { backgroundColor: theme.surface }]}>
+                          <AppText variant="subtitle">🍽️</AppText>
+                        </View>
+                      )}
+                      <View style={styles.recBody}>
+                        <AppText weight="700" numberOfLines={1}>{product.name}</AppText>
+                        <AppText variant="small" muted>{formatPrice(product.price)}</AppText>
+                      </View>
+                      <Pressable
+                        onPress={() => addItem(product, restaurant)}
+                        style={({ pressed }) => [styles.recAdd, { backgroundColor: theme.brandSoft }, pressed && styles.pressed]}
+                      >
+                        <AppText variant="small" weight="800" color={theme.brand}>+ Add</AppText>
+                      </Pressable>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            ) : null}
+            <View style={{ height: 138 }} />
+          </View>
+        )}
       />
 
       <View style={[styles.summary, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
@@ -176,6 +247,13 @@ const styles = StyleSheet.create({
   removeButton: { height: 36, justifyContent: 'center', paddingHorizontal: 8 },
   pressed: { opacity: 0.75 },
   banner: { borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 12 },
+  recs: { marginTop: 8 },
+  recsTitle: { marginBottom: 10 },
+  recsList: { gap: 12, paddingRight: 4 },
+  recCard: { width: 150, borderWidth: 1, borderRadius: 14, overflow: 'hidden' },
+  recImage: { width: '100%', height: 90 },
+  recBody: { padding: 10, gap: 3 },
+  recAdd: { margin: 10, marginTop: 0, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   summary: { position: 'absolute', left: 0, right: 0, bottom: 0, borderTopWidth: 1, padding: 16, gap: 12 },
   summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   summaryActions: { flexDirection: 'row', gap: 10 },

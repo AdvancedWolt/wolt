@@ -1,5 +1,7 @@
 # AdvancedWolt
 
+![Continuous Integration](https://github.com/AdvancedWolt/wolt/actions/workflows/ci.yml/badge.svg)
+
 AdvancedWolt is a multi-client food-delivery platform. A MongoDB-backed Express API serves a React web application and a React Native/Expo mobile application, while a C++ TCP service supplies product recommendations.
 
 ## Features
@@ -13,7 +15,7 @@ AdvancedWolt is a multi-client food-delivery platform. A MongoDB-backed Express 
 
 ## Product walkthrough
 
-The repository includes a small, maintained screenshot set for the mobile client and local stack. These images document the primary user journeys without replacing the detailed, step-by-step [wiki walkthroughs](wiki/Home.md).
+The repository includes a maintained screenshot set for the mobile client and local stack. These images document the primary journeys; the detailed [wiki walkthroughs](wiki/Home.md) provide complete setup and flow documentation.
 
 | Authentication | Restaurant discovery | Search |
 | --- | --- | --- |
@@ -23,14 +25,13 @@ The repository includes a small, maintained screenshot set for the mobile client
 | --- | --- | --- |
 | ![Mobile cart and order](wiki/images/mobile-cart-order.png) | ![Mobile order status](wiki/images/mobile-order-status.png) | ![Manage restaurant](wiki/images/mobile-manage-edit-restaurant.png) |
 
-The [environment setup guide](wiki/Environment-Setup.md) also includes a screenshot of the Docker Compose stack starting successfully.
-
 ## Architecture
 
 ```text
-React web (client/) ─┐
-Expo mobile (mobile/) ├─ HTTP/JSON + JWT ─> Express API (web/) ─> MongoDB
-                      └───────────────────────> C++ recommender (src/, TCP :8080)
+React web (client/) --------\
+                            +-- HTTP/JSON + JWT --> Express API (web/) --> MongoDB
+Expo mobile (mobile/) -----/                         |
+                                                     +--> C++ recommender (src/, TCP :8080)
 ```
 
 The web production bundle is built into the web container and served by Express. MongoDB data is stored in the `mongo-data` Compose volume. The mobile app runs separately through Expo and uses `EXPO_PUBLIC_API_URL`.
@@ -108,7 +109,9 @@ The mobile package currently provides Expo start targets but no automated test o
 
 ## Testing and CI
 
-Every pull request targeting `main` and pushes to `main` or `ci` run `.github/workflows/ci.yml`. It installs clean dependencies, builds and tests the C++ service, runs the API test suite, builds the web client, and validates mobile dependencies. Jobs use Node.js 20 and dependency caching where supported.
+Every pull request targeting `main` and pushes to `main` or `ci` run `.github/workflows/ci.yml`. It installs clean dependencies, builds and tests the C++ service, runs the API test suite, builds the web client, and validates mobile dependencies. Node.js 20 is used for all JavaScript jobs.
+
+The API exposes REST resources under `/api/restaurants`, `/api/users`, `/api/tokens`, `/api/orders`, and `/api/search`. Authentication uses JWTs for protected operations.
 
 ## Releases
 

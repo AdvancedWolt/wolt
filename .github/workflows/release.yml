@@ -1,0 +1,38 @@
+name: Release artifacts
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build and upload release artifacts
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install and build web client
+        working-directory: client
+        run: npm install --no-audit --no-fund && npm run build
+      - name: Configure and build C++ service
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel
+      - name: Package release bundle
+        shell: bash
+        run: |
+          mkdir -p release/web release/bin
+          cp -r client/dist release/web/
+          cp build/src/wolt_app release/bin/
+          tar -czf advancedwolt-${GITHUB_REF_NAME}.tar.gz -C release .
+      - name: Upload release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: advancedwolt-${{ github.ref_name }}
+          path: advancedwolt-${{ github.ref_name }}.tar.gz

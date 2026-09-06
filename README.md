@@ -11,6 +11,20 @@ AdvancedWolt is a multi-client food-delivery platform. A MongoDB-backed Express 
 - React/Vite web client and Expo mobile client
 - Docker Compose stack for the API, web application, recommender, and MongoDB
 
+## Product walkthrough
+
+The repository includes a small, maintained screenshot set for the mobile client and local stack. These images document the primary user journeys without replacing the detailed, step-by-step [wiki walkthroughs](wiki/Home.md).
+
+| Authentication | Restaurant discovery | Search |
+| --- | --- | --- |
+| ![Mobile login](wiki/images/mobile-login.png) | ![Mobile home](wiki/images/mobile-home.png) | ![Mobile search](wiki/images/mobile-search.png) |
+
+| Cart and checkout | Order status | Owner management |
+| --- | --- | --- |
+| ![Mobile cart and order](wiki/images/mobile-cart-order.png) | ![Mobile order status](wiki/images/mobile-order-status.png) | ![Manage restaurant](wiki/images/mobile-manage-edit-restaurant.png) |
+
+The [environment setup guide](wiki/Environment-Setup.md) also includes a screenshot of the Docker Compose stack starting successfully.
+
 ## Architecture
 
 ```text

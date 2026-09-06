@@ -1,0 +1,69 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main, ci]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cpp:
+    name: C++ build and unit tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Configure CMake
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure -C Release
+
+  web:
+    name: Web API tests and client build
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: API
+            directory: web
+            command: npm test
+          - name: Client
+            directory: client
+            command: npm run build
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        working-directory: ${{ matrix.directory }}
+        run: npm install --no-audit --no-fund
+      - name: Run ${{ matrix.name }} validation
+        working-directory: ${{ matrix.directory }}
+        run: ${{ matrix.command }}
+
+  mobile:
+    name: Mobile dependency validation
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Expo dependencies
+        working-directory: mobile
+        run: npm install --no-audit --no-fund
